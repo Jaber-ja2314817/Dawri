@@ -1,0 +1,11 @@
+[
+  {"id":"DR-PARA","name_en":"paracetamol","name_ar":"باراسيتامول","form":"tablet","default_dose":"500 mg","default_frequency":"every 6 hours as needed","default_days":3,"allergy_tags":[],"demo_default":1},
+  {"id":"DR-DEXT","name_en":"dextromethorphan syrup","name_ar":"ديكستروميثورفان","form":"syrup","default_dose":"10 ml","default_frequency":"every 8 hours as needed","default_days":3,"allergy_tags":[],"demo_default":1},
+  {"id":"DR-AMOX","name_en":"amoxicillin","name_ar":"أموكسيسيلين","form":"capsule","default_dose":"500 mg","default_frequency":"three times daily","default_days":5,"allergy_tags":["penicillin"],"demo_default":0},
+  {"id":"DR-AUGM","name_en":"co-amoxiclav","name_ar":"أموكسيسيلين مع كلافولانيك","form":"tablet","default_dose":"625 mg","default_frequency":"twice daily","default_days":5,"allergy_tags":["penicillin"],"demo_default":0},
+  {"id":"DR-AZIT","name_en":"azithromycin","name_ar":"أزيثرومايسين","form":"tablet","default_dose":"500 mg","default_frequency":"once daily","default_days":3,"allergy_tags":[],"demo_default":0},
+  {"id":"DR-IBU","name_en":"ibuprofen","name_ar":"إيبوبروفين","form":"tablet","default_dose":"400 mg","default_frequency":"three times daily","default_days":3,"allergy_tags":["nsaid"],"demo_default":0},
+  {"id":"DR-CETI","name_en":"cetirizine","name_ar":"سيتريزين","form":"tablet","default_dose":"10 mg","default_frequency":"once daily","default_days":5,"allergy_tags":[],"demo_default":0},
+  {"id":"DR-AMLO","name_en":"amlodipine","name_ar":"أملوديبين","form":"tablet","default_dose":"5 mg","default_frequency":"once daily","default_days":30,"allergy_tags":[],"demo_default":0},
+  {"id":"DR-METF","name_en":"metformin","name_ar":"ميتفورمين","form":"tablet","default_dose":"500 mg","default_frequency":"twice daily","default_days":30,"allergy_tags":[],"demo_default":0}
+]

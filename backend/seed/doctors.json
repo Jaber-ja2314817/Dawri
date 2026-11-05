@@ -1,0 +1,10 @@
+[
+  {"id":"S-WAK-DOC1","centre_id":"C-WAKRA","name":"Dr. Khalid Al-Demo","role":"doctor","clinic":"gp","languages":["ar","en"],"gender":"M"},
+  {"id":"S-WAK-DOC2","centre_id":"C-WAKRA","name":"Dr. Noor Al-Demo","role":"doctor","clinic":"gp","languages":["ar","en"],"gender":"F"},
+  {"id":"S-WAK-DEN1","centre_id":"C-WAKRA","name":"Dr. Sara Al-Demo","role":"doctor","clinic":"dental","languages":["ar","en"],"gender":"F"},
+  {"id":"S-WAK-WH1","centre_id":"C-WAKRA","name":"Dr. Huda Al-Demo","role":"doctor","clinic":"womens_health","languages":["ar","en"],"gender":"F"},
+  {"id":"S-RAY-DOC1","centre_id":"C-RAYYAN","name":"Dr. Yousef Al-Demo","role":"doctor","clinic":"gp","languages":["ar","en"],"gender":"M"},
+  {"id":"S-MES-DOC1","centre_id":"C-MESAIMEER","name":"Dr. Aisha Al-Demo","role":"doctor","clinic":"gp","languages":["ar","en"],"gender":"F"},
+  {"id":"S-AIR-DOC1","centre_id":"C-AIRPORT","name":"Dr. Omar Al-Demo","role":"doctor","clinic":"gp","languages":["ar","en"],"gender":"M"},
+  {"id":"S-WBY-DOC1","centre_id":"C-WESTBAY","name":"Dr. Reem Al-Demo","role":"doctor","clinic":"gp","languages":["ar","en"],"gender":"F"}
+]

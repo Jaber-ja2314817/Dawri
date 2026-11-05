@@ -1,0 +1,20 @@
+[
+  {"id":"P001","qid_demo":"DEMO-10001","full_name_en":"Fatima Al-Demo","full_name_ar":"فاطمة التجريبية",
+   "dob":"1992-03-14","sex":"F","preferred_lang":"ar","registered_centre_id":"C-WAKRA",
+   "allergies":["penicillin"],"chronic":[],"active_meds":[]},
+  {"id":"P002","qid_demo":"DEMO-10002","full_name_en":"Ahmed Al-Demo","full_name_ar":"أحمد التجريبي",
+   "dob":"1959-07-02","sex":"M","preferred_lang":"ar","registered_centre_id":"C-RAYYAN",
+   "allergies":[],"chronic":["hypertension"],"active_meds":["amlodipine 5 mg once daily"]},
+  {"id":"P003","qid_demo":"DEMO-10003","full_name_en":"Ravi Demo","full_name_ar":"رافي",
+   "dob":"1981-11-20","sex":"M","preferred_lang":"en","registered_centre_id":"C-AIRPORT",
+   "allergies":[],"chronic":["type 2 diabetes"],"active_meds":["metformin 500 mg twice daily"]},
+  {"id":"P004","qid_demo":"DEMO-10004","full_name_en":"Layla Al-Demo","full_name_ar":"ليلى التجريبية",
+   "dob":"2019-05-10","sex":"F","preferred_lang":"ar","registered_centre_id":"C-WAKRA",
+   "allergies":[],"chronic":[],"active_meds":[]},
+  {"id":"P005","qid_demo":"DEMO-10005","full_name_en":"Mariam Al-Demo","full_name_ar":"مريم التجريبية",
+   "dob":"1948-02-21","sex":"F","preferred_lang":"ar","registered_centre_id":"C-WAKRA",
+   "allergies":[],"chronic":["hypertension"],"active_meds":["amlodipine 5 mg once daily"]},
+  {"id":"P006","qid_demo":"DEMO-10006","full_name_en":"Salem Al-Demo","full_name_ar":"سالم التجريبي",
+   "dob":"1970-09-09","sex":"M","preferred_lang":"ar","registered_centre_id":"C-WAKRA",
+   "allergies":[],"chronic":[],"active_meds":[]}
+]

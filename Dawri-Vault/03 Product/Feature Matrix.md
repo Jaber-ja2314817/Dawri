@@ -10,7 +10,7 @@ skill: replica-recon
 | ID | Feature | Priority | Owner role | Status |
 |---|---|:---:|---|:---:|
 | F01 | Mock Tawtheeq login (QID + OTP 0000) | Must | Frontend | ☐ |
-| F02 | Mock national health record (3+ synthetic patients) | Must | Backend | ☐ |
+| F02 | Mock national health record (3+ synthetic patients) | Must | Backend | ☑ |
 | F03 | AI chat intake (text), AR + EN | Must | AI | ☐ |
 | F04 | Red-flag rules (AR/EN) before model | Must | AI | ☐ |
 | F05 | Service classification → intake JSON | Must | AI | ☐ |

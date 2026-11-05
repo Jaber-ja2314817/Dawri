@@ -1,0 +1,17 @@
+[
+  {"id":"S-WAK-NURSE1","centre_id":"C-WAKRA","name":"Amal Al-Demo","role":"nurse","clinic":null,"languages":["ar","en"],"gender":"F"},
+  {"id":"S-WAK-PHARM1","centre_id":"C-WAKRA","name":"Hassan Al-Demo","role":"pharmacist","clinic":null,"languages":["ar","en"],"gender":"M"},
+  {"id":"S-WAK-DESK1","centre_id":"C-WAKRA","name":"Dana Al-Demo","role":"desk","clinic":null,"languages":["ar","en"],"gender":"F"},
+  {"id":"S-RAY-NURSE1","centre_id":"C-RAYYAN","name":"Hind Al-Demo","role":"nurse","clinic":null,"languages":["ar","en"],"gender":"F"},
+  {"id":"S-RAY-PHARM1","centre_id":"C-RAYYAN","name":"Tariq Al-Demo","role":"pharmacist","clinic":null,"languages":["ar","en"],"gender":"M"},
+  {"id":"S-RAY-DESK1","centre_id":"C-RAYYAN","name":"Maha Al-Demo","role":"desk","clinic":null,"languages":["ar","en"],"gender":"F"},
+  {"id":"S-MES-NURSE1","centre_id":"C-MESAIMEER","name":"Lina Al-Demo","role":"nurse","clinic":null,"languages":["ar","en"],"gender":"F"},
+  {"id":"S-MES-PHARM1","centre_id":"C-MESAIMEER","name":"Faisal Al-Demo","role":"pharmacist","clinic":null,"languages":["ar","en"],"gender":"M"},
+  {"id":"S-MES-DESK1","centre_id":"C-MESAIMEER","name":"Nada Al-Demo","role":"desk","clinic":null,"languages":["ar","en"],"gender":"F"},
+  {"id":"S-AIR-NURSE1","centre_id":"C-AIRPORT","name":"Rana Al-Demo","role":"nurse","clinic":null,"languages":["ar","en"],"gender":"F"},
+  {"id":"S-AIR-PHARM1","centre_id":"C-AIRPORT","name":"Majid Al-Demo","role":"pharmacist","clinic":null,"languages":["ar","en"],"gender":"M"},
+  {"id":"S-AIR-DESK1","centre_id":"C-AIRPORT","name":"Salma Al-Demo","role":"desk","clinic":null,"languages":["ar","en"],"gender":"F"},
+  {"id":"S-WBY-NURSE1","centre_id":"C-WESTBAY","name":"Joud Al-Demo","role":"nurse","clinic":null,"languages":["ar","en"],"gender":"F"},
+  {"id":"S-WBY-PHARM1","centre_id":"C-WESTBAY","name":"Bader Al-Demo","role":"pharmacist","clinic":null,"languages":["ar","en"],"gender":"M"},
+  {"id":"S-WBY-DESK1","centre_id":"C-WESTBAY","name":"Hala Al-Demo","role":"desk","clinic":null,"languages":["ar","en"],"gender":"F"}
+]

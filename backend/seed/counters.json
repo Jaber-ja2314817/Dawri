@@ -1,0 +1,20 @@
+[
+  {"id":"C-WAKRA-T1","centre_id":"C-WAKRA","stage":"triage","label":"Triage 1","label_ar":"الفرز 1","staff_id":"S-WAK-NURSE1","prefix":"T","avg_service_sec":240},
+  {"id":"C-WAKRA-D3","centre_id":"C-WAKRA","stage":"doctor","label":"Room 3","label_ar":"غرفة 3","staff_id":"S-WAK-DOC1","prefix":"D-GP","avg_service_sec":480},
+  {"id":"C-WAKRA-D4","centre_id":"C-WAKRA","stage":"doctor","label":"Room 4","label_ar":"غرفة 4","staff_id":"S-WAK-DOC2","prefix":"D-GP","avg_service_sec":480},
+  {"id":"C-WAKRA-DEN1","centre_id":"C-WAKRA","stage":"doctor","label":"Dental","label_ar":"الأسنان","staff_id":"S-WAK-DEN1","prefix":"D-DEN","avg_service_sec":600},
+  {"id":"C-WAKRA-WH1","centre_id":"C-WAKRA","stage":"doctor","label":"Women's Health","label_ar":"صحة المرأة","staff_id":"S-WAK-WH1","prefix":"D-WH","avg_service_sec":600},
+  {"id":"C-WAKRA-P1","centre_id":"C-WAKRA","stage":"pharmacy","label":"Pharmacy","label_ar":"الصيدلية","staff_id":"S-WAK-PHARM1","prefix":"P","avg_service_sec":180},
+  {"id":"C-RAYYAN-T1","centre_id":"C-RAYYAN","stage":"triage","label":"Triage 1","label_ar":"الفرز 1","staff_id":"S-RAY-NURSE1","prefix":"T","avg_service_sec":240},
+  {"id":"C-RAYYAN-D1","centre_id":"C-RAYYAN","stage":"doctor","label":"Room 1","label_ar":"غرفة 1","staff_id":"S-RAY-DOC1","prefix":"D-GP","avg_service_sec":480},
+  {"id":"C-RAYYAN-P1","centre_id":"C-RAYYAN","stage":"pharmacy","label":"Pharmacy","label_ar":"الصيدلية","staff_id":"S-RAY-PHARM1","prefix":"P","avg_service_sec":180},
+  {"id":"C-MESAIMEER-T1","centre_id":"C-MESAIMEER","stage":"triage","label":"Triage 1","label_ar":"الفرز 1","staff_id":"S-MES-NURSE1","prefix":"T","avg_service_sec":240},
+  {"id":"C-MESAIMEER-D1","centre_id":"C-MESAIMEER","stage":"doctor","label":"Room 1","label_ar":"غرفة 1","staff_id":"S-MES-DOC1","prefix":"D-GP","avg_service_sec":480},
+  {"id":"C-MESAIMEER-P1","centre_id":"C-MESAIMEER","stage":"pharmacy","label":"Pharmacy","label_ar":"الصيدلية","staff_id":"S-MES-PHARM1","prefix":"P","avg_service_sec":180},
+  {"id":"C-AIRPORT-T1","centre_id":"C-AIRPORT","stage":"triage","label":"Triage 1","label_ar":"الفرز 1","staff_id":"S-AIR-NURSE1","prefix":"T","avg_service_sec":240},
+  {"id":"C-AIRPORT-D1","centre_id":"C-AIRPORT","stage":"doctor","label":"Room 1","label_ar":"غرفة 1","staff_id":"S-AIR-DOC1","prefix":"D-GP","avg_service_sec":480},
+  {"id":"C-AIRPORT-P1","centre_id":"C-AIRPORT","stage":"pharmacy","label":"Pharmacy","label_ar":"الصيدلية","staff_id":"S-AIR-PHARM1","prefix":"P","avg_service_sec":180},
+  {"id":"C-WESTBAY-T1","centre_id":"C-WESTBAY","stage":"triage","label":"Triage 1","label_ar":"الفرز 1","staff_id":"S-WBY-NURSE1","prefix":"T","avg_service_sec":240},
+  {"id":"C-WESTBAY-D1","centre_id":"C-WESTBAY","stage":"doctor","label":"Room 1","label_ar":"غرفة 1","staff_id":"S-WBY-DOC1","prefix":"D-GP","avg_service_sec":480},
+  {"id":"C-WESTBAY-P1","centre_id":"C-WESTBAY","stage":"pharmacy","label":"Pharmacy","label_ar":"الصيدلية","staff_id":"S-WBY-PHARM1","prefix":"P","avg_service_sec":180}
+]

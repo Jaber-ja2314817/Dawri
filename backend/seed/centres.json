@@ -1,0 +1,23 @@
+[
+  {"id":"C-WAKRA","name_en":"Al Wakra Health Centre","name_ar":"مركز الوكرة الصحي","operator":"PHCC",
+   "lat":25.17302,"lng":51.59575,"services":["gp","dental","vaccination","lab_only","womens_health"],
+   "has_emergency":0,"priority_age_min":65},
+  {"id":"C-RAYYAN","name_en":"Al Rayyan Health Centre","name_ar":"مركز الريان الصحي","operator":"PHCC",
+   "lat":25.27992,"lng":51.43243,"services":["gp","vaccination","lab_only"],
+   "has_emergency":0,"priority_age_min":65},
+  {"id":"C-MESAIMEER","name_en":"Mesaimeer Health Centre","name_ar":"مركز مسيمير الصحي","operator":"PHCC",
+   "lat":25.23369,"lng":51.48246,"services":["gp","vaccination","lab_only"],
+   "has_emergency":0,"priority_age_min":65},
+  {"id":"C-AIRPORT","name_en":"Airport Health Centre","name_ar":"مركز المطار الصحي","operator":"PHCC",
+   "lat":25.25580,"lng":51.55778,"services":["gp","vaccination","lab_only"],
+   "has_emergency":0,"priority_age_min":65},
+  {"id":"C-WESTBAY","name_en":"West Bay Health Centre","name_ar":"مركز الخليج الغربي الصحي","operator":"PHCC",
+   "lat":25.33767,"lng":51.50388,"services":["gp","vaccination","lab_only"],
+   "has_emergency":0,"priority_age_min":65},
+  {"id":"H-HGH","name_en":"Hamad General Hospital","name_ar":"مستشفى حمد العام","operator":"HMC",
+   "lat":25.29349,"lng":51.50222,"services":["emergency"],
+   "has_emergency":1,"priority_age_min":65},
+  {"id":"H-WAKRA","name_en":"Al Wakra Hospital","name_ar":"مستشفى الوكرة","operator":"HMC",
+   "lat":25.16750,"lng":51.58742,"services":["emergency"],
+   "has_emergency":1,"priority_age_min":65}
+]
