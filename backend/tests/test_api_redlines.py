@@ -1254,6 +1254,7 @@ PATIENT_ROUTES = {
     ("GET", "/api/centres"),
     ("POST", "/api/visits/{visit_id}/reserve"),
     ("POST", "/api/visits/{visit_id}/arrive"),
+    ("POST", "/api/visits/{visit_id}/rating"),
 }
 
 

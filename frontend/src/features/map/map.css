@@ -1,0 +1,54 @@
+/* Inside the Leaflet container, which is the one thing set to dir="ltr". */
+
+.dawri-map.leaflet-container {
+  font-family: var(--font-app);
+  font-size: 12px;
+  line-height: 16px;
+  background-color: var(--color-raised);
+}
+
+.dawri-map .leaflet-control-attribution {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-inline: 8px;
+  font-size: 12px;
+  color: var(--color-ink);
+  background-color: var(--color-surface);
+}
+
+.dawri-map .leaflet-control-attribution a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--color-ink);
+  text-decoration: underline;
+}
+
+.dawri-pin {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.dawri-pin-badge {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 28px;
+  padding-inline: 8px;
+  border: 1px solid var(--color-control);
+  border-radius: var(--radius-control);
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--color-ink);
+  background-color: var(--color-surface);
+}
+
+.dawri-pin.is-selected .dawri-pin-badge {
+  border-color: var(--color-data);
+  color: var(--color-white);
+  background-color: var(--color-data);
+}

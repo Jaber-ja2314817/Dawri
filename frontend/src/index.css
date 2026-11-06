@@ -1,0 +1,147 @@
+@import 'tailwindcss';
+
+/* IBM Plex through @fontsource only: nothing here may reach a CDN. */
+@import '@fontsource/ibm-plex-sans/latin-400.css';
+@import '@fontsource/ibm-plex-sans/latin-500.css';
+@import '@fontsource/ibm-plex-sans/latin-600.css';
+@import '@fontsource/ibm-plex-sans-arabic/arabic-400.css';
+@import '@fontsource/ibm-plex-sans-arabic/arabic-500.css';
+@import '@fontsource/ibm-plex-sans-arabic/arabic-600.css';
+
+/*
+  Achromatic ledger. The palette is cleared first, so only these names exist as utilities:
+  a colour from the default palette produces no CSS at all.
+*/
+@theme {
+  --color-*: initial;
+  --color-ground: #f2f4f7;
+  --color-surface: #ffffff;
+  --color-border: #e6e6e6;
+  --color-rule: #efefef;
+  --color-ink: #0a0a0a;
+  --color-ink-hover: #2a2a2a;
+  --color-muted: #6b6b6b;
+  --color-control: #d4d4d4;
+  --color-raised: #eeeeee;
+  --color-white: #ffffff;
+  --color-data: #1d5fbf;
+  --color-positive: #2e7d32;
+  --color-negative: #c4242a;
+  --color-warning: #92400e;
+  --color-emergency: #c4242a;
+  --color-emergency-hover: #a81d23;
+  --color-pill-positive-bg: #dcfae5;
+  --color-pill-positive-ink: #04250e;
+  --color-pill-negative-bg: #ffedea;
+  --color-pill-negative-ink: #831c1e;
+  --color-pill-warning-bg: #fffbeb;
+  --color-pill-warning-ink: #92400e;
+  --color-pill-neutral-bg: #eeeeee;
+  --color-pill-neutral-ink: #3d3d3d;
+  --color-notice-border: #fde68a;
+
+  /* Sizes 12/14/16/24/30 only. */
+  --text-*: initial;
+  --text-xs: 12px;
+  --text-xs--line-height: 16px;
+  --text-sm: 14px;
+  --text-sm--line-height: 20px;
+  --text-base: 16px;
+  --text-base--line-height: 24px;
+  --text-xl: 24px;
+  --text-xl--line-height: 32px;
+  --text-2xl: 30px;
+  --text-2xl--line-height: 36px;
+
+  --radius-*: initial;
+  --radius-panel: 8px;
+  --radius-control: 6px;
+
+  --shadow-*: initial;
+
+  --font-sans: var(--font-app);
+}
+
+:root {
+  --ground: #f2f4f7;
+  --surface: #ffffff;
+  --border: #e6e6e6;
+  --text: #0a0a0a;
+  --muted: #6b6b6b;
+  --control: #d4d4d4;
+  --data: #1d5fbf;
+  --positive: #2e7d32;
+  --negative: #c4242a;
+  --warning: #92400e;
+  --radius-card: 8px;
+  --radius-control: 6px;
+  --row: 44px;
+  --gap: 12px;
+  --pad: 24px;
+  --gutter: 16px;
+
+  --font-app: 'IBM Plex Sans Arabic', 'IBM Plex Sans', system-ui, sans-serif;
+}
+
+/* The face of the language comes first; the other carries any mixed-in script. */
+html[lang='en'] {
+  --font-app: 'IBM Plex Sans', 'IBM Plex Sans Arabic', system-ui, sans-serif;
+}
+
+html[data-tone='emergency'],
+html[data-tone='emergency'] body {
+  background-color: var(--color-emergency);
+}
+
+@layer base {
+  *,
+  ::before,
+  ::after,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-border);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    background-color: var(--ground);
+    color: var(--text);
+    font-family: var(--font-app);
+    font-size: 14px;
+    line-height: 20px;
+    font-variant-numeric: tabular-nums;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+    color: inherit;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 2px;
+  }
+
+  [data-tone='emergency'] :focus-visible {
+    outline-color: var(--color-white);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    transition-duration: 0.01ms !important;
+    animation: none !important;
+  }
+}

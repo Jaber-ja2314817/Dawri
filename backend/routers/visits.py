@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from fastapi import APIRouter, Depends, Request
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, StrictInt
 from starlette.datastructures import UploadFile
 from starlette.formparsers import MultiPartException, MultiPartParser
 
@@ -84,6 +84,10 @@ class Arrive(BaseModel):
     lng: float | None = Field(default=None, ge=-180, le=180)
     qr_code: str | None = None
     button: bool | None = None
+
+
+class Rating(BaseModel):
+    stars: StrictInt = Field(ge=1, le=5)  # Strict: "3" and true are not a rating.
 
 
 # Reading uploads
@@ -315,7 +319,9 @@ def list_visits(
             "stage": STAGES[row["status"]],
             "service": row["service"],
             "centre_id": row["centre_id"],
+            "centre": _centre_name(conn, row["centre_id"]),
             "created_at": row["created_at"],
+            "completed_at": row["completed_at"],
             "active": row["status"] in ACTIVE_STATUSES,
         }
         for row in rows
@@ -362,6 +368,22 @@ def _emergency_card(conn: sqlite3.Connection, visit: sqlite3.Row, chat: dict) ->
     }
 
 
+def _refill_card(visit: sqlite3.Row, chat: dict) -> dict | None:
+    if visit["status"] != "deflected_refill":
+        return None
+    refill = (chat["last_turn"] or {}).get("refill")
+    return None if refill is None else {"medicine": refill["medicine"]}
+
+
+def _rating(conn: sqlite3.Connection, visit_id: str) -> int | None:
+    row = conn.execute(
+        "SELECT payload FROM event WHERE visit_id = ? AND type = 'visit.rated' "
+        "ORDER BY id LIMIT 1",
+        (visit_id,),
+    ).fetchone()
+    return None if row is None else json.loads(row["payload"])["stars"]
+
+
 @router.get("/visits/{visit_id}")
 def get_visit(
     visit: sqlite3.Row = Depends(patient_visit),
@@ -395,6 +417,8 @@ def get_visit(
         },
         "emergency": _emergency_card(conn, visit, chat),
         "go_to": _go_to(shown),
+        "refill": _refill_card(visit, chat),
+        "rating": _rating(conn, visit_id),
     }
 
 
@@ -500,6 +524,22 @@ def reserve(
         "message": CHECK_IN_EN,
         "message_ar": CHECK_IN_AR,
     }
+
+
+@router.post("/visits/{visit_id}/rating")
+def rate_visit(
+    body: Rating,
+    visit: sqlite3.Row = Depends(patient_visit),
+    conn: sqlite3.Connection = Depends(get_conn),
+) -> dict:
+    """An event row only: the visit, its tickets and the stats stay as they are."""
+    with db.transaction(conn):
+        if load_visit(conn, visit["id"])["status"] != "completed":
+            raise ApiError(409, "visit_not_completed", "Only a completed visit can be rated.")
+        if _rating(conn, visit["id"]) is not None:
+            raise ApiError(409, "already_rated", "This visit has already been rated.")
+        audit.record(conn, visit["id"], [AiEvent("visit.rated", {"stars": body.stars})])
+    return {"rating": body.stars}
 
 
 # Arriving

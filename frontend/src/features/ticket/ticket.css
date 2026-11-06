@@ -1,0 +1,24 @@
+/* The ticket number changing is the moment the demo turns on: quick, and only once. */
+
+@keyframes ticket-change {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ticket-change {
+    animation: ticket-change 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+}
+
+.ticket-frame {
+  container-type: inline-size;
+}
+
+/* Fills the column whatever its length: T-014 and D-GP-023 both read across a room. */
+.ticket-number {
+  font-size: min(112px, calc(100cqi / (var(--ticket-chars) * 0.62)));
+  line-height: 1.1;
+}
