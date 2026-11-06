@@ -39,3 +39,10 @@ Owner's standing instruction: **keep building until the main build is finished a
 - **New session:** resume is not available. Start a new workflow from `07 Build/orchestrator-workflow.js` (a copy of the script) with `PHASES` trimmed to Phases 4, 5 and 6. Begin Phase 4 with a review of the existing `frontend/` and do not rebuild it. Stage `Dawri-Vault/07 Build` in every commit, and use the attribution trailer in force in that session.
 - Original script: `~/.claude/projects/-Users-jaberal-boenain-Desktop-Dawri/4c03dfbd-8767-4791-a2f8-95a198f5289f/workflows/scripts/dawri-orchestrated-build-wf_925fae5b-c90.js`
 - Run journal: `~/.claude/projects/-Users-jaberal-boenain-Desktop-Dawri/4c03dfbd-8767-4791-a2f8-95a198f5289f/subagents/workflows/wf_925fae5b-c90/journal.jsonl`
+
+## Update, Fri 6 Nov, about 17:35 Doha
+Build resumed in a new session as run `wf_b653a907-cb4`, script `07 Build/orchestrator-workflow-resume.js`, with Phase 4 data in `07 Build/phase4-handover.json`. It reviews Phase 4 without rebuilding it, then builds Phases 5 and 6. The two stale tests in `test_api_visits.py` were widened first, so the backend suite started at 10539 passed. Docker Desktop was started for Phase 6.
+
+- **Same session:** Workflow with that `scriptPath` and `resumeFromRunId: wf_b653a907-cb4`.
+- **New session:** check `git log` to see which phases landed, trim `ALL_PHASES.slice(3)` in the script to what is left, and remove `PHASES[0].resume` unless Phase 4 is still unreviewed.
+- Journal: `~/.claude/projects/-Users-jaberal-boenain-Desktop-Dawri/d2706c8e-316d-477a-8c11-293891467d78/subagents/workflows/wf_b653a907-cb4/journal.jsonl`

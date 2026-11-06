@@ -455,7 +455,9 @@ def test_the_list_is_mine_and_my_dependents_newest_first(api, fatima, ravi, conn
         "stage",
         "service",
         "centre_id",
+        "centre",
         "created_at",
+        "completed_at",
         "active",
     }
     assert (rows[0]["patient_id"], rows[0]["active"], rows[0]["stage"]) == (
@@ -499,6 +501,8 @@ def test_a_fresh_visit(api, fatima):
         "medicines",
         "emergency",
         "go_to",
+        "refill",
+        "rating",
     }
     assert state["stage"] == "intake"
     assert state["centre"] is None

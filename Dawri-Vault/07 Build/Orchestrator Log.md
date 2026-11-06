@@ -181,3 +181,85 @@ F07 and F19. F19 because [[Build Decisions]] 8 asks only that the backend accept
 - The patient routes read `timeutil.utcnow` and the desk reads `engine.clock`. They are the same function in production, but a test that patches one needs to patch both.
 - `.venv/bin/hf` exists as an entry point of `huggingface_hub`. `hf` is not on the PATH, and nothing was set up with it.
 - The live HF paths are untested, as [[Build Decisions]] expects. The README must say so.
+
+## Phase 4: Patient app (approved in review round 1 of 4, 6 Nov 2026)
+
+The builders finished before a restart and the first review was cut off. This review ran in a new session against WIP commit `cb61c24`, with [[Resume Point]] and `07 Build/phase4-handover.json` as the record. Nothing was rebuilt.
+
+### Plan
+`frontend/` with Vite, React, Tailwind, router, AR/EN with RTL, a PWA manifest, the API and SSE client, and S01 to S12 with consent, dependents, chat, voice with WAV conversion and transcript confirm, emergency, refill, Leaflet map with list fallback, reserved countdown, live ticket, visit complete and history. Four tasks in three waves, plus three small backend additions. Features in scope: F01, F11, F13, F14, F17, F18, and the screens that F03, F06, F15 and F24 were waiting for.
+
+### What was built
+- Frontend, 112 tracked files: pages, `features/chat`, `features/map`, `features/ticket`, `voice/`, `i18n/`, `state/`, 16 unit test files with 275 tests, 13 Playwright specs with 38 tests, `scripts/inspect-all.mjs`.
+- Backend: `GET /api/visits/{id}` gains `refill` and `rating`. `GET /api/visits` rows gain `centre` and `completed_at`. New `POST /api/visits/{id}/rating`, stored as one `visit.rated` event. `test_api_patient_app.py` is new with 37 tests, `test_api_redlines.py` gains one route line, and `test_api_visits.py` gains 4 lines that widen two stale key sets.
+
+Decisions the vault left open, taken at planning. The owner can overrule any of them:
+- Manifest only, no service worker, so a cached page cannot serve a stale build on stage.
+- S02 chips show the three demo patients. P006 logs in by typing the QID.
+- S11 follow-up is fixed safety-net text. "Message your centre" shows a demo notice, because the seed has no refill channel.
+- No chat box after intake is confirmed, including on S10. No door-code UI.
+- Arrival happens on a tap. Geolocation is never requested on page load.
+- Language: Arabic before login, then the record's language until the viewer taps the toggle, kept until logout.
+
+### Verdict
+Approved. Every acceptance check passed on the orchestrator's own runs, with one disclosure on the backend check. The first fresh Python 3.12 run had 1 failure out of 10539, in a Phase 3 race that was already there. It is explained under known gaps. The check limiting `backend/` changes predates the `test_api_visits.py` edit, which the review brief allows.
+
+The Phase 3 known gap is confirmed closed. `screensFor` lists chat only for an unconfirmed intake, and `VisitGate` guards every visit screen. A deep link to chat on a completed visit landed on S11 with no text input, in the spec and in my own run. The same holds for reserved, in-triage and emergency visits.
+
+### Evidence
+- Clean `npm ci`, typecheck, `npm run test` (275 passed), `npm run build`: all exit 0. Exact versions, lock file present.
+- `.venv/bin/python -m pytest -q -rs`: 10539 passed, none skipped, twice. `test_api_patient_app.py` collected 37.
+- Fresh Python 3.12.15 venv from `requirements.txt`: first run 1 failed and 10538 passed while my browser scripts ran alongside. Then 3 runs with nothing else running: 10539 passed each. `compileall` exit 0. `requirements.txt` has an empty diff.
+- Backend scope: only `routers/visits.py` and the three test files differ from `5df531c`. `filters.py`, `redflags.py`, `session.py` and `queue_engine.py` have an empty diff. `test_api_redlines.py` differs by the one rating line.
+- `npm run e2e`: 3 runs in a row, 38 passed, 0 skipped, exit 0, all 13 specs. I read the specs: patient steps go through the UI, staff through the API, and no `skip`, `fixme` or `only` exists.
+- Fatima, my own script on port 7865 with `SIMULATE_LOAD=1`, a temp DB and `frontend/dist`: chip login, consent, the Arabic sentence, summary, confirm. Pins Al Wakra 12 and Airport 36. Reserve showed `تسجيل الوصول صالح لمدة 45 دقيقة`, 45:00 then 44:58, no number on screen and `number` null in the API. I'm here gave T-014, 3 ahead, 12 min. Staff calls in a second session, no reload: called 23 ms, serving 24 ms, D-GP-023 12 ms, P-031 12 ms, S11 19 ms, with Arabic medicines. 0 page errors. Rating left `/api/stats` unchanged and survived a reload.
+- Ahmed: S07 with amlodipine, reload kept it, 0 ticket rows, I still want a visit reached S08 with C-RAYYAN first.
+- Ravi: full red field, `tel:999`, Hamad General Hospital, 0 ticket rows. Back twice stayed on S06. One `emergency.override` event and the staff route. Home then Start check-in returned to the same visit on S06 with no input, and a deep link to chat did too.
+- Real mode with a stand-in client, the same seam the tests use, in the browser: the AI footer line goes, a banned model reply never reached the screen and showed the scripted note, the summary card and confirm worked, a model `emergency` reached S06, and marker text in `summary_for_nurse` never appeared in the DOM or the patient GET. The browser's upload reached the server's ASR client as 16 kHz, mono, 16-bit WAV. The transcript waited for Send with 0 chat POSTs, then a spoken red flag reached S06 with no ticket.
+- Adversarial runs in the browser: a red flag in a correction at the summary, AR and EN, reached S06 and confirm was then refused. A stale tab lost its chat box as soon as another tab reserved. A second patient's people-ahead figure updated live. Another patient's deep link showed only "no access". A demo reset under an open chat went Home. Dental listed only Al Wakra, and mental health showed the GP note.
+- Map: with `tile.openstreetmap.org` blocked, S08 fell to the list with the notice and a reservation completed. With tiles, pins showed wait badges and the registered centre came first.
+- Live updates: stream open under 25 ms. Stream aborted, polling delivered in 1.8 s.
+- Geofence: own coordinates gave T-014, 200 m showed `too_far` with 200 and 150, denied location left I'm here working, 0 geolocation calls before a tap.
+- `npm run inspect` against a `build:inspect` server: exit 0, 40 screens at 1440 and 390, 0 FAIL, 54 WARN. Allowances confirmed from each `report.json`: `kpi-size` on S10 and `colour-sprawl` on S06 only. `lint.mjs --app src`: 0 FAIL. I read S03, S05, S06, S08, S09, S10 and S11 at 390 in Arabic, and S06, S08 and S10 at desktop.
+- Greps on `frontend/src` and `dist`: banned wording, physical left and right CSS, gradient, blur, indigo, violet and emoji all print nothing outside the test that lists the banned words. `#1d5fbf` sits only on the ticket number, the current step and the selected pin. No browser storage in `src/voice`. `inspect_token` is in 0 `dist` files.
+- PWA: manifest served as `application/manifest+json`, 3 icons 200 `image/png`, deep links return the SPA, no service worker. The icon is the plain word دوري.
+- Mutations in a scratch copy, each failing its named suite: chat allowed on completed (`stages.test` and `safety.spec`), emergency navigate removed (`ravi.spec`), auto-send (`voice.spec`, 4 failed), `encodeWav` at 44100 (`voice.spec`), tile fallback removed (`map.spec`), footer dropped on the emergency tone (`shell.spec`), and my added one, Back guard removed (`ravi.spec`).
+- Scope: no Dockerfile or README. No `.env`, DB, `node_modules`, `dist` or `.inspect-dist` in git status. No `hf_` token. `HF_TOKEN` blank in `.env.example`. `main` equals `origin/main` at a2ac73a, only the GitHub remote, `hf` not on the PATH, `.obsidian` unstaged. All servers stopped and ports 7865, 7866, 8142, 8143 and 8155 free.
+
+### Open issues from the builder reports
+Closed:
+- T1 and T4, stale backend tests: widened, suite green.
+- T1, T2 and T3, Playwright's Chromium: specs use `channel: 'chrome'`.
+- T1, S05 `fill`: in use.
+- T1, no stream event on chat: chat uses the response and refetches.
+- T2, the mutation risk on the emergency navigate: T4 added the spec, and the mutation now fails `ravi.spec`.
+- T2, the Fatima sequence: either answer set reaches the summary.
+- T2 and T3, brand link width: fixed, and the 390 sweep passes.
+- T2, `npm run inspect` missing: now exists and was run.
+- T3, repeated medicine name: S11 splits the line.
+- T3, `.inspect-dist`: gitignored.
+- T4, inspector setup: the steps are at the top of the script.
+- T4, the live Fatima run: done above.
+
+Known gaps are listed below.
+
+### Features ticked
+F01, F03, F06, F11, F13, F14, F15, F17, F18 and F24. F13 and F03 are ticked on the scripted path and a stand-in client: the live models stay untested, as [[Build Decisions]] expects, and the specs replace `getUserMedia`. Left open on purpose: F08, F09, F10, F16, F20 and F21 wait for the staff consoles, and F12 for Hugging Face.
+
+### Known gaps
+- **Fix in Phase 5 or 6, may flake the suite until then:** `queue_engine.position` reads the ticket, then the active list, on separate reads. If call-next takes that ticket between them, `order.index` raises ValueError and `POST /arrive` or `GET /api/visits/{id}` returns 500. `test_arrivals_racing_call_next_keep_each_ticket_once` hit this in 1 of 4 full Python 3.12 runs, the one with other work running. It passed 50 of 50 on its own (25 on each Python), the other 3 Python 3.12 runs and both Python 3.14 runs. No ticket, number or order goes wrong. With a forced 500 on arrive the screen still reached S10 through the stream, and a failed refresh keeps the last good screen. The fix sits in `queue_engine.py`, which this phase's check holds at an empty diff.
+- **Orchestrator's reading, the owner can overrule:** [[Build Decisions]] 7 asks for "a 3-tap flow for each demo patient via quick-pick chips". I read that as chip, Start check-in, I agree. Ahmed and Ravi reach chat in 3 taps. Fatima takes 4, because she has dependents and S04 asks who the visit is for. The sentence is then typed or spoken.
+- **Before the demo:** Airport reads 36 only soon after a reset, because simulated load drains the other centres (builder report). Reset before going on stage.
+- **For the owner to read:** text typed into the box or held in the transcript step at the summary is dropped if the patient taps "Yes, that's right" instead of Send. Rules run only on what is sent, so a cue in unsent text is never read. Nothing fires, and the nurse sees only sent words.
+- From reading the code, not reproduced: a patient who leaves chat while a red-flag reply is in flight lands on Home with no emergency shown. Start check-in then reaches S06.
+- In real mode the scripted-assistant note lasts for the page's life, because `chat.messages` has no per-message `ai_source`. The event log still records `ai.fallback`.
+- The emergency reply follows the patient's language, not the toggle, so an English reply can sit under an Arabic title.
+- S07 shows the medicine in English on an Arabic screen, as stored in the record. `i18n/record.ts` has the Arabic, so this is a small change if the owner wants it.
+- Builder report, not re-tested: in simulated mode a severity correction after the summary is ignored. A duration correction works. The nurse still sees the patient's words.
+- Builder report: one unexplained false map fallback in about 100 loads, before T4 hardened it. None in my runs. The cause is not proven, `data-reason` now names the path, and the list stays usable.
+- Inspector WARNs kept: `hero-void` on 38 desktop screens from the phone-width column, `tiny-text` on 11 from the mandated footer, `app-title-size` on 4 S06 screens, `blank-gap` on S01-en.
+- S03 shows the name, centre and allergy, with no greeting word and no age.
+- `endpoints.sendChat` and `demoPatients` are unused. `frontend/e2e` and `frontend/scripts` are not typechecked.
+- Unverified here: a real microphone, iOS Safari and live Whisper. `getUserMedia` and geolocation need HTTPS on a phone, so plain LAN http falls back to typing and the I'm here button.
+- `/staff/*` renders NotFound until Phase 5.
+- For the ship phase: the README must carry the two design exceptions and the untested-live note, and the Docker build needs Node 20.19 or later, so use `node:22`.
