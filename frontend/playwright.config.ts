@@ -47,7 +47,7 @@ export default defineConfig({
       DAWRI_DB: process.env.DAWRI_E2E_DB,
       SIMULATE_LOAD: '1',
       HF_TOKEN: '',
-      DAWRI_STATIC_DIR: 'frontend/dist',
+      DAWRI_STATIC_DIR: process.env.DAWRI_E2E_STATIC ?? 'frontend/dist',
     },
   },
 })

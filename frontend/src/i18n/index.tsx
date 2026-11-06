@@ -12,6 +12,14 @@ import ar from './ar.json'
 import chatAr from './chat.ar.json'
 import chatEn from './chat.en.json'
 import en from './en.json'
+import staffAr from './staff.ar.json'
+import staffClinicAr from './staff.clinic.ar.json'
+import staffClinicEn from './staff.clinic.en.json'
+import staffEn from './staff.en.json'
+import staffFloorAr from './staff.floor.ar.json'
+import staffFloorEn from './staff.floor.en.json'
+import staffNurseAr from './staff.nurse.ar.json'
+import staffNurseEn from './staff.nurse.en.json'
 import visitAr from './visit.ar.json'
 import visitEn from './visit.en.json'
 
@@ -33,8 +41,24 @@ if (import.meta.env.VITE_INSPECT) {
 }
 
 const dictionaries: Record<Lang, Record<string, string>> = {
-  ar: { ...ar, ...chatAr, ...visitAr },
-  en: { ...en, ...chatEn, ...visitEn },
+  ar: {
+    ...ar,
+    ...chatAr,
+    ...visitAr,
+    ...staffAr,
+    ...staffNurseAr,
+    ...staffClinicAr,
+    ...staffFloorAr,
+  },
+  en: {
+    ...en,
+    ...chatEn,
+    ...visitEn,
+    ...staffEn,
+    ...staffNurseEn,
+    ...staffClinicEn,
+    ...staffFloorEn,
+  },
 }
 
 function storedLang(): Lang {

@@ -1302,7 +1302,7 @@ def test_the_route_table_is_fully_classified():
         assert any(path.startswith(prefix) for path in staff_paths), prefix
     assert ("PUT", "/api/visits/{visit_id}/intake") in STAFF_ROUTES
     assert ("POST", "/api/visits/{visit_id}/dispensed") in STAFF_ROUTES
-    assert len(STAFF_ROUTES) == 19
+    assert len(STAFF_ROUTES) == 20
 
 
 @pytest.mark.parametrize(("method", "path"), STAFF_ROUTES, ids=route_ids(STAFF_ROUTES))

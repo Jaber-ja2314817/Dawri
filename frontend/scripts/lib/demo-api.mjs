@@ -7,6 +7,7 @@
 export const NURSE = 'S-WAK-NURSE1'
 export const DOCTOR = 'S-WAK-DOC2'
 export const PHARMACIST = 'S-WAK-PHARM1'
+export const DESK = 'S-WAK-DESK1'
 export const TRIAGE_COUNTER = 'C-WAKRA-T1'
 export const DOCTOR_COUNTER = 'C-WAKRA-D4'
 export const PHARMACY_COUNTER = 'C-WAKRA-P1'
@@ -113,6 +114,18 @@ export class DemoApi {
     return this.asStaff(PHARMACIST, 'POST', `/api/visits/${visitId}/dispensed`)
   }
 
+  walkIn(qid, complaint) {
+    return this.asStaff(DESK, 'POST', '/api/desk/walk-in', { qid, complaint })
+  }
+
+  fastForward(visitId) {
+    return this.asStaff(NURSE, 'POST', `/api/demo/fast-forward/${visitId}`)
+  }
+
+  stats(centreId = 'C-WAKRA') {
+    return this.asStaff(NURSE, 'GET', `/api/stats/${centreId}`)
+  }
+
   /* A patient, for setting up state only. Patient journeys under test go through the UI. */
 
   async patient(qid) {
@@ -155,6 +168,17 @@ export class DemoApi {
       token,
       body: { button: true },
     })
+  }
+
+  /** A patient taken by API as far as an active ticket. */
+  async arrivedVisit(qid, words = FATIMA_WORDS, answers = FATIMA_ANSWERS) {
+    const { token } = await this.patient(qid)
+    const visitId = await this.newVisit(token)
+    await this.toSummary(token, visitId, words, answers)
+    await this.confirm(token, visitId)
+    await this.reserve(token, visitId)
+    const { ticket } = await this.arrive(token, visitId)
+    return { token, visitId, number: ticket.number }
   }
 
   getVisit(token, visitId) {

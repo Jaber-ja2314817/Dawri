@@ -167,6 +167,31 @@ def demo_staff(conn: sqlite3.Connection = Depends(get_conn)) -> list[dict]:
     ]
 
 
+@router.get("/staff/me")
+def staff_me(
+    staff: dict = Depends(staff_member),
+    conn: sqlite3.Connection = Depends(get_conn),
+) -> dict:
+    """What a console needs after a reload: the session token alone names none of this."""
+    centre = conn.execute(
+        "SELECT id, name_en, name_ar FROM centre WHERE id = ?", (staff["centre_id"],)
+    ).fetchone()
+    own = conn.execute(
+        "SELECT id, label, label_ar, stage, prefix FROM counter WHERE staff_id = ? ORDER BY id",
+        (staff["id"],),
+    ).fetchall()
+    everyone = conn.execute(
+        "SELECT id, label, label_ar, stage FROM counter WHERE centre_id = ? ORDER BY id",
+        (staff["centre_id"],),
+    ).fetchall()
+    return {
+        "staff": staff,
+        "centre": dict(centre),
+        "counters": [dict(counter) for counter in own],
+        "centre_counters": [dict(counter) for counter in everyone],
+    }
+
+
 def _waiting_min(row: dict, now: datetime) -> int:
     waited = now - timeutil.parse(row["activated_at"])
     return max(int(waited.total_seconds() // 60), 0)
@@ -312,6 +337,8 @@ def staff_visit_detail(
         "denied_text_en": redflags.denied_text(view["denied"], "en"),
         "denied_text_ar": redflags.denied_text(view["denied"], "ar"),
         "red_flags_checked": _red_flags_checked(conn, visit_id, view["denied_text"]),
+        "red_flags_raised": _raised_flags(conn, visit_id),
+        "arrived_at": visit["arrived_at"],
         "patient": {
             "id": patient["id"],
             "name": patient["full_name_en"],
@@ -455,7 +482,13 @@ def draft_handoff(
     if stale:
         raise ApiError(409, "draft_stale", "The intake changed. Draft the handoff again.")
     denied = (basis[0] or {}).get("denied_red_flags") or []
-    return {**drafted, "denied_text": redflags.denied_text(denied)}
+    patient = _patient_or_404(conn, visit["patient_id"])
+    return {
+        **drafted,
+        "denied_text": redflags.denied_text(denied),
+        # The fixed template, for reading only. The doctor gets final_text.
+        "text_ar": handoff.template(basis[0], basis[1], patient, "ar"),
+    }
 
 
 def _doctor_counter(conn: sqlite3.Connection, doctor_id: str, centre_id: str) -> sqlite3.Row:

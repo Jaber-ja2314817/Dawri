@@ -5,6 +5,7 @@ __pycache__/
 node_modules/
 frontend/dist/
 frontend/.inspect-dist/
+frontend/.dist-*/
 backend/static/
 backend/data/
 *.db

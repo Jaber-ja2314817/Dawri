@@ -1,11 +1,18 @@
 import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { test as base, expect, type Page, type Route } from '@playwright/test'
+import {
+  test as base,
+  expect,
+  type BrowserContext,
+  type Page,
+  type Route,
+  type ViewportSize,
+} from '@playwright/test'
 import { DemoApi, FATIMA_ANSWERS, FATIMA_WORDS } from '../scripts/lib/demo-api.mjs'
 
 export { expect }
-export type { Page, Route }
+export type { BrowserContext, Page, Route }
 export * from '../scripts/lib/demo-api.mjs'
 
 const ROOT = process.env.DAWRI_E2E_ROOT as string
@@ -15,7 +22,7 @@ const DB = process.env.DAWRI_E2E_DB as string
 function dictionary(lang: 'ar' | 'en'): Record<string, string> {
   return Object.assign(
     {},
-    ...['', 'chat.', 'visit.'].map((part) =>
+    ...['', 'chat.', 'visit.', 'staff.', 'staff.nurse.', 'staff.clinic.', 'staff.floor.'].map((part) =>
       JSON.parse(readFileSync(join(ROOT, 'frontend/src/i18n', `${part}${lang}.json`), 'utf8')),
     ),
   )
@@ -82,6 +89,15 @@ export async function login(page: Page, chip: 'P001' | 'P002' | 'P003') {
   await page.goto('/login')
   await page.getByTestId(`chip-${chip}`).click()
   await page.waitForURL('**/home')
+}
+
+/** A staff member signs in through their chip on T01, at the default centre unless told. */
+export async function staffLogin(page: Page, staffId: string, centreId?: string) {
+  await page.goto('/staff/login')
+  if (centreId !== undefined) await page.getByTestId('staff-centre').selectOption(centreId)
+  await page.getByTestId(`staff-chip-${staffId}`).click()
+  await page.waitForURL((url) => url.pathname !== '/staff/login')
+  await expect(page.getByTestId('staff-logout').or(page.getByTestId('staff-menu'))).toBeVisible()
 }
 
 export async function startCheckIn(page: Page, lang: 'ar' | 'en' = 'ar') {
@@ -172,9 +188,47 @@ export async function expectNotReloaded(page: Page) {
   expect(mark).toBe(true)
 }
 
-export const test = base.extend<{ api: DemoApi; freshDemo: void }>({
+/** A separate browser profile per call: its own storage, and its own six connections. */
+export interface Windows {
+  context: (viewport?: ViewportSize) => Promise<BrowserContext>
+  phone: () => Promise<Page>
+  staff: (staffId: string, centreId?: string) => Promise<Page>
+}
+
+export const PHONE_SIZE: ViewportSize = { width: 390, height: 844 }
+export const DESK_SIZE: ViewportSize = { width: 1440, height: 900 }
+
+export const test = base.extend<{ api: DemoApi; freshDemo: void; windows: Windows }>({
   api: async ({}, use) => {
     await use(new DemoApi(process.env.DAWRI_E2E_BASE as string))
+  },
+  windows: async ({ browser }, use) => {
+    const opened: BrowserContext[] = []
+    const context: Windows['context'] = async (viewport = DESK_SIZE) => {
+      const made = await browser.newContext({
+        baseURL: process.env.DAWRI_E2E_BASE,
+        viewport,
+        locale: 'en-GB',
+        timezoneId: 'Asia/Qatar',
+      })
+      opened.push(made)
+      return made
+    }
+    await use({
+      context,
+      phone: async () => {
+        const page = await (await context(PHONE_SIZE)).newPage()
+        await serveTiles(page)
+        return page
+      },
+      staff: async (staffId, centreId) => {
+        const page = await (await context()).newPage()
+        await staffLogin(page, staffId, centreId)
+        return page
+      },
+    })
+    // A context left open would hold its streams against the server until the run ends.
+    await Promise.all(opened.map((made) => made.close()))
   },
   freshDemo: [
     async ({ api, page }, use) => {

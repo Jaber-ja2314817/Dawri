@@ -606,7 +606,8 @@ class SqliteQueueEngine(QueueAdapter):
 
     def position(self, ticket_id: str) -> Position:
         self._expire(self.clock())
-        with closing(self._conn_factory()) as conn:
+        # One snapshot: a call_next between two reads would take this ticket off the list.
+        with closing(self._conn_factory()) as conn, db.read_snapshot(conn):
             row = _load(conn, ticket_id)
             people_ahead = _people_ahead(conn, row)
             est_wait_min = None
@@ -658,7 +659,7 @@ class SqliteQueueEngine(QueueAdapter):
 
     def queue_snapshot(self, counter_id: str) -> list[dict]:
         self._expire(self.clock())
-        with closing(self._conn_factory()) as conn:
+        with closing(self._conn_factory()) as conn, db.read_snapshot(conn):
             at_counter = conn.execute(
                 "SELECT * FROM ticket WHERE counter_id = ? "
                 "AND state IN ('called', 'serving') ORDER BY called_at ASC",

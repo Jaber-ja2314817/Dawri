@@ -23,8 +23,17 @@ export class ApiError extends Error {
   }
 }
 
+/** Where a request's bearer token comes from, and what a 401 ends. */
+export interface TokenSource {
+  get(): string | null
+  clear(): void
+}
+
+const patientSource: TokenSource = { get: getToken, clear: clearToken }
+
 interface ApiOptions {
   signal?: AbortSignal
+  auth?: TokenSource
 }
 
 async function readJson(response: Response): Promise<unknown> {
@@ -55,9 +64,9 @@ export async function api<T>(
   method: string,
   path: string,
   body?: unknown,
-  { signal }: ApiOptions = {},
+  { signal, auth = patientSource }: ApiOptions = {},
 ): Promise<T> {
-  const token = getToken()
+  const token = auth.get()
   const headers: Record<string, string> = {}
   if (token !== null) headers.Authorization = `Bearer ${token}`
 
@@ -82,7 +91,7 @@ export async function api<T>(
 
   const error = toApiError(response.status, payload)
   // invalid_otp is also a 401, and it is not the session ending.
-  if (error.code === 'unauthorized' && token !== null && token === getToken()) clearToken()
+  if (error.code === 'unauthorized' && token !== null && token === auth.get()) auth.clear()
   throw error
 }
 

@@ -63,6 +63,21 @@ def transaction(conn: sqlite3.Connection) -> Iterator[sqlite3.Connection]:
         raise
 
 
+@contextmanager
+def read_snapshot(conn: sqlite3.Connection) -> Iterator[sqlite3.Connection]:
+    """Several reads that see one moment. A deferred BEGIN takes no write lock.
+
+    Under WAL the first SELECT pins a snapshot and a writer can still commit beside it, so
+    this never queues behind `transaction` the way BEGIN IMMEDIATE would.
+    """
+    conn.execute("BEGIN")
+    try:
+        yield conn
+    finally:
+        if conn.in_transaction:
+            conn.execute("COMMIT")
+
+
 def reset_all(conn: sqlite3.Connection) -> None:
     with transaction(conn):
         for table in _RESET_ORDER:

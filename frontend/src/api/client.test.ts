@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { translate, type Lang } from '../i18n'
 import { clearToken, getToken, setToken } from '../state/token'
-import { api, ApiError, errorText } from './client'
+import { api, ApiError, errorText, type TokenSource } from './client'
 import { transcribe } from './endpoints'
 
 const respond = (status: number, body: unknown) =>
@@ -96,6 +96,42 @@ describe('api', () => {
     fetchMock.mockResolvedValue(respond(401, { error: 'invalid_otp', message: 'No' }))
     await expect(api('POST', '/api/auth/verify')).rejects.toMatchObject({ code: 'invalid_otp' })
     expect(getToken()).toBe('abc')
+  })
+})
+
+describe('api with another token source', () => {
+  const staffSide = (start: string | null) => {
+    let token = start
+    const source: TokenSource = {
+      get: () => token,
+      clear: () => {
+        token = null
+      },
+    }
+    return source
+  }
+
+  it('sends that token and not the patient token', async () => {
+    setToken('patient')
+    fetchMock.mockResolvedValue(respond(200, {}))
+    await api('GET', '/api/x', undefined, { auth: staffSide('staff') })
+    expect(fetchMock.mock.calls[0][1]?.headers).toMatchObject({ Authorization: 'Bearer staff' })
+  })
+
+  it('sends no token at all when that source has none, even with a patient signed in', async () => {
+    setToken('patient')
+    fetchMock.mockResolvedValue(respond(200, {}))
+    await api('GET', '/api/x', undefined, { auth: staffSide(null) })
+    expect(fetchMock.mock.calls[0][1]?.headers).not.toHaveProperty('Authorization')
+  })
+
+  it('a 401 clears only the source that was used', async () => {
+    setToken('patient')
+    const source = staffSide('staff')
+    fetchMock.mockResolvedValue(respond(401, { error: 'unauthorized', message: 'No' }))
+    await expect(api('GET', '/api/x', undefined, { auth: source })).rejects.toBeInstanceOf(ApiError)
+    expect(source.get()).toBeNull()
+    expect(getToken()).toBe('patient')
   })
 })
 

@@ -263,3 +263,99 @@ F01, F03, F06, F11, F13, F14, F15, F17, F18 and F24. F13 and F03 are ticked on t
 - Unverified here: a real microphone, iOS Safari and live Whisper. `getUserMedia` and geolocation need HTTPS on a phone, so plain LAN http falls back to typing and the I'm here button.
 - `/staff/*` renders NotFound until Phase 5.
 - For the ship phase: the README must carry the two design exceptions and the untested-live note, and the Docker build needs Node 20.19 or later, so use `node:22`.
+
+## Phase 5: Staff consoles (approved in review round 2 of 4, 6 Nov 2026)
+
+### Plan
+`/staff` screens T01 to T09 in the same frontend: login, nurse queue, intake card with vitals and urgency, handoff confirm, doctor queue with prescription picker and allergy warning, pharmacy, front desk walk-in, waiting-room display, dashboard, demo reset and fast-forward. Live through SSE, `ai_mode` always visible, same design rules and inspector. Five tasks in three waves, then one round of two small fixes. Features in scope: F08, F09 (the nurse confirm step), F10, F16, F20 and F21.
+
+### What was built
+- Backend, small on purpose: `db.read_snapshot` around the reads in `queue_engine.position` and `queue_snapshot`, `GET /api/staff/me`, `red_flags_raised` and `arrived_at` on the staff visit, `text_ar` on the draft. `test_queue_position_race.py` and `test_api_staff_console.py` are new. `test_api_redlines.py` changes by one line, the staff route count from 19 to 20.
+- Frontend: `pages/staff`, `features/staff`, `components/staff`, `state/staff` with a separate staff token and the generic `useLive` hook, `api/staff.ts`, 8 staff dictionaries, 6 staff specs and the T screens in `inspect-all.mjs`. No new dependency.
+
+Decisions the vault left open, taken at planning. The owner can overrule any of them:
+- Staff have their own token, so a patient and a staff session sit side by side in one browser. `sessionStorage` keeps each tab its own person.
+- Consoles default to English, with the toggle present. T08 always shows both languages.
+- The reset control sits in the staff shell, behind two taps. T08 has no shell and no reset.
+- The label for the no-show route is "Not here", because [[Build Decisions]] 3 bans the word.
+- The doctor gets no preselected medicine, and a chosen medicine with no second acknowledgement cannot be sent.
+- At most one EventSource per tab. Dashboard and desk poll, and a hidden tab closes its stream, so plain HTTP/1.1 on the demo laptop stays under the browser's six connections.
+- T08 and T09 need a staff login, as Phase 3 accepted.
+- `text_ar` is the fixed Arabic template and is labelled as not following edits.
+
+### Verdict
+Approved. Every acceptance check passed on the orchestrator's own runs in round 2. Round 1 failed two checks, and both are re-tested and closed:
+- BACKEND: the pinned staff route count. Fixed by the one-line test change, and suites are green.
+- LANGUAGE: six backend error codes had no entry. They now have AR and EN entries, and two separate enumerations of the backend codes find none missing.
+
+### Evidence
+- Clean `npm ci`, typecheck, `npm run test` (510 passed, 29 files), `npm run build`: all exit 0. `git diff 0dcc28e` of `package.json`, the lock file and `requirements.txt` is empty.
+- `npm run e2e`: 3 runs in a row, 143 passed each, 0 skipped, exit 0, all 19 specs, including the 38 patient tests and all 6 staff specs (105 staff tests). The skip, fixme and only grep prints nothing. I read the staff specs: `staff-demo` drives every staff step through the UI, and the others use the API only for set-up around the screen under test.
+- `.venv/bin/python -m pytest -q -rs`: 10559 passed, none skipped, twice. Fresh Python 3.12.15 venv from `requirements.txt`: pip exit 0, 3 runs of 10559 passed, none skipped, the third with `npm run e2e` alongside. `compileall` exit 0 on both Pythons. `test_arrivals_racing_call_next_keep_each_ticket_once` passed 25 of 25 alone.
+- Race fix: `test_queue_position_race.py` forces the call deterministically, and it fails with ValueError in a scratch copy with `read_snapshot` removed from `position`.
+- Scope: the tracked backend diff is `db.py`, `queue_engine.py`, `routers/staff.py` and `test_api_redlines.py`, plus the two new test files. `backend/ai`, `visit_flow.py` and `routers/visits.py`, `demo.py` and `streams.py` have an empty diff. Patient pages and the chat, map and ticket features have an empty diff.
+- API: a flat walk of 40 routes finds only the 3 streams async. `/api/staff/me` returns staff, centre, counters and centre_counters, 401 with no token, 403 for a patient token. Health is exactly `{status, ai_mode, simulate_load}`.
+- Fatima live, my two-browser script on 7867 with a temp DB, `SIMULATE_LOAD=1` and a copy of `dist`: reset from the shell, T-014 on the nurse table with no reload in 61 ms (40 ms on the first run), 3 grey Simulated rows with no name. Call next auto-completed T-011 to T-013, never showed one as called, and called T-014. Penicillin, vitals, scripted label, Dr. Noor with reason, `in_triage` until confirm, D-GP-023 on the phone, Done, P-031, Dispensed, S11 with Arabic medicines. 0 page errors.
+- Nurse backstop: 11 turns equal the API, Arabic diacritics byte for byte, also during editing and after the summary was edited. In real mode with a stand-in client, a marker in `summary_for_nurse` showed on T03 and never in the patient DOM or any patient response.
+- Denied and flags: "Patient denied: chest pain" in English and المريض نفى: ألم في الصدر on an Arabic console. A flagged visit shows its flags from `red_flags_raised`, never "none detected".
+- Nurse edit: edited complaint, re-draft, edited line, and a second edit from another session while T04 was open. Confirm gave the re-draft and a clear sentence, stayed `in_triage` and kept the nurse's text. T05 showed both edits.
+- Nothing sent without confirm: `in_triage` and no row on either doctor queue before confirm. A non-suggested doctor got the ticket on C-WAKRA-D3. Urgency has no default and the primary action stays disabled until one is chosen. A service changed on T03 reached T04: a dentist was suggested.
+- Draft honesty: scripted label in simulated mode. Model label in real mode. A banned draft fell back, was labelled scripted, and `ai.fallback` recorded `banned_output`.
+- Urgent: the first tap changed nothing, the second left no live ticket, and the phone reached S06 with no reload.
+- Allergy: nothing preselected, warnings on amoxicillin and co-amoxiclav before selection in AR and EN, Done disabled until the box is ticked. Adding a second warned medicine cleared the tick. Two warned medicines wrote exactly one `prescription.allergy_override`. Layla's visit showed no warning, no box and no event on amoxicillin.
+- Pharmacy: T06 showed the prescription and medicine lines, and Dispensed completed the visit. An empty prescription completed with no P ticket. A chosen medicine and its note survived "Patient here" and a poll.
+- Walk-in: Salem by chip got T-015 after T-014 and appeared on T02 in 57 ms with no reload, complaint in turns. A second walk-in was refused. English and Arabic chest pain gave the emergency panel, 0 ticket rows and no number. Ravi's QID after an emergency was refused.
+- Display at 1920, 1440 and 390: 1 chime per call, none on first snapshot, serve, reconnect or reset. Sound toggle works. No sideways scroll. The round 1 network assertion was too loose, so this round hooked the page's EventSource and filtered to `/api/` responses: no name or visit id in 12 API bodies, 10 stream messages, URLs or the DOM.
+- Dashboard: every figure equalled my SQL at 7 points: seed, walk-in, refill, emergency, at doctor, at pharmacy, completed. 0 prints 0, a null wait prints a dash, no no-show text.
+- AI mode: 40 of 40 screen combinations, T01 to T09 at 1440 and 390 in AR and EN, simulated and real, visible and in view with no menu open.
+- Fast-forward: labelled Demo, completed through the normal engine with event rows, the phone reached S11 with no reload. With a real patient ahead it showed "Another patient is next at this counter." and changed nothing.
+- Reset: two taps. T03 and T04 went to the queue with a notice, the phone went Home, no reload, seeded rows back, T-014 reached again, no errors.
+- Stream drop: polling delivered in 4.4 s, `live-state` read Reconnecting, back to live 10.8 s after restore.
+- One profile: six role tabs plus a patient tab completed a full Fatima run. Desk and dashboard held 0 open EventSources. Hidden-tab closing is confirmed in `useLive.test.tsx` and `staff-live`.
+- Sessions: patient token and language survive staff login and logout. A reload keeps the console, a wrong role redirects, and `/staff/unknown` shows the staff not-found page signed in and out.
+- Language: every staff pair has identical keys. The banned-phrase grep prints only the test's own list. 60 backend codes all have `error.` entries in AR and EN. The toggle sets rtl and ltr on T01 to T07 and T09, and T08 stays fixed.
+- Design: `npm run inspect` exit 0, 68 screens, 0 FAIL, 95 WARN. `report.json` confirms `kpi-size` only on t08 and s10, `colour-sprawl` only on s06. `lint.mjs --app src`: 0 FAIL, 3 WARN.
+- Screens read at 1440 and 390 in Arabic and English: T02, T03, T04, T05, T08 and T09. app-screens 2.7: (1) the called number, the patient's words beside the card, the draft, the handoff, the serving numbers and the waiting counts are the largest thing on their screens. (2) Blocks share the edges, and no stretched card or dead strip. (3) Colour sits only on numbers, the penicillin pill, the warning and status, with near-black on the primary action. (4) Numbers agree: T09 1 + 0 + 0 = 1, and the T-014 and D-GP-023 copies match in each screen's rows and banner. (5) Zeros print 0, and missing values are dashes. (6) No charts. (7) Navigation folds on the phone, and each block still answers its question.
+- Kept WARNs: `hero-void` and `blank-gap`, a short queue leaves honest canvas. `ragged-row`, a transcript is never padded or clipped. `tiny-text`, the mandated footer and 12 px pills. `panel-void` on t08, a dash cell holds a number's height. `numeric-align` at 390, folded rows. `app-title-size`, the Phase 4 keep. Lint: `padStart` in clocks and the dash placeholder.
+- Greps on `frontend/src`: no physical left or right CSS, gradient, blur, indigo, violet or emoji. Sizes over 30 px sit only in `display.css` and in the S10 number, the Phase 4 [[Build Decisions]] exception. `#1d5fbf` is only the data token. `inspect_` is in 0 `dist` files. In `dist` the only hits are vendor: Leaflet's physical CSS, a Tailwind transition variable name, and two emoji in React Router's developer message, which is not rendered.
+- Mutations in a scratch copy, 11 of 11 failed their named suite: patient-words, ai-mode, simulated label, allergy warning, acknowledge true, Done gate (unit and `staff-doctor`), desk number, first-snapshot chime (unit), stream ignored with poll stretched, patient token, position snapshot. Each named e2e suite ran with `--max-failures=1`, so each result is the first failing test.
+- Scope and safety: no Dockerfile or README. No `.env`, DB, `node_modules`, `dist`, `.dist-*` or `.inspect-dist` in git status. No `hf_` token. `HF_TOKEN` blank in `.env.example`. `main` equals `origin/main` at a2ac73a, also by `git ls-remote`. Only the GitHub remote, `hf` not on the PATH, `.obsidian` unstaged, nothing staged. All servers stopped and every port I used is free.
+
+### Open issues from the builder reports
+Closed:
+- P5-T1 and P5-T5, route count: fixed in round 1.
+- P5-T1, `voice.spec` failure: did not reproduce in 6 full runs across two rounds.
+- P5-T1, inspector coverage and the `kpi-size` allowance: added and confirmed from `report.json`.
+- P5-T1, `arrived_at`: accepted, tested, and needed by the banner.
+- P5-T1, hidden-tab behaviour in a real browser: covered in `staff-live`.
+- P5-R1-T2, `invalid_request`: it has AR and EN entries. Only the test list is missing it, see below.
+
+Phase 4 gaps closed by this phase:
+- The `queue_engine.position` race. Fixed with one read snapshot, covered by a deterministic test.
+- `/staff/*` rendering NotFound. Every route now has its screen, and an unknown staff path has its own page.
+
+The rest are under known gaps.
+
+### Features ticked
+F08, F09, F10, F16, F20 and F21. F09 is ticked on the scripted path and a stand-in client: the live model stays untested, as [[Build Decisions]] expects. F20 is covered by T07, as [[Build Decisions]] 8 says. Left open on purpose: F12 waits for Hugging Face, and F22 and F23 are dropped.
+
+### Known gaps
+- **For the owner to read:** text typed in T03's edit form and not saved is dropped if the nurse presses Confirm & generate handoff (from reading the code). The draft on T04 then shows what was saved, and the nurse reads it before confirming.
+- **For the owner to read:** an Arabic T05 reads "حساسية مسجلة: penicillin", because `visit_flow.allergy_conflict` puts the record's English term in `text_ar`. The warning and the gate work. `visit_flow.py` is held at an empty diff this phase. `i18n/record.ts` has the Arabic.
+- `red_flags_raised` pills show English labels on an Arabic console, because the API returns English only. The flag still shows.
+- On an Arabic console Latin digits take different glyph shapes from the English console, as on T09 and T-014. CDP reports a custom IBM Plex font in both, so this is no system fallback.
+- T03 says "AI summary" and "Reason (AI)" in simulated mode, matching the vault's card, with "AI: simulated" always in view. T04 is the only surface that labels the draft's source.
+- When a raised flag exists, T03 shows it and hides any "Patient denied" line on the same visit. Such a visit is already an emergency.
+- On a phone, Reset demo leaves the menu sheet open after the second tap, so the done notice sits behind it. The reset works, and the demo uses the laptop.
+- `PUT /api/visits/{id}/intake` publishes no event, so a second nurse tab on the same T03 shows an edit only at the 20 s backstop. T02 tabs stay in step.
+- From reading the code, not reproduced: two nurse tabs on one visit, where tab B edits and re-drafts, leave a draft row, so tab A can still confirm its older text. T05 still shows the edited complaint from the intake above the final text.
+- A staff tab sends the patient's token on `GET /api/me` and `GET /api/health` when a patient is signed in beside it. Every staff route carries only the staff token.
+- A new tab in one profile opens as the last person to sign in, so a second role needs Log out in that tab. Open tabs keep their own session. The demo uses separate browsers or logs out first.
+- Staff logout does not reset the language, so a patient on the same browser is not disturbed.
+- The reset status line is carried in router state, so a reload straight after a reset shows it again.
+- `PatientBanner` shows a 24 px dash in the data hue when the ticket is null, as on T03 after an emergency.
+- T06 shows the allergy pill in the banner but no per-medicine warning on an acknowledged override.
+- `ERROR_CODES` in `i18n.test.ts` lists 59 of the 60 backend codes. `invalid_request` has its entries but no test guards it.
+- `field-sizing` on the T04 textarea was tested in Chrome only. Older Safari falls back to 8 rows with scrolling.
+- `frontend/e2e` and `frontend/scripts` are still not typechecked (Phase 4 gap).
+- The other Phase 3 and 4 gaps stand, including the ones marked before the demo: press Reset before going on stage, and a server left running past midnight does not reset. The live HF paths are untested, and the README must say so.

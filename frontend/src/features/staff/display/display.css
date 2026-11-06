@@ -1,0 +1,56 @@
+/*
+  The one place in this phase over 30 px: the numbers are read from across a waiting room.
+  See "Justified exceptions" in Build Decisions.
+*/
+
+.display-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 768px) {
+  .display-grid {
+    flex: 1;
+    grid-auto-rows: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.display-cell {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  border-width: 2px;
+  transition: border-color 200ms ease-out;
+}
+
+.display-cell[data-marked='true'] {
+  border-color: var(--color-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .display-cell {
+    transition: none;
+  }
+}
+
+/* Holds the number's height, so a dash and a number sit on the same line. */
+.display-serving {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: 1.15em;
+  font-size: clamp(48px, 7vw, 112px);
+  font-weight: 600;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* A dash at the number's size would read as loading. */
+.display-serving-dash {
+  font-size: 30px;
+  line-height: 36px;
+}

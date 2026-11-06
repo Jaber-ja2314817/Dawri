@@ -5,6 +5,14 @@ import chatEn from './chat.en.json'
 import en from './en.json'
 import { translate } from './index'
 import { recordTerm } from './record'
+import staffAr from './staff.ar.json'
+import staffClinicAr from './staff.clinic.ar.json'
+import staffClinicEn from './staff.clinic.en.json'
+import staffEn from './staff.en.json'
+import staffFloorAr from './staff.floor.ar.json'
+import staffFloorEn from './staff.floor.en.json'
+import staffNurseAr from './staff.nurse.ar.json'
+import staffNurseEn from './staff.nurse.en.json'
 import visitAr from './visit.ar.json'
 import visitEn from './visit.en.json'
 
@@ -14,6 +22,10 @@ const PAIRS: [string, Dictionary, Dictionary][] = [
   ['main', ar, en],
   ['chat', chatAr, chatEn],
   ['visit', visitAr, visitEn],
+  ['staff', staffAr, staffEn],
+  ['staff.nurse', staffNurseAr, staffNurseEn],
+  ['staff.clinic', staffClinicAr, staffClinicEn],
+  ['staff.floor', staffFloorAr, staffFloorEn],
 ]
 const BANNED = ['place held', 'held for', 'no-show', 'nobody skips', 'skip the queue', 'مكانك محجوز']
 const ERROR_CODES = `unauthorized forbidden unknown_qid invalid_otp consent_required active_visit
@@ -21,7 +33,12 @@ const ERROR_CODES = `unauthorized forbidden unknown_qid invalid_otp consent_requ
   intake_not_confirmed service_not_offered unknown_centre no_reservation too_far wrong_door
   arrival_method_required ticket_expired visit_not_eligible visit_has_live_ticket invalid_transition
   asr_unavailable bad_audio asr_failed audio_too_large not_emergency visit_not_deflected
-  visit_not_completed already_rated internal_error network`.split(/\s+/)
+  visit_not_completed already_rated internal_error network draft_required draft_stale invalid_intake
+  not_called not_next_in_queue not_your_counter patient_not_found unknown_counter unknown_doctor
+  unknown_drug unknown_staff visit_not_in_doctor visit_not_in_pharmacy visit_not_in_triage
+  visit_not_ready vitals_required wrong_centre wrong_role counter_busy ticket_not_found
+  allergy_conflict no_patient not_found method_not_allowed http_error queue_error
+  frontend_not_built`.split(/\s+/)
 
 const hasPrefix = (key: string, prefixes: string[]) =>
   prefixes.some((prefix) => key.startsWith(prefix))
@@ -56,6 +73,19 @@ describe('ownership of the wave files', () => {
   it('visit files hold only their prefixes', () => {
     const prefixes = ['centre.', 'reserved.', 'ticket.', 'complete.']
     for (const key of [...Object.keys(visitAr), ...Object.keys(visitEn)]) {
+      expect(hasPrefix(key, prefixes), key).toBe(true)
+    }
+  })
+})
+
+describe('ownership of the staff files', () => {
+  it.each([
+    ['staff', [staffAr, staffEn], ['staff.', 'queue.']],
+    ['staff.nurse', [staffNurseAr, staffNurseEn], ['nurse.']],
+    ['staff.clinic', [staffClinicAr, staffClinicEn], ['doctor.', 'pharmacy.']],
+    ['staff.floor', [staffFloorAr, staffFloorEn], ['desk.', 'display.', 'dashboard.']],
+  ] as [string, Dictionary[], string[]][])('%s files hold only their prefixes', (_name, files, prefixes) => {
+    for (const key of files.flatMap((file) => Object.keys(file))) {
       expect(hasPrefix(key, prefixes), key).toBe(true)
     }
   })
