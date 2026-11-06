@@ -12,8 +12,8 @@ skill: replica-recon
 | F01 | Mock Tawtheeq login (QID + OTP 0000) | Must | Frontend | ☐ |
 | F02 | Mock national health record (3+ synthetic patients) | Must | Backend | ☑ |
 | F03 | AI chat intake (text), AR + EN | Must | AI | ☐ |
-| F04 | Red-flag rules (AR/EN) before model | Must | AI | ☐ |
-| F05 | Service classification → intake JSON | Must | AI | ☐ |
+| F04 | Red-flag rules (AR/EN) before model | Must | AI | ☑ |
+| F05 | Service classification → intake JSON | Must | AI | ☑ |
 | F06 | Ticket reserve → activate on arrival ("I'm here" button for demo) | Must | Backend | ☐ |
 | F07 | Queue engine: triage, doctor, pharmacy queues; live updates (SSE) | Must | Backend | ☐ |
 | F08 | Nurse console: call next, intake card, vitals, confirm | Must | Frontend | ☐ |

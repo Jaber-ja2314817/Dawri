@@ -13,6 +13,7 @@ from fastapi.responses import JSONResponse
 
 from backend import bootstrap, config, events
 from backend.adapters.queue_base import QueueError
+from backend.ai import runtime
 from backend.deps import ApiError
 from backend.queue_engine import SqliteQueueEngine
 from backend.routers import auth, streams
@@ -47,6 +48,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     events.bus.bind_loop(asyncio.get_running_loop())
     bootstrap.startup()
     app.state.engine = SqliteQueueEngine(publish=events.bus.publish)
+    app.state.ai = runtime.build_runtime()
+    logger.info("AI mode: %s", app.state.ai.mode)
     expiry = asyncio.create_task(_expiry_loop(app.state.engine))
     try:
         yield
@@ -77,9 +80,9 @@ async def queue_error(request: Request, exc: QueueError) -> JSONResponse:
 
 
 @app.get("/api/health")
-def health() -> dict:
+def health(request: Request) -> dict:
     return {
         "status": "ok",
-        "ai_mode": config.ai_mode(),
+        "ai_mode": request.app.state.ai.mode,
         "simulate_load": config.simulate_load(),
     }

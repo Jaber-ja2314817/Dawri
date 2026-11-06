@@ -10,6 +10,7 @@ from fastapi import Depends, Query, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from backend import auth, db
+from backend.ai.runtime import AiRuntime
 from backend.queue_engine import SqliteQueueEngine
 
 _bearer = HTTPBearer(auto_error=False)
@@ -32,6 +33,10 @@ def get_conn() -> Iterator[sqlite3.Connection]:
 
 def get_engine(request: Request) -> SqliteQueueEngine:
     return request.app.state.engine
+
+
+def get_ai(request: Request) -> AiRuntime:
+    return request.app.state.ai
 
 
 def _valid_session(conn: sqlite3.Connection, token: str | None) -> sqlite3.Row:

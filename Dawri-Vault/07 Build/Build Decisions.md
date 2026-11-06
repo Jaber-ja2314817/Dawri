@@ -59,6 +59,18 @@ Coordinates from OpenStreetMap Nominatim, 6 Nov 2026. Abu Baker Al Siddiq and Um
 
 Seed load so the demo reads well: Al Wakra about 12 min, a nearby alternative about 35 min. Seed Al Wakra triage so Fatima's number lands on T-014 on a fresh reset when possible.
 
+### Model text gate (added 6 Nov, 03:30, after four Phase 2 reviews)
+Reviews kept finding new wordings because a blocklist cannot be complete. Patient-facing safety now rests on the shape of the text, and the filters remain as a second layer.
+
+- A model chat reply reaches the patient only if it is **one short question**: optionally one acknowledgement of at most 6 words, then a single question. The acknowledgement holds no digits, drug or disease wording. Any other shape is rejected and that turn uses the simulated fallback, recorded as `ai.fallback`.
+- The summary read back to the patient is **rendered by the server** from a fixed AR/EN template using the patient's own words from the transcript, validated duration and severity, and the server-built medicines list. Model free prose such as `summary_for_nurse` is never shown to the patient.
+- `self_medication` is built by the server from what the patient said, never taken from the model.
+- Model text may reach staff, after filtering, because a nurse confirms everything at triage ([[Safety Guardrails]] layer 4).
+- The red-flag list stays a starter list until a clinician reviews it. New synonyms are review items. Structural holes are bugs.
+
+### Nurse backstop (added 6 Nov, 04:35)
+The nurse intake card (T03) always shows the patient's exact words from the chat, turn by turn, next to the AI summary, whatever the summary says. The API must return them to staff. This is required, not polish: a summary can drop a detail such as "with blood", and the nurse is the last safety layer. Patient-facing routes still receive only `receptionist.patient_intake`, never `summary_for_nurse`.
+
 ### Other implementation decisions
 - **Queue:** priority from centre rules only (age 65+ in the seed). Order: `priority DESC, activated_at ASC, seq ASC`. Numbers from a per-centre, per-prefix daily sequence, so `D-GP` stays unique across two GP doctors. Reserved tickets expire after 45 minutes through a lazy check plus a background task.
 - **Doctor suggestion** is the rule score from [[AI Receptionist Design]], and the reason is a template. No model.
