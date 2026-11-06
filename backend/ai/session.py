@@ -263,6 +263,113 @@ def continue_after_refill(
     return gp_intake
 
 
+def start_walk_in(
+    conn: sqlite3.Connection,
+    visit_id: str,
+    complaint: str,
+    on: datetime | date | None = None,
+) -> TurnResult | None:
+    """The front desk's one line stands in for the chat: the emergency turn on a hit, else None.
+
+    Layer 1 runs on this message like any other. No opening line is stored, because the
+    patient never saw one. With no hit the intake is built from the complaint alone, and
+    the patient has confirmed it by saying it to the desk.
+    """
+    visit = _visit(conn, visit_id)
+    patient = mock_health.get_patient(conn, visit["patient_id"], on)
+    if patient is None:
+        raise SessionError("visit_not_found")
+    text = complaint.strip() if isinstance(complaint, str) else ""
+    if not text:
+        raise SessionError("invalid_text")
+    language = _new_state(patient)["language"]
+    state = {"messages": [], "denied": [], "language": language, "last_turn": None}
+
+    result = receptionist.rule_emergency(text, [], patient, [], language)
+    if result is not None:
+        with db.transaction(conn):
+            _store_state(conn, visit_id, state)
+        return _save_turn(conn, visit_id, patient, text, result)
+
+    denied = [hit.label_en for hit in redflags.check(text).denied]
+    walk_in = intake.validate_intake(
+        {
+            "language": "ar-gulf" if language == "ar" else "en",
+            "chief_complaint": text,
+            "chief_complaint_patient_words": text,
+            "service": "gp",
+            "service_confidence": 0.0,
+            "summary_for_nurse": f"Walk-in at the front desk: {text}",
+            "questions_asked": 0,
+            "denied_red_flags": denied,
+        }
+    )
+    state["messages"].append({"role": "user", "content": text, "slot": None})
+    state["denied"] = denied
+    with db.transaction(conn):
+        _store_state(conn, visit_id, state, walk_in.model_dump())
+        conn.execute("UPDATE intake SET confirmed_by_patient = 1 WHERE visit_id = ?", (visit_id,))
+        conn.execute(
+            "UPDATE visit SET service = 'gp' WHERE id = ? AND status = 'intake'", (visit_id,)
+        )
+        if denied:
+            audit.record(conn, visit_id, [AiEvent("redflag.denied", {"labels": denied})])
+    return None
+
+
+def desk_red_flag(
+    conn: sqlite3.Connection,
+    visit_id: str,
+    complaint: str,
+    on: datetime | date | None = None,
+) -> TurnResult | None:
+    """Layer 1 on what the desk heard about a visit already open: the emergency turn, or None.
+
+    The desk is a way in after the chat has closed, so its one line is read like any other
+    message. A hit is stored as a turn, so the nurse sees the words. With no hit nothing is
+    stored, and the caller's refusal stands. The model is never involved.
+    """
+    visit = _visit(conn, visit_id)
+    patient = mock_health.get_patient(conn, visit["patient_id"], on)
+    if patient is None:
+        raise SessionError("visit_not_found")
+    state = _load_state(conn, visit_id, patient)
+    text = complaint.strip()
+    hit = receptionist.rule_emergency(
+        text, state["messages"], patient, state["denied"], state["language"]
+    )
+    return None if hit is None else _save_turn(conn, visit_id, patient, text, hit)
+
+
+def red_flag_past_arrival(
+    conn: sqlite3.Connection,
+    visit_id: str,
+    message: str | None,
+    on: datetime | date | None = None,
+) -> TurnResult:
+    """Layer 1 on a message from a patient already in the centre: the emergency turn, or a
+    refusal. The chat has closed, so the model is never involved, whatever the outcome.
+
+    The rules read all of it and the cut applies only to what is stored, as in
+    _over_long_turn. Taking the visit out of the queue is the caller's step, because
+    nothing under backend/ai touches the queue.
+    """
+    visit = _visit(conn, visit_id)
+    if not isinstance(message, str) or not message.strip():
+        raise SessionError("invalid_text")
+    patient = mock_health.get_patient(conn, visit["patient_id"], on)
+    if patient is None:
+        raise SessionError("visit_not_found")
+    state = _load_state(conn, visit_id, patient)
+    text = message.strip()
+    hit = receptionist.rule_emergency(
+        text, state["messages"], patient, state["denied"], state["language"]
+    )
+    if hit is None:
+        raise SessionError("visit_not_in_intake")
+    return _save_turn(conn, visit_id, patient, text[:_MAX_TEXT], hit)
+
+
 def history(conn: sqlite3.Connection, visit_id: str) -> dict:
     """Read-only, and the patient's view: model prose stays out, as it does in last_turn.
 

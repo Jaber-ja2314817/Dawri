@@ -1,13 +1,15 @@
-"""Demo queue state: sequence starts and simulated waiting tickets.
+"""Demo queue state: sequence starts, simulated waiting tickets and the load tick.
 
-There is no periodic tick here. Advancing the queues on a timer would consume
-numbers and break T-014 between a reset and the demo.
+tick() keeps the other centres' triage queues moving, one ticket at a time around
+their seed counts, so their waits stay steady. Protected centres are left alone:
+a tick there would consume numbers and break T-014 between a reset and the demo.
 """
 
 from __future__ import annotations
 
 import sqlite3
 from collections import Counter
+from contextlib import closing
 
 from backend import db, timeutil
 from backend.queue_engine import SqliteQueueEngine
@@ -20,6 +22,8 @@ NEXT_REAL_NUMBER = {
     "C-MESAIMEER": {"T": 18, "D-GP": 11, "P": 9},
     "C-WESTBAY": {"T": 16, "D-GP": 10, "P": 8},
 }
+
+PROTECTED_CENTRES = ("C-WAKRA",)
 
 SIMULATED_TICKETS = {
     "C-WAKRA-T1": 3,
@@ -60,4 +64,33 @@ def seed_queue_state(
 
     for counter_id, count in tickets.items():
         for _ in range(count):
+            engine.issue_simulated(counter_id)
+
+
+def _tick_counters(conn: sqlite3.Connection) -> list[tuple[str, int, int]]:
+    """Each ticked counter with its seed target and its waiting simulated tickets."""
+    ticked = []
+    for counter_id, target in SIMULATED_TICKETS.items():
+        counter = conn.execute(
+            "SELECT centre_id, stage FROM counter WHERE id = ?", (counter_id,)
+        ).fetchone()
+        if counter["stage"] != "triage" or counter["centre_id"] in PROTECTED_CENTRES:
+            continue
+        waiting = conn.execute(
+            "SELECT COUNT(*) FROM ticket WHERE counter_id = ? AND state = 'active' "
+            "AND simulated = 1",
+            (counter_id,),
+        ).fetchone()[0]
+        ticked.append((counter_id, target, waiting))
+    return ticked
+
+
+def tick(engine: SqliteQueueEngine) -> None:
+    """Move each counter one ticket towards or away from its target, so it stays within one."""
+    with closing(db.connect()) as conn:
+        ticked = _tick_counters(conn)
+    for counter_id, target, waiting in ticked:
+        if waiting >= target:
+            engine.complete_simulated(counter_id)
+        else:
             engine.issue_simulated(counter_id)

@@ -99,6 +99,14 @@ class QueueAdapter(ABC):
         """Finish this stage's ticket."""
 
     @abstractmethod
+    def advance(self, ticket_id: str, next_counter_id: str) -> Ticket:
+        """Finish this ticket and join the next stage's queue, in one step."""
+
+    @abstractmethod
+    def finish_visit(self, ticket_id: str) -> Ticket:
+        """Finish this ticket and complete the visit, in one step."""
+
+    @abstractmethod
     def issue_active(self, visit_id: str, counter_id: str) -> Ticket:
         """Create a ticket that joins the end of the queue now."""
 
@@ -107,12 +115,28 @@ class QueueAdapter(ABC):
         """Remove a live ticket from the queue."""
 
     @abstractmethod
+    def escalate(self, ticket_id: str, reason: str) -> Ticket:
+        """Release a live ticket and send the visit to emergency, in one step."""
+
+    @abstractmethod
+    def complete_simulated(self, counter_id: str) -> Ticket | None:
+        """Finish the first simulated ticket here, if any. Never a real one."""
+
+    @abstractmethod
     def expire_due(self) -> list[Ticket]:
         """Release every reserved ticket past its check-in window."""
 
     @abstractmethod
     def position(self, ticket_id: str) -> Position:
         """Where this ticket stands now."""
+
+    @abstractmethod
+    def live_ticket(self, visit_id: str) -> Ticket | None:
+        """The visit's reserved, active, called or serving ticket, if any."""
+
+    @abstractmethod
+    def latest_ticket(self, visit_id: str) -> Ticket | None:
+        """The visit's most recent ticket, in any state."""
 
     @abstractmethod
     def queue_snapshot(self, counter_id: str) -> list[dict]:

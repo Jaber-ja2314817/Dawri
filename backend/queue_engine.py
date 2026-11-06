@@ -28,6 +28,7 @@ RESERVATION_MINUTES = 45
 NO_SHOW_LIMIT = 3
 ROLLING_WINDOW = 20
 MIN_ROLLING_SAMPLES = 5
+MIN_SAMPLE_SEC = 30  # Shorter spans are demo clicks, not service times.
 
 RESERVABLE_STATUSES = ("intake", "expired")
 NO_TICKET_STATUSES = (
@@ -177,12 +178,13 @@ def _avg_service_sec(conn: sqlite3.Connection, counter: sqlite3.Row) -> float:
         "ORDER BY done_at DESC, rowid DESC LIMIT ?",
         (counter["id"], ROLLING_WINDOW),
     ).fetchall()
-    if len(rows) < MIN_ROLLING_SAMPLES:
-        return float(counter["avg_service_sec"])
     spans = [
         (timeutil.parse(row["done_at"]) - timeutil.parse(row["called_at"])).total_seconds()
         for row in rows
     ]
+    spans = [span for span in spans if span >= MIN_SAMPLE_SEC]
+    if len(spans) < MIN_ROLLING_SAMPLES:
+        return float(counter["avg_service_sec"])
     return sum(spans) / len(spans)
 
 
@@ -350,45 +352,50 @@ class SqliteQueueEngine(QueueAdapter):
         now = self.clock()
         self._expire(now)
         with self._unit() as unit:
-            conn = unit.conn
-            counter = _counter(conn, counter_id)
-            status = _visit_status(conn, visit_id)
-            if status is None:
-                raise VisitNotEligible(f"no visit {visit_id}")
-            if _has_live_ticket(conn, visit_id):
-                raise VisitHasLiveTicket(f"visit {visit_id} already has a live ticket")
-            if status in NO_TICKET_STATUSES:
-                raise VisitNotEligible(f"visit {visit_id} is {status}")
-            ticket_id = db.new_id("tkt")
-            stamp = timeutil.iso(now)
-            number = _numbered(conn, counter, now)
-            conn.execute(
-                "INSERT INTO ticket (id, visit_id, centre_id, counter_id, state, number, seq, "
-                "day, priority, activated_at) VALUES (?, ?, ?, ?, 'active', ?, ?, ?, ?, ?)",
-                (
-                    ticket_id,
-                    visit_id,
-                    counter["centre_id"],
-                    counter_id,
-                    number["number"],
-                    number["seq"],
-                    number["day"],
-                    _priority(conn, visit_id, counter["centre_id"], now),
-                    stamp,
-                ),
-            )
-            conn.execute(
-                "UPDATE visit SET status = ?, centre_id = ?, "
-                "arrived_at = COALESCE(arrived_at, ?) WHERE id = ?",
-                (
-                    _VISIT_STATUS_BY_STAGE[counter["stage"]],
-                    counter["centre_id"],
-                    stamp,
-                    visit_id,
-                ),
-            )
-            row = self._record(unit, ticket_id, "ticket.activated", now, method="direct")
+            counter = _counter(unit.conn, counter_id)
+            row = self._join_queue(unit, visit_id, counter, now)
         return _to_ticket(row)
+
+    def _join_queue(
+        self, unit: _Unit, visit_id: str, counter: sqlite3.Row, now: datetime
+    ) -> sqlite3.Row:
+        conn = unit.conn
+        status = _visit_status(conn, visit_id)
+        if status is None:
+            raise VisitNotEligible(f"no visit {visit_id}")
+        if _has_live_ticket(conn, visit_id):
+            raise VisitHasLiveTicket(f"visit {visit_id} already has a live ticket")
+        if status in NO_TICKET_STATUSES:
+            raise VisitNotEligible(f"visit {visit_id} is {status}")
+        ticket_id = db.new_id("tkt")
+        stamp = timeutil.iso(now)
+        number = _numbered(conn, counter, now)
+        conn.execute(
+            "INSERT INTO ticket (id, visit_id, centre_id, counter_id, state, number, seq, "
+            "day, priority, activated_at) VALUES (?, ?, ?, ?, 'active', ?, ?, ?, ?, ?)",
+            (
+                ticket_id,
+                visit_id,
+                counter["centre_id"],
+                counter["id"],
+                number["number"],
+                number["seq"],
+                number["day"],
+                _priority(conn, visit_id, counter["centre_id"], now),
+                stamp,
+            ),
+        )
+        conn.execute(
+            "UPDATE visit SET status = ?, centre_id = ?, "
+            "arrived_at = COALESCE(arrived_at, ?) WHERE id = ?",
+            (
+                _VISIT_STATUS_BY_STAGE[counter["stage"]],
+                counter["centre_id"],
+                stamp,
+                visit_id,
+            ),
+        )
+        return self._record(unit, ticket_id, "ticket.activated", now, method="direct")
 
     def issue_simulated(self, counter_id: str) -> Ticket:
         """A waiting ticket with no patient behind it, for SIMULATE_LOAD."""
@@ -437,12 +444,7 @@ class SqliteQueueEngine(QueueAdapter):
             ahead = queue[:1] if first_real is None else queue[:first_real]
             auto_completed = []
             for row in ahead:
-                _set(conn, row["id"], state="done", done_at=timeutil.iso(now))
-                auto_completed.append(
-                    self._record(
-                        unit, row["id"], "ticket.simulated_done", now, note=_SIMULATED_NOTE
-                    )
-                )
+                auto_completed.append(self._finish_simulated(unit, row["id"], now))
             called = None
             if first_real is not None:
                 ticket = queue[first_real]
@@ -458,6 +460,22 @@ class SqliteQueueEngine(QueueAdapter):
             called=None if called is None else _to_ticket(called),
             auto_completed=[_to_ticket(row) for row in auto_completed],
         )
+
+    def _finish_simulated(self, unit: _Unit, ticket_id: str, now: datetime) -> sqlite3.Row:
+        _set(unit.conn, ticket_id, state="done", done_at=timeutil.iso(now))
+        return self._record(unit, ticket_id, "ticket.simulated_done", now, note=_SIMULATED_NOTE)
+
+    def complete_simulated(self, counter_id: str) -> Ticket | None:
+        """Move one simulated ticket on. Real tickets are never touched."""
+        now = self.clock()
+        with self._unit() as unit:
+            conn = unit.conn
+            _counter(conn, counter_id)
+            first = next((row for row in _active(conn, counter_id) if row["simulated"]), None)
+            if first is None:
+                return None
+            row = self._finish_simulated(unit, first["id"], now)
+        return _to_ticket(row)
 
     def serve(self, ticket_id: str) -> Ticket:
         now = self.clock()
@@ -494,23 +512,67 @@ class SqliteQueueEngine(QueueAdapter):
     def complete(self, ticket_id: str) -> Ticket:
         now = self.clock()
         with self._unit() as unit:
-            row = _load(unit.conn, ticket_id)
-            if row["state"] not in ("called", "serving"):
-                raise InvalidTransition(f"cannot complete a {row['state']} ticket")
-            if row["state"] == "called":
-                self._serve(unit, ticket_id, now)
-            _set(unit.conn, ticket_id, state="done", done_at=timeutil.iso(now))
-            row = self._record(unit, ticket_id, "ticket.done", now)
+            row = self._finish(unit, ticket_id, now)
+        return _to_ticket(row)
+
+    def _finish(self, unit: _Unit, ticket_id: str, now: datetime) -> sqlite3.Row:
+        row = _load(unit.conn, ticket_id)
+        if row["state"] not in ("called", "serving"):
+            raise InvalidTransition(f"cannot complete a {row['state']} ticket")
+        if row["state"] == "called":
+            self._serve(unit, ticket_id, now)
+        _set(unit.conn, ticket_id, state="done", done_at=timeutil.iso(now))
+        return self._record(unit, ticket_id, "ticket.done", now)
+
+    def advance(self, ticket_id: str, next_counter_id: str) -> Ticket:
+        now = self.clock()
+        self._expire(now)
+        with self._unit() as unit:
+            conn = unit.conn
+            finished = self._finish(unit, ticket_id, now)
+            counter = _counter(conn, next_counter_id)
+            if counter["centre_id"] != finished["centre_id"]:
+                raise InvalidTransition(f"counter {next_counter_id} is at another centre")
+            row = self._join_queue(unit, finished["visit_id"], counter, now)
+        return _to_ticket(row)
+
+    def finish_visit(self, ticket_id: str) -> Ticket:
+        now = self.clock()
+        with self._unit() as unit:
+            conn = unit.conn
+            row = self._finish(unit, ticket_id, now)
+            status = _visit_status(conn, row["visit_id"])
+            if status in NO_TICKET_STATUSES:  # An emergency must stay an emergency.
+                raise VisitNotEligible(f"visit {row['visit_id']} is {status}")
+            conn.execute(
+                "UPDATE visit SET status = 'completed', completed_at = ? WHERE id = ?",
+                (timeutil.iso(now), row["visit_id"]),
+            )
         return _to_ticket(row)
 
     def release(self, ticket_id: str, reason: str) -> Ticket:
         now = self.clock()
         with self._unit() as unit:
-            row = _load(unit.conn, ticket_id)
-            if row["state"] not in _LIVE_STATES:
-                raise InvalidTransition(f"cannot release a {row['state']} ticket")
-            _set(unit.conn, ticket_id, state="released", released_at=timeutil.iso(now))
-            row = self._record(unit, ticket_id, "ticket.released", now, reason=reason)
+            row = self._release(unit, ticket_id, reason, now)
+        return _to_ticket(row)
+
+    def _release(
+        self, unit: _Unit, ticket_id: str, reason: str, now: datetime
+    ) -> sqlite3.Row:
+        row = _load(unit.conn, ticket_id)
+        if row["state"] not in _LIVE_STATES:
+            raise InvalidTransition(f"cannot release a {row['state']} ticket")
+        _set(unit.conn, ticket_id, state="released", released_at=timeutil.iso(now))
+        return self._record(unit, ticket_id, "ticket.released", now, reason=reason)
+
+    def escalate(self, ticket_id: str, reason: str) -> Ticket:
+        now = self.clock()
+        with self._unit() as unit:
+            row = self._release(unit, ticket_id, reason, now)
+            unit.conn.execute(
+                "UPDATE visit SET status = 'redirected_emergency' WHERE id = ?",
+                (row["visit_id"],),
+            )
         return _to_ticket(row)
 
     def expire_due(self) -> list[Ticket]:
@@ -564,6 +626,35 @@ class SqliteQueueEngine(QueueAdapter):
             est_wait_min=est_wait_min,
             expires_at=expires_at,
         )
+
+    def live_ticket(self, visit_id: str) -> Ticket | None:
+        # No lazy expiry here: activate() must see a past-due ticket to answer 410.
+        marks = ", ".join("?" for _ in _LIVE_STATES)
+        return self._one_ticket(
+            f"SELECT * FROM ticket WHERE visit_id = ? AND state IN ({marks}) "
+            "ORDER BY rowid DESC LIMIT 1",
+            (visit_id, *_LIVE_STATES),
+        )
+
+    def live_tickets_of_patient(self, patient_id: str) -> list[Ticket]:
+        marks = ", ".join("?" for _ in _LIVE_STATES)
+        with closing(self._conn_factory()) as conn:
+            rows = conn.execute(
+                "SELECT ticket.* FROM ticket JOIN visit ON visit.id = ticket.visit_id "
+                f"WHERE visit.patient_id = ? AND ticket.state IN ({marks}) ORDER BY ticket.rowid",
+                (patient_id, *_LIVE_STATES),
+            ).fetchall()
+        return [_to_ticket(row) for row in rows]
+
+    def latest_ticket(self, visit_id: str) -> Ticket | None:
+        return self._one_ticket(
+            "SELECT * FROM ticket WHERE visit_id = ? ORDER BY rowid DESC LIMIT 1", (visit_id,)
+        )
+
+    def _one_ticket(self, sql: str, params: tuple) -> Ticket | None:
+        with closing(self._conn_factory()) as conn:
+            row = conn.execute(sql, params).fetchone()
+        return None if row is None else _to_ticket(row)
 
     def queue_snapshot(self, counter_id: str) -> list[dict]:
         self._expire(self.clock())

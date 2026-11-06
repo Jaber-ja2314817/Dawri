@@ -24,6 +24,15 @@ def db_path() -> Path:
     return Path(_env("DAWRI_DB", str(_REPO_ROOT / "backend" / "data" / "dawri.db")))
 
 
+def static_dir() -> Path:
+    """The built frontend: the override, the image's copy, or the local Vite build."""
+    override = _env("DAWRI_STATIC_DIR", "")
+    if override:
+        return Path(override)
+    bundled = _REPO_ROOT / "backend" / "static"
+    return bundled if bundled.exists() else _REPO_ROOT / "frontend" / "dist"
+
+
 def ai_mode() -> str:
     return "real" if os.environ.get("HF_TOKEN", "").strip() else "simulated"
 

@@ -114,3 +114,70 @@ F04 and F05. Left open on purpose, by the same reading as Phase 1:
 - `denied_text` is English on Arabic visits. Phase 3 can call `redflags.denied_text(view['denied'], 'ar')`.
 - The live HF paths are untested, as [[Build Decisions]] expects. The README must say so.
 - `mental_health` and `other` have no clinic, so suggestions fall back to a GP with a reason saying so. This settles the Phase 1 routing gap for doctor suggestion. Centre selection still has to handle them.
+
+## Phase 3: Full API (approved in review round 4 of 4, 6 Nov 2026)
+
+### Plan
+`backend/main.py` and routers for every route in [[API]] plus those added by [[Build Decisions]]: SSE streams, centres with wait estimates and the suggestion rule, reserve, arrive with geofence and door code, staff flows, walk-in, fast-forward, reset, stats, the `SIMULATE_LOAD` simulator and static SPA serving. An API-level test walks all three demo patients end to end, and proves that a nurse edit reaches the doctor, that a red flag gives no ticket, and that SSE stays live while a model call blocks.
+
+### What was built
+- Routers: `visits.py`, `centres.py`, `staff.py`, `demo.py`, `streams.py`. 38 method and path pairs. Every `/api` endpoint is plain def except the 3 streams.
+- `visit_flow.py`: `emergency_today` (dated by when the emergency happened, not when the visit opened), `leave_the_queue`, the allergy check, consult and dispensing.
+- `centres.py`: services, distance and the suggestion rule, with no model. `geo.py` for distance. `views.py` for the shared ticket shape. `spa.py` for the frontend fallback.
+- Engine additions: `advance`, `finish_visit`, `escalate`, `complete_simulated`, `live_ticket`, `latest_ticket`, and a floor of 30 s on samples so demo clicks cannot move an estimate.
+- `session.py` additions only: `start_walk_in`, `desk_red_flag`, `red_flag_past_arrival`.
+- `simulate.tick` moves the other centres one ticket at a time and leaves Al Wakra alone.
+- Startup resets a database from an earlier day and keeps a same-day one.
+
+The frontend, Dockerfile and README are later work. None were added here.
+
+### Verdict
+Approved. Every acceptance check passed on the orchestrator's own runs. The round 3 failure was re-tested and is fixed: a visit opened at 23:50 Doha and flagged at 00:10 blocks a new visit and the desk until 23:59 of the flag's own day, and frees them on the next Doha day. The same holds for a nurse urgent after midnight.
+
+### Evidence
+- `.venv/bin/python -m pytest -q -rs`: 10500 passed, none skipped, above 9731. 3 runs in a row, then `TZ=UTC` and `TZ=Asia/Tokyo`, all 10500. All 15 named files collected.
+- `test_api_sse_threadpool`, `test_api_e2e` and `test_sse_e2e`: 23 passed, 5 runs in a row.
+- Fresh Python 3.12.15 venv from `requirements.txt`: pip exit 0, 10500 passed, `compileall` exit 0. Also exit 0 on 3.14. `requirements.txt` has an empty diff, and there is no `sse-starlette`.
+- Route inventory by a flat walk: nothing missing, nothing extra. FastAPI 0.162 hides included routers from a plain loop over `app.routes`, so the script walks `original_router`.
+- Live server on 7863 with `SIMULATE_LOAD=1` and a temp DB, my own HTTP scripts:
+  - Fatima: reserved ticket with number null, "Check-in valid for 45 minutes" and the Arabic text, T-014 with 3 ahead and 12 min, map Al Wakra first at 12 and Airport 36, call-next auto-completed 3 and called T-014, D-GP-023 on `C-WAKRA-D4`, P-031, completed, medicines in Arabic.
+  - Ahmed: `deflected_refill`, 0 ticket rows, reserve refused, `refill/continue` reached centres as GP with his registered centre as default.
+  - Ravi: emergency true, `redirected_emergency`, nearest ED, 0 ticket rows. Override wrote one event and returned the staff route. Reserve, arrive, draft, fast-forward, a new visit and the desk were all refused.
+  - A red flag after reservation, one in the waiting room, a walk-in chest pain and nurse urgent to ED all left no live ticket for that patient.
+  - A red flag on a lapsed visit, a refill-deflected visit and a confirmed intake each ended the visit, and the next reserve or continue was refused.
+  - Nurse edit: confirm after an edit gave 409 `draft_required`. After a re-draft the doctor saw the edit in intake and `handoff.final_text`, and turns kept the patient's words byte for byte.
+- SSE by `curl -N`: `: connected`, heartbeat inside 17 s of connecting, `ticket.called` with exactly type, visit_id, ticket, counter and people_ahead on the visit and counter streams, and no visit_id on the display. 401 with no token, 403 for another patient and another centre's staff, 200 with `?token=`.
+- Nurse backstop: turns sit next to `summary_for_nurse` for staff, 403 for a patient, 401 with none. In real mode with a fake client and marker text in the summary and complaint, no marker and no staff key appeared in any patient response. Arabic denied text is present. A visit booked for a dependent uses the dependent's record, and a dependent's red flag leaves the guardian's ticket alone.
+- Arrival: own coordinates, 140 m, button and `DOOR-C-WAKRA` all gave T-014. 200 m gave 409 `too_far`, `DOOR-C-AIRPORT` gave 409 `wrong_door`, and `{"lat":NaN}` gave 422. Arrival order beat reservation order, and a 65+ patient got priority 1 and 0 ahead.
+- Expiry: 45 minutes on `engine.clock` gave 410 and `expired`, and a re-reserve then worked. On the running server the background loop released a past-due ticket in 25 s.
+- Walk-in: T-014 in arrival order with app patients, schema-valid intake, complaint in turns, and a phone visit could not then take a second place.
+- Simulated load: 20 ticks left Al Wakra tickets and sequences identical and Fatima on T-014. Airport triage stayed 6-7 against a seed of 7 and its GP wait stayed 32-36. Labelled "Simulated", and never returned as called. The live 60 s loop was seen ticking.
+- Fast-forward and reset: 3 tickets done through the engine with event rows. Refused with nothing changed when a real patient was ahead or a counter was busy. 10 instant runs left the estimate at 480 s. Reset restored T-014, kept tokens and reached open streams. A DB rewritten to an earlier day was reset at startup, and a same-day restart kept its tickets.
+- Allergy and medicines: amoxicillin warned, gave 409 `allergy_conflict`, and with acknowledgement succeeded and logged `prescription.allergy_override`. An unknown drug gave 422. No model call for medicine lines in real mode with a fake client.
+- Centres: dental lists only Al Wakra, `mental_health` and `other` list GP centres with `service_fallback` true, hospitals only for `emergency` and sorted by distance. A suggestion needed Al Wakra at 52 min and left `default_centre_id` on the registered centre.
+- Stats: matched SQL on real rows, with no simulated tickets and no no-show field.
+- ASR and modes: 503 with a clear message and no transcript in simulated mode. In real mode with a fake client the transcript returned, a 3 MB upload never spooled to disk, and a spoken red flag fired. Health is exactly `{status, ai_mode, simulate_load}`.
+- SPA: `/` and `/staff/nurse` return index.html, a real asset returns itself, `/api/unknown` is JSON 404, 8 traversal paths leaked nothing, `/docs` works, and no build gives a JSON 404.
+- 834 concurrent HTTP calls over 3 patient flows and 4 pollers: all 200, no duplicate numbers, no errors in the server log.
+- Fuzz of 34 bad bodies and ids: no 5xx.
+- Greps and scope: wording, queue calls under `backend/ai` and the priority signature check are clean. `filters.py` and `redflags.py` have an empty diff, `session.py` has additions only. No frontend or Dockerfile, no `.env`, DB, `backend/data` or `hf_` token in git status. `HF_TOKEN` blank in `.env.example`. `main` equals `origin/main` at a2ac73a. Only the GitHub remote. Nothing staged. No commit. Server stopped and the port confirmed free.
+- Mutations in scratch copies, full suite: async chat with a blocking fake, dropped release in chat, `staff_view` in a patient route, no draft clear, no sample floor, no protected-centre check, no `not_next_in_queue` (either site), `created_at` dating, no emergency check at arrive, no emergency check at reserve. All 11 failed. Each copy also fails `test_env_example_lists_the_static_dir_blank`, only because `.env.example` is not copied, and each has at least one other failure. The async chat copy fails `test_a_slow_model_does_not_stall_sse`.
+
+### Features ticked
+F07 and F19. F19 because [[Build Decisions]] 8 asks only that the backend accept `{qr_code}`. Left open on purpose, by the same reading as Phases 1 and 2, because each still needs its screen:
+- F01, F08, F10, F11, F13, F14, F16, F17, F18, F20, F21: no screen yet.
+- F03, F09, F15, F24: routes are done and verified, screens are not.
+- F06: routes are done and verified, the "I'm here" button is not.
+- F12: Hugging Face is later work.
+
+### Known gaps
+- **For the owner to read:** a chat message sent to a **completed** visit is refused with 409 and the rules do not run on it. If the same patient holds a live ticket on another visit, a red-flag message sent there leaves that ticket live (run, not just read). Only a client that offers chat on a completed visit can reach it, so it stayed out of the failures. **The frontend must not show a chat box on a completed visit.** A later fix could run the rules there.
+- From reading the code, not reproduced: a sibling visit flagged in the milliseconds between reserve's emergency check and the issue can leave a reservation, which arrive then refuses. The same window at the walk-in desk would leave an active ticket.
+- **Must act before the demo, from reading the code:** a server left running past midnight does not reset. Numbers restart at T-001, and once any row exists for the new day a restart will not reset either, because the startup check only asks whether today has a row. Press the demo reset before going on stage.
+- The display routes need a staff token, so the TV must log in as staff.
+- `emergencies_redirected` counts by the day a visit opened, so a flag after midnight counts on the earlier day.
+- `NEAR_KM = 12` for the suggestion is a builder's value. The vault only says "near".
+- A nurse edit shows in the patient's own `intake` view, for its whitelisted fields only.
+- The patient routes read `timeutil.utcnow` and the desk reads `engine.clock`. They are the same function in production, but a test that patches one needs to patch both.
+- `.venv/bin/hf` exists as an entry point of `huggingface_hub`. `hf` is not on the PATH, and nothing was set up with it.
+- The live HF paths are untested, as [[Build Decisions]] expects. The README must say so.

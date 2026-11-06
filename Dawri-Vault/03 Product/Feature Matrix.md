@@ -15,7 +15,7 @@ skill: replica-recon
 | F04 | Red-flag rules (AR/EN) before model | Must | AI | ☑ |
 | F05 | Service classification → intake JSON | Must | AI | ☑ |
 | F06 | Ticket reserve → activate on arrival ("I'm here" button for demo) | Must | Backend | ☐ |
-| F07 | Queue engine: triage, doctor, pharmacy queues; live updates (SSE) | Must | Backend | ☐ |
+| F07 | Queue engine: triage, doctor, pharmacy queues; live updates (SSE) | Must | Backend | ☑ |
 | F08 | Nurse console: call next, intake card, vitals, confirm | Must | Frontend | ☐ |
 | F09 | AI handoff summary + doctor suggestion (nurse confirms) | Must | AI | ☐ |
 | F10 | Doctor + pharmacy consoles (simple) | Must | Frontend | ☐ |
@@ -27,7 +27,7 @@ skill: replica-recon
 | F16 | Waiting-room display screen | Should | Frontend | ☐ |
 | F17 | Arabic RTL polish | Should | Frontend | ☐ |
 | F18 | Real geofence (browser geolocation) | Could | Frontend | ☐ |
-| F19 | QR at entrance | Could | Frontend | ☐ |
+| F19 | QR at entrance | Could | Frontend | ☑ |
 | F20 | Kiosk mode | Could | Frontend | ☐ |
 | F21 | Centre dashboard / stats | Could | Frontend | ☐ |
 | F22 | Voice reply (TTS) | Could | AI | ☐ |

@@ -3,9 +3,12 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 
 import pytest
+from fastapi.testclient import TestClient
 
 from backend import db, seeding
+from backend.main import app
 from backend.queue_engine import SqliteQueueEngine
+from backend.tests.api_helpers import live_server
 
 
 @pytest.fixture
@@ -73,3 +76,23 @@ def engine(seeded, db_path, clock, events):
     return SqliteQueueEngine(
         conn_factory=lambda: db.connect(db_path), clock=clock, publish=events.publish
     )
+
+
+@pytest.fixture
+def api_env(db_path, monkeypatch):
+    """A developer's .env must not leak a token or load setting into these tests."""
+    monkeypatch.setattr("backend.main.load_dotenv", lambda: None)
+    monkeypatch.delenv("HF_TOKEN", raising=False)
+    monkeypatch.setenv("SIMULATE_LOAD", "1")
+
+
+@pytest.fixture
+def api(api_env):
+    with TestClient(app) as client:
+        yield client
+
+
+@pytest.fixture
+def live_api(api_env):
+    with live_server(app) as live:
+        yield live
