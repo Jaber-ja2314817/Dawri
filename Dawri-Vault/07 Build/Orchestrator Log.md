@@ -455,3 +455,11 @@ The README's numbered steps stand. Before following them, three things have chan
 - Why `voice.spec` passed until 01:10 on 7 Nov and failed after is not established. The hold does not depend on the cause.
 - Round 2's gaps stand: `emergency_today` ends at Doha midnight, a same-container restart keeps data only on the same day, `httpx2` arrives only through `huggingface_hub`, leaving T03 by navigation drops an unsaved edit, no auto-move to S06 after a full reload mid-turn, a hidden or polling staff tab keeps "Handled by a colleague" until its next Call next, `api/stream.ts` duplicates `openStream`, T05 always says "Summary from triage", Yes stays disabled while voice is starting, and the scripted-assistant note in real mode lasts for the page.
 - The nurse-signed card on T05 stays in English on an Arabic console, by design from round 1. T06's dose line (`500 mg · three times daily`) is also English on an Arabic console, as seen in my run. That one was not a stated decision, and the Arabic sentence sits directly under it.
+
+## After Phase 6: live checks on 7 Nov
+- Default chat model is now Gemma 4 26B on novita, see [[Build Decisions]]. Whisper transcribed one English and one Arabic synthesised clip correctly through `/api/asr`. A real microphone and a real phone are still untested.
+- 13 serious wordings passed the rules before this change. Gemma escalated 13 of 13 through the app. They are now rule cues as well, so a model failure cannot lose them. They are invented wordings and are **not clinician reviewed**.
+- The reply gate now accepts an opening 0 to 10 scale and a comma list of plain symptoms. Both are rewritten into the plain form, so every other check still applies.
+- Backend suite: 10767 passed. Browser and Docker suites were not rerun after these changes.
+- Fine-tune of Fanar 9B, private repos on `xTamim`: gate 1 of 100 to 100 of 100, valid intake 6 of 63 to 56 of 63, emergency escalation 9 of 13 to 0 of 13. **It must not be used for live chat.** It mostly imitates the scripted receptionist.
+

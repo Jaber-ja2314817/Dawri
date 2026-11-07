@@ -1322,3 +1322,41 @@ def test_every_cue_label_has_its_arabic():
 
 def test_an_unknown_label_stays_as_it_is():
     assert redflags.label_ar("something new") == "something new"
+
+
+# Wordings that got past the rules in the live test of 7 Nov. Not clinician reviewed.
+LIVE_TEST_WORDINGS = [
+    ("My husband's lips have turned blue and he is not making sense.", "consciousness"),
+    ("I feel like an elephant is sitting on me and my left arm went numb.", "chest_pain"),
+    ("I can't get air in, I can only say a few words at a time.", "breathing"),
+    ("One side of my mouth has dropped and my words come out wrong.", "stroke"),
+    ("There is blood soaking through the towel and it won't stop.", "bleeding"),
+    ("I took the whole box of my tablets and I don't want to be here.", "self_harm"),
+    ("زوجي شفايفه زرقت وما يرد علي عدل.", "consciousness"),
+    ("حاس في شي ثقيل جالس على صدري ويدي اليسار تنملت.", "chest_pain"),
+    ("ولدي الرضيع مرخي وما يقوم يرضع.", "infant"),
+    ("ما أقدر آخذ نفسي، أتكلم كلمتين وأوقف.", "breathing"),
+    ("نص وجهي نزل وكلامي صار مو مفهوم.", "stroke"),
+    ("الدم يغمر المنشفة ولا يتوقف.", "bleeding"),
+    ("تناولت كل ما في علبة الدواء ولا أريد أن أبقى هنا.", "self_harm"),
+]
+
+
+@pytest.mark.parametrize(("text", "category"), LIVE_TEST_WORDINGS)
+def test_the_live_test_wordings_are_red_flags(text, category):
+    result = check(text)
+    assert result.emergency
+    assert category in result.categories
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "my stomach has been hurting since yesterday",
+        "I have a cough and a runny nose",
+        "my lips are dry",
+        "I took all my medicine this morning",
+    ],
+)
+def test_ordinary_visits_stay_clear_of_the_new_wordings(text):
+    assert not check(text).emergency

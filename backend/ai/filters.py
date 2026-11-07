@@ -300,6 +300,13 @@ _GATE_WORD = r"[^\W_]+(?:'[^\W_]+)?"
 _QUESTION_SHAPE = re.compile(rf"{_GATE_WORD}(?: {_GATE_WORD})*")
 _ACK_SHAPE = re.compile(rf"{_GATE_WORD}(?:(?:[,،] ?| ){_GATE_WORD})*")
 _ACK_COMMA = re.compile("[,،]")
+# Two everyday wordings with a comma that is not an acknowledgement. Both are rewritten into
+# the plain form, so every check below still applies and neither is an exemption.
+_SCALE_OPENING = re.compile(
+    r"(?:on a scale (?:of|from) |from |من )?0 (?:to|الى) 10[,،] ?(?P<rest>.+)(?P<mark>[?؟])"
+)
+_LIST_MARKER = re.compile(r"[,،]? ?\b(like|such as|مثل)\b")
+_LIST_ITEM_SPLIT = re.compile(r"[,،]| or | او | and | و")
 # A question opens on one of these. Can, could and why are left out on purpose, since
 # each one turns a harmless clause into a suggestion: "Why not take a tablet?".
 _GATE_FRAMES = _phrases(
@@ -349,7 +356,7 @@ _GATE_WORDS = _GATE_SUBJECTS | frozenset(
         "how long many much often far and or but not no any anything else something "
         "some other another more most less than very too so just still also only ever "
         "now then again of in on at to from for with without by about into over under "
-        "after before during since until as like per up down out off all both each "
+        "after before during since until as like such per up down out off all both each "
         "every same new thing things "
         # Time. No number gets through here, spelled out or not.
         "today tonight yesterday morning afternoon evening night nights day days week "
@@ -357,6 +364,7 @@ _GATE_WORDS = _GATE_SUBJECTS | frozenset(
         "first scale rate rating level severity severe bad worse worst better mild "
         "moderate strong sharp dull constant usually always sometimes usual "
         # What a receptionist asks.
+        "experience experiencing having مثل "
         "start started starting begin began come came comes coming go goes going get got "
         "getting gets feel feeling felt feels help helps helped change changed make makes "
         "made keep keeps stop stopped happen happened happening tell know share mention "
@@ -865,6 +873,31 @@ def _usable_known_words(known: Iterable[str]) -> frozenset[str]:
     )
 
 
+def _plain_wording(question: str) -> str:
+    """Move an opening 0 to 10 scale to the end, and join a list of plain symptoms.
+
+    "On a scale of 0 to 10, how bad is it?" becomes "how bad is it from 0 to 10?". A comma
+    list goes only if every item is one word from _GATE_SUBJECTS, so no clause can hide.
+    """
+    opening = _SCALE_OPENING.fullmatch(question)
+    if opening:
+        scale = "من 0 الى 10" if opening["mark"] == "؟" else "from 0 to 10"
+        question = f"{opening['rest']} {scale}{opening['mark']}"
+
+    markers = list(_LIST_MARKER.finditer(question))
+    if len(markers) != 1:
+        return question
+    marker = markers[0]
+    items = [item.strip() for item in _LIST_ITEM_SPLIT.split(question[marker.end() : -1])]
+    items = [item.removeprefix("or ").removeprefix("او ").strip() for item in items if item.strip()]
+    plain = all(
+        len(words := tokenise(item)) == 1 and _word_is(words[0], _GATE_SUBJECTS) for item in items
+    )
+    if not items or not plain:
+        return question
+    return f"{question[: marker.start()]} {marker[1]} {' '.join(items)}{question[-1]}"
+
+
 def gate_reply(text: str, *, known: Iterable[str] = ()) -> bool:
     """True only for one short question, after at most one acknowledgement.
 
@@ -878,7 +911,7 @@ def gate_reply(text: str, *, known: Iterable[str] = ()) -> bool:
     *acknowledgements, last = split_sentences(norm)
     if not last.endswith(("?", "؟")):
         return False
-    parts = _ACK_COMMA.split(last[:-1])
+    parts = _ACK_COMMA.split(_plain_wording(last)[:-1])
     acknowledgements.extend(parts[:-1])
     if len(acknowledgements) > 1 or not all(map(_is_acknowledgement, acknowledgements)):
         return False

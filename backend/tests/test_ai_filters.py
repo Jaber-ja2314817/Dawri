@@ -1745,3 +1745,44 @@ def test_only_a_listed_frame_opens_a_question(frame):
 @pytest.mark.parametrize("text", ["من زوربلاكس؟", "منذ زوربلاكس؟"])
 def test_arabic_from_alone_opens_no_question(text):
     assert not filters.gate_reply(text, known=["زوربلاكس"])
+
+
+# Everyday wordings with a comma
+
+
+@pytest.mark.parametrize(
+    "reply",
+    [
+        "On a scale of 0 to 10, how bad is the pain?",
+        "On a scale from 0 to 10, how severe is the pain?",
+        "From 0 to 10, how bad is the pain?",
+        "Are you experiencing any other symptoms like nausea, vomiting, or fever?",
+        "Do you have any other symptoms such as fever or cough?",
+        "هل في أعراض ثانية مع الألم، مثل غثيان أو حرارة؟",
+        "Thanks, are you having any symptoms like nausea or fever?",
+    ],
+)
+def test_everyday_wordings_pass_the_gate(reply):
+    assert filters.gate_reply(reply)
+
+
+@pytest.mark.parametrize(
+    "reply",
+    [
+        "On a scale of 0 to 10, you have zorblax?",
+        "On a scale of 0 to 10, what is your zorblax?",
+        "On a scale of 0 to 10, take a tablet?",
+        "On a scale of 7 to 10, how bad is the pain?",
+        "On a scale of 0 to 10, how bad is the pain? Take rest?",
+        "From 0 to 10, should you take paracetamol?",
+        "Is it like zorblax?",
+        "Do you have symptoms like fever, which means zorblax?",
+        "Do you have symptoms like fever, you have zorblax?",
+        "Are you experiencing symptoms like fever, so take paracetamol?",
+        "Is this like a heart attack?",
+        "هل عندك أعراض مثل زوربلاكس؟",
+        "You have zorblax, like fever or cough?",
+    ],
+)
+def test_the_new_wordings_leave_the_gate_closed(reply):
+    assert not filters.gate_reply(reply)
