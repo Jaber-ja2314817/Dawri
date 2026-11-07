@@ -1,0 +1,31 @@
+Dawri — How it works (short ad, cut from the explainer film)
+Third-party assets and licences
+=====================================
+
+FONTS
+IBM Plex Sans (400/500/600/700) and IBM Plex Sans Arabic (400/500/600)
+  Source: github.com/IBM/plex (via @fontsource), the faces the Dawri app itself uses
+  Licence: SIL Open Font License 1.1
+
+VOICE
+Microsoft Azure neural voice en-US-AndrewNeural, accessed through edge-tts
+  edge-tts: github.com/rany2/edge-tts (GPL-3.0); voice service: Microsoft
+  Checked line by line with faster-whisper (small.en), MIT
+
+MUSIC (original score, written for this film; sampled instruments)
+Piano: "Salamander Grand Piano V3" by Alexander Holm, licensed under CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
+Drums: "MuldjordKit" by Lars Muldjord (drumgizmo.org), FreePats version, licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
+Samples (CC0): Karoryfer Samples / sfzinstruments (upright bass), Versilian Community Sample Library (Versilian Studios) (vibraphone, glockenspiel)
+Chip voice, foley and room tone: synthesised in code (numpy)
+
+PICTURE
+Every screen is redrawn in HTML from the Dawri app's own labels (frontend/src/i18n) and seed data (backend/seed).
+No screenshots, no logos. The map on the phone is a hand-drawn schematic with no borders.
+The ticket mascot is an original pixel character made for this film.
+
+TOOLS
+Rendering, voice check and mux: the Lemo-Opuscar toolchain (github.com/lemomo-ai/lemo-opuscar, MIT), Playwright / headless Chromium (Apache-2.0), ffmpeg (GPL)
+
+CONTENT
+All patients (Fatima, Ravi) are synthetic demo data, not connected to PHCC or HMC systems.
+Real facility names appear as in the app; no endorsement by PHCC or HMC is implied.

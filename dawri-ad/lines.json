@@ -1,0 +1,72 @@
+[
+ {
+  "id": "a01",
+  "text": "Walking into a health centre? Skip the front desk.",
+  "voice": "en-US-AndrewNeural",
+  "asr": "Walking into a health center? Skip the front desk."
+ },
+ {
+  "id": "a02",
+  "text": "Meet Dawri, the AI front desk for walk-ins.",
+  "voice": "en-US-AndrewNeural",
+  "say": "Meet Dow-ree, the AI front desk for walk-ins.",
+  "asr": "Meet Dowry, the AI front desk for walk-ins."
+ },
+ {
+  "id": "a03",
+  "text": "Step one: tell it what's wrong, in Arabic or English, by text or voice.",
+  "voice": "en-US-AndrewNeural"
+ },
+ {
+  "id": "a04",
+  "text": "It asks a few short questions, one at a time.",
+  "voice": "en-US-AndrewNeural"
+ },
+ {
+  "id": "a05",
+  "text": "Step two: pick a health centre, with estimated waits.",
+  "voice": "en-US-AndrewNeural",
+  "asr": "Step two: pick a health center, with estimated waits."
+ },
+ {
+  "id": "a06",
+  "text": "Step three: when you arrive, tap “I'm here”, and your ticket gets its number.",
+  "voice": "en-US-AndrewNeural",
+  "say": "Step three: when you arrive, tap, I'm here, and your ticket gets its number.",
+  "asr": "Step three: when you arrive, tap I'm here, and your ticket gets its number."
+ },
+ {
+  "id": "a07",
+  "text": "Then follow your turn. The nurse already has your answers, and your allergies.",
+  "voice": "en-US-AndrewNeural"
+ },
+ {
+  "id": "a08",
+  "text": "Doctor. Pharmacy. Done.",
+  "voice": "en-US-AndrewNeural"
+ },
+ {
+  "id": "a09",
+  "text": "And if it sounds like an emergency, Dawri tells you to call 999. No queue.",
+  "voice": "en-US-AndrewNeural",
+  "say": "And if it sounds like an emergency, Dow-ree tells you to call nine nine nine. No queue.",
+  "asr": "And if it sounds like an emergency, Dowry tells you to call 999. No queue."
+ },
+ {
+  "id": "a10",
+  "text": "Dawri.",
+  "voice": "en-US-AndrewNeural",
+  "say": "Dow-ree.",
+  "asr": "Dowry."
+ },
+ {
+  "id": "a11",
+  "text": "Arrive, don't register.",
+  "voice": "en-US-AndrewNeural"
+ },
+ {
+  "id": "a12",
+  "text": "Try the demo today.",
+  "voice": "en-US-AndrewNeural"
+ }
+]

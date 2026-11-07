@@ -1,0 +1,47 @@
+1
+00:00:00,950 --> 00:00:03,968
+Walking into a health centre? Skip the front desk.
+
+2
+00:00:03,988 --> 00:00:07,168
+Meet Dawri, the AI front desk for walk-ins.
+
+3
+00:00:08,568 --> 00:00:13,536
+Step one: tell it what's wrong, in Arabic or English, by text or voice.
+
+4
+00:00:13,556 --> 00:00:16,818
+It asks a few short questions, one at a time.
+
+5
+00:00:16,838 --> 00:00:20,444
+Step two: pick a health centre, with estimated waits.
+
+6
+00:00:20,464 --> 00:00:25,800
+Step three: when you arrive, tap “I'm here”, and your ticket gets its number.
+
+7
+00:00:25,820 --> 00:00:29,909
+Then follow your turn. The nurse already has your answers, and your allergies.
+
+8
+00:00:29,929 --> 00:00:32,194
+Doctor. Pharmacy. Done.
+
+9
+00:00:33,344 --> 00:00:38,088
+And if it sounds like an emergency, Dawri tells you to call 999. No queue.
+
+10
+00:00:39,138 --> 00:00:39,948
+Dawri.
+
+11
+00:00:39,948 --> 00:00:42,023
+Arrive, don't register.
+
+12
+00:00:42,043 --> 00:00:43,643
+Try the demo today.
