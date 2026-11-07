@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
-import { Link, NavLink, useLocation } from 'react-router-dom'
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useI18n } from '../../i18n'
 import { centreName } from '../../lib/format'
 import { cx } from '../../lib/cx'
@@ -183,11 +183,27 @@ function Sheet({ live, onClose }: { live?: LiveMode | null; onClose: () => void 
       {staff !== null && <Nav sheet />}
       <div className="flex flex-wrap items-center gap-2 border-t border-border pt-3">
         <LanguageToggle />
-        {staff !== null && <ResetDemo />}
+        {staff !== null && <ResetDemo onDone={onClose} />}
         {staff !== null && <Logout />}
       </div>
     </div>
   )
+}
+
+/** Router state outlives a reload, so a line is read once and taken out of history. */
+function useCarriedNotice(): string | null {
+  const location = useLocation()
+  const navigate = useNavigate()
+  const carried = (location.state as { staffNotice?: string } | null)?.staffNotice ?? null
+  const [notice, setNotice] = useState(carried)
+
+  useEffect(() => {
+    if (carried === null) return
+    setNotice(carried)
+    navigate(location, { replace: true, state: null })
+  }, [carried, location, navigate])
+
+  return notice
 }
 
 export interface StaffShellProps {
@@ -203,12 +219,11 @@ export interface StaffShellProps {
 export function StaffShell({ title, subtitle, actions, live, children }: StaffShellProps) {
   const { t } = useI18n()
   const { staff } = useStaff()
-  const { state } = useLocation()
+  const notice = useCarriedNotice()
   const narrow = useNarrow()
   const [open, setOpen] = useState(false)
   const menuButton = useRef<HTMLButtonElement>(null)
   const home = staff === null ? '/staff/login' : roleHome(staff.role)
-  const notice = (state as { staffNotice?: string } | null)?.staffNotice
 
   useEffect(() => {
     const root = document.documentElement

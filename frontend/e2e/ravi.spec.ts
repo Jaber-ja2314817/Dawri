@@ -14,6 +14,10 @@ import {
 } from './fixtures'
 
 const SUPPORTIVE = /talk to someone|you are not alone/i
+const REPLY_EN =
+  'This needs urgent care. Please go to the nearest emergency department now, or call 999.'
+const REPLY_AR = 'هذا يحتاج رعاية عاجلة. توجه الآن إلى أقرب قسم طوارئ، أو اتصل على 999.'
+const SUPPORT_AR = 'أنت لست وحدك. كلم أحد الآن، شخص تثق فيه أو الفريق على 999.'
 
 test.beforeEach(async ({ page }) => {
   await login(page, 'P003')
@@ -92,6 +96,35 @@ test('the chat answer alone reaches S06 and 999, even if nothing else can load',
   await expect(page.getByTestId('emergency-nearest')).toContainText('Hamad General Hospital', {
     timeout: 6_000,
   })
+})
+
+test('the reply on S06 follows the language toggle, there and back', async ({ page }) => {
+  await startCheckIn(page, 'en')
+  await agree(page, 'en')
+  await send(page, RAVI_WORDS)
+  await page.waitForURL('**/emergency')
+  const reply = page.getByTestId('emergency-reply')
+  await expect(reply).toHaveText(REPLY_EN)
+
+  await page.getByTestId('language-toggle').click()
+  await expect(page.locator('html')).toHaveAttribute('lang', 'ar')
+  await expect(reply).toHaveText(REPLY_AR)
+  await expect(page.locator('h1')).toHaveText(say('ar', 'emergency.title'))
+
+  await page.getByTestId('language-toggle').click()
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en')
+  await expect(reply).toHaveText(REPLY_EN)
+})
+
+test('the supportive line stays when the language changes on S06', async ({ page }) => {
+  await startCheckIn(page, 'en')
+  await agree(page, 'en')
+  await send(page, 'I want to end my life')
+  await page.waitForURL('**/emergency')
+  await expect(page.getByTestId('emergency-reply')).toHaveText(SUPPORTIVE)
+
+  await page.getByTestId('language-toggle').click()
+  await expect(page.getByTestId('emergency-reply')).toHaveText(`${REPLY_AR} ${SUPPORT_AR}`)
 })
 
 test('a red flag after several normal turns still stops the chat at once', async ({ page }) => {

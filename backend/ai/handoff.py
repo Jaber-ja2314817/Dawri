@@ -7,6 +7,7 @@ recorded' for the rest. The nurse confirms either one in Phase 3.
 
 from __future__ import annotations
 
+import hashlib
 import re
 import sqlite3
 from collections.abc import Sequence
@@ -369,10 +370,17 @@ def draft(
 def _service(conn: sqlite3.Connection, visit: sqlite3.Row, visit_id: str, intake: dict) -> str:
     """The nurse's edit wins. Unedited, the visit's service beats the intake's guess."""
     row = conn.execute("SELECT edited_json FROM intake WHERE visit_id = ?", (visit_id,)).fetchone()
+    if row is None:  # A demo reset removed it after draft_for_visit read the intake.
+        raise HandoffError("no_intake")
     edited = bool(row["edited_json"] and row["edited_json"].strip())
     if edited and intake.get("service"):
         return intake["service"]
     return visit["service"] or intake.get("service") or "other"
+
+
+def draft_id(text: str) -> str:
+    """Names one stored draft, so a nurse can only confirm the draft they read."""
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]
 
 
 def draft_for_visit(

@@ -139,6 +139,9 @@ export interface NearestEd extends Centre {
 
 export interface EmergencyCard {
   reply: string
+  /** The fixed text in each language, so the reply follows the toggle. */
+  reply_en?: string
+  reply_ar?: string
   self_harm: boolean
   nearest_ed: NearestEd
 }

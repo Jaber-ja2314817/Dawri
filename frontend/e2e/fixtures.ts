@@ -16,7 +16,7 @@ export type { BrowserContext, Page, Route }
 export * from '../scripts/lib/demo-api.mjs'
 
 const ROOT = process.env.DAWRI_E2E_ROOT as string
-const DB = process.env.DAWRI_E2E_DB as string
+const CONTAINER = process.env.DAWRI_E2E_CONTAINER
 
 /* The app's own strings. Mandated wording is spelled out in the specs instead. */
 function dictionary(lang: 'ar' | 'en'): Record<string, string> {
@@ -57,11 +57,17 @@ export function sql(statement: string, ...params: string[]): unknown[][] {
     'conn.commit()',
     'print(json.dumps(rows))',
   ].join('\n')
-  const output = execFileSync(
-    join(ROOT, '.venv/bin/python'),
-    ['-c', script, DB, statement, ...params],
-    { encoding: 'utf8' },
-  )
+  const db = base.info().project.metadata.db as string
+  const output =
+    CONTAINER === undefined
+      ? execFileSync(join(ROOT, '.venv/bin/python'), ['-c', script, db, statement, ...params], {
+          encoding: 'utf8',
+        })
+      : execFileSync(
+          'docker',
+          ['exec', CONTAINER, 'python', '-c', script, db, statement, ...params],
+          { encoding: 'utf8' },
+        )
   return JSON.parse(output)
 }
 
@@ -188,6 +194,88 @@ export async function expectNotReloaded(page: Page) {
   expect(mark).toBe(true)
 }
 
+/** Page errors, console errors and any refused /api/ call, in one list a test can assert empty. */
+export function watchForFaults(faults: string[], ...pages: Page[]) {
+  for (const page of pages) {
+    page.on('pageerror', (error) => faults.push(`page error on ${page.url()}: ${error.message}`))
+    page.on('console', (message) => {
+      if (message.type() === 'error') faults.push(`console on ${page.url()}: ${message.text()}`)
+    })
+    page.on('response', (response) => {
+      const path = new URL(response.url()).pathname
+      if (path.startsWith('/api/') && response.status() >= 400) {
+        faults.push(`${response.request().method()} ${path} gave ${response.status()}`)
+      }
+    })
+  }
+}
+
+/** Whole-document loads from now on. Moving between screens in the app is not one. */
+export function documentLoads(page: Page): () => number {
+  let loads = 0
+  page.on('request', (request) => {
+    if (request.isNavigationRequest() && request.frame() === page.mainFrame()) loads += 1
+  })
+  return () => loads
+}
+
+export const queueRow = (page: Page, number: string) =>
+  page.locator(`[data-testid=queue-row][data-number="${number}"]`)
+
+export const queueNumbers = (page: Page) =>
+  page
+    .getByTestId('queue-row')
+    .evaluateAll((rows) => rows.map((row) => row.getAttribute('data-number')))
+
+export async function liveConsole(page: Page) {
+  await expect(page.getByTestId('live-state')).toHaveAttribute('data-live', 'live')
+}
+
+export async function fillVitals(page: Page) {
+  await page.getByTestId('vital-bp_sys').fill('118')
+  await page.getByTestId('vital-bp_dia').fill('76')
+  await page.getByTestId('vital-hr').fill('88')
+  await page.getByTestId('vital-temp_c').fill('38.2')
+  await page.getByTestId('vital-spo2').fill('98')
+  await page.getByTestId('vital-weight_kg').fill('62')
+}
+
+/** T03 to T04: vitals, the nurse's own urgency, and the draft on screen. */
+export async function vitalsToDraft(page: Page, visitId: string) {
+  await fillVitals(page)
+  await page.getByTestId('urgency-routine').check()
+  await page.getByTestId('vitals-submit').click()
+  await page.waitForURL(`**/staff/nurse/${visitId}/handoff`)
+  await expect(page.getByTestId('handoff-text')).toBeVisible()
+}
+
+/*
+ * getUserMedia hangs under automation on this machine even with Chrome's fake device, so the
+ * microphone alone is replaced: an oscillator through a real MediaStream. MediaRecorder,
+ * decodeAudioData, the resample and the WAV encoder are the app's own and all run for real.
+ */
+export async function fakeMicrophone(page: Page) {
+  await page.addInitScript(() => {
+    navigator.mediaDevices.getUserMedia = async () => {
+      const audio = new AudioContext()
+      const oscillator = audio.createOscillator()
+      const destination = audio.createMediaStreamDestination()
+      oscillator.frequency.value = 220
+      oscillator.connect(destination)
+      oscillator.start()
+      await audio.resume()
+      return destination.stream
+    }
+  })
+}
+
+export async function recordVoice(page: Page) {
+  await page.getByTestId('chat-mic').click()
+  await expect(page.getByTestId('voice-stop')).toBeVisible()
+  await page.waitForTimeout(1_100)
+  await page.getByTestId('voice-stop').click()
+}
+
 /** A separate browser profile per call: its own storage, and its own six connections. */
 export interface Windows {
   context: (viewport?: ViewportSize) => Promise<BrowserContext>
@@ -199,14 +287,14 @@ export const PHONE_SIZE: ViewportSize = { width: 390, height: 844 }
 export const DESK_SIZE: ViewportSize = { width: 1440, height: 900 }
 
 export const test = base.extend<{ api: DemoApi; freshDemo: void; windows: Windows }>({
-  api: async ({}, use) => {
-    await use(new DemoApi(process.env.DAWRI_E2E_BASE as string))
+  api: async ({ baseURL }, use) => {
+    await use(new DemoApi(baseURL as string))
   },
-  windows: async ({ browser }, use) => {
+  windows: async ({ browser, baseURL }, use) => {
     const opened: BrowserContext[] = []
     const context: Windows['context'] = async (viewport = DESK_SIZE) => {
       const made = await browser.newContext({
-        baseURL: process.env.DAWRI_E2E_BASE,
+        baseURL,
         viewport,
         locale: 'en-GB',
         timezoneId: 'Asia/Qatar',

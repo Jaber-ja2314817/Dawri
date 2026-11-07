@@ -25,7 +25,10 @@ export function PatientBanner({ number, patient, arrivedAt, waitingMin }: Patien
   return (
     <Card data-testid="patient-banner" className="flex flex-col gap-2">
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <span data-testid="banner-number" className="text-xl font-semibold text-data">
+        <span
+          data-testid="banner-number"
+          className={number === null ? 'text-base text-muted' : 'text-xl font-semibold text-data'}
+        >
           <Ltr>{number ?? DASH}</Ltr>
         </span>
         <span className="min-w-0 text-base font-semibold">

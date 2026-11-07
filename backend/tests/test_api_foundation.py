@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+from datetime import UTC, datetime
 
 import pytest
 from fastapi import Depends
@@ -22,6 +23,7 @@ from backend.ai.handoff import HandoffError
 from backend.ai.session import SessionError
 from backend.deps import ApiError
 from backend.main import app
+from backend.queue_engine import SqliteQueueEngine
 from backend.simulate import SIMULATED_TICKETS
 from backend.tests import api_helpers
 from backend.tests.api_helpers import (
@@ -436,6 +438,53 @@ def test_a_same_day_restart_keeps_everything(api_env):
     assert _count(conn, "visit") == 1
     assert conn.execute("SELECT id FROM visit").fetchone()["id"] == visit_id
     assert auth.lookup_session(conn, token) is not None
+    conn.close()
+
+
+NOON_NOV_6 = datetime(2026, 11, 6, 9, 0, tzinfo=UTC)  # 12:00 in Doha
+LATE_NOV_6 = datetime(2026, 11, 6, 20, 30, tzinfo=UTC)  # 23:30 in Doha
+EARLY_NOV_7 = datetime(2026, 11, 6, 21, 30, tzinfo=UTC)  # 00:30 the next Doha day
+
+
+def _clock_at(monkeypatch, moment):
+    monkeypatch.setattr(timeutil, "utcnow", lambda: moment)
+
+
+def test_a_restart_past_midnight_resets_once_the_new_day_has_a_row(api_env, monkeypatch):
+    _clock_at(monkeypatch, NOON_NOV_6)
+    bootstrap.startup()
+    conn = db.connect()
+    engine = SqliteQueueEngine(clock=lambda: EARLY_NOV_7)
+    ticket = engine.issue_ticket(make_visit(conn, "P001"), T1)
+    engine.activate(ticket.id)  # Only here does a new day take a row in number_sequence.
+    days = {row["day"] for row in conn.execute("SELECT day FROM number_sequence")}
+    assert days == {"2026-11-06", "2026-11-07"}
+
+    _clock_at(monkeypatch, EARLY_NOV_7)
+    bootstrap.startup()
+
+    days = {row["day"] for row in conn.execute("SELECT day FROM number_sequence")}
+    assert days == {"2026-11-07"}
+    assert _count(conn, "visit") == 0
+    conn.close()
+
+
+def test_a_same_day_restart_at_a_later_hour_keeps_everything(api_env, monkeypatch):
+    _clock_at(monkeypatch, NOON_NOV_6)
+    bootstrap.startup()
+    conn = db.connect()
+    engine = SqliteQueueEngine(clock=lambda: NOON_NOV_6)
+    ticket = engine.issue_ticket(make_visit(conn, "P001"), T1)
+    engine.activate(ticket.id)
+    tickets = _count(conn, "ticket")
+
+    _clock_at(monkeypatch, LATE_NOV_6)
+    bootstrap.startup()
+
+    assert _count(conn, "visit") == 1
+    assert _count(conn, "ticket") == tickets
+    days = {row["day"] for row in conn.execute("SELECT day FROM number_sequence")}
+    assert days == {"2026-11-06"}
     conn.close()
 
 

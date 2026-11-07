@@ -57,6 +57,8 @@ def _load_state(conn: sqlite3.Connection, visit_id: str, patient: dict) -> dict:
 def _store_state(
     conn: sqlite3.Connection, visit_id: str, state: dict, intake_json: dict | None = None
 ) -> None:
+    """Always in the caller's transaction, so a demo reset cannot land after this check."""
+    _visit(conn, visit_id)
     conn.execute(
         "INSERT INTO intake (visit_id, json, transcript) VALUES (?, '{}', ?) "
         "ON CONFLICT(visit_id) DO UPDATE SET transcript = excluded.transcript",

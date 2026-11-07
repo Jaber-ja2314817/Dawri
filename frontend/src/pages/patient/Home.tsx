@@ -12,6 +12,7 @@ import {
   Pill,
   Skeleton,
   Title,
+  type PillTone,
 } from '../../components/ui'
 import { useI18n } from '../../i18n'
 import { recordTerm } from '../../i18n/record'
@@ -22,8 +23,21 @@ import { useVisitList } from '../../state/useVisitList'
 
 const FLAGGED_ALLERGY = 'penicillin'
 
+const dohaDay = (when: string | number) =>
+  new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Qatar' }).format(new Date(when))
+
+/** The same day the server refuses a new check-in, so an old emergency does not stay open. */
+function isEmergencyToday(row: VisitRow): boolean {
+  return row.status === 'redirected_emergency' && dohaDay(row.created_at) === dohaDay(Date.now())
+}
+
 function isOpen(row: VisitRow): boolean {
-  return row.active || row.status === 'intake' || row.status === 'expired'
+  return row.active || row.status === 'intake' || row.status === 'expired' || isEmergencyToday(row)
+}
+
+function toneOf(row: VisitRow): PillTone {
+  if (row.status === 'redirected_emergency') return 'negative'
+  return row.status === 'expired' ? 'warning' : 'neutral'
 }
 
 function OpenVisit({ row, me }: { row: VisitRow; me: Me }) {
@@ -43,9 +57,7 @@ function OpenVisit({ row, me }: { row: VisitRow; me: Me }) {
             <span className="block text-sm text-muted">{centreName(row.centre, lang)}</span>
           )}
         </span>
-        <Pill tone={row.status === 'expired' ? 'warning' : 'neutral'}>
-          {t(`status.${row.status}`)}
-        </Pill>
+        <Pill tone={toneOf(row)}>{t(`status.${row.status}`)}</Pill>
         <ChevronIcon className="text-muted" />
       </Link>
     </Card>

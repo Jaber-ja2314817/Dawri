@@ -8,13 +8,15 @@ async function countGeolocationCalls(page: Page) {
   await page.addInitScript(() => {
     const counted = window as unknown as { __geoCalls: number }
     counted.__geoCalls = 0
-    for (const name of ['getCurrentPosition', 'watchPosition'] as const) {
-      const real = navigator.geolocation[name].bind(navigator.geolocation)
-      navigator.geolocation[name] = ((...args: Parameters<typeof real>) => {
+    const geolocation = navigator.geolocation
+    const counting =
+      <Args extends unknown[], Result>(real: (...args: Args) => Result) =>
+      (...args: Args) => {
         counted.__geoCalls += 1
-        return real(...args)
-      }) as typeof navigator.geolocation.getCurrentPosition
-    }
+        return real.apply(geolocation, args)
+      }
+    geolocation.getCurrentPosition = counting(geolocation.getCurrentPosition)
+    geolocation.watchPosition = counting(geolocation.watchPosition)
   })
 }
 

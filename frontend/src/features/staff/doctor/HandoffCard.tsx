@@ -81,6 +81,7 @@ function UrgencyPill({ urgency }: { urgency: Urgency | null }) {
 export function HandoffCard({ visit }: { visit: StaffVisit }) {
   const { t } = useI18n()
   const complaint = visit.intake?.chief_complaint
+  const summary = visit.intake?.summary_for_nurse
   return (
     <Card className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
@@ -91,6 +92,12 @@ export function HandoffCard({ visit }: { visit: StaffVisit }) {
         <Label>{t('doctor.handoff.complaint')}</Label>
         <p data-testid="handoff-complaint" className="text-base">
           {complaint ? <bdi>{complaint}</bdi> : <span className="text-muted">{DASH}</span>}
+        </p>
+      </div>
+      <div className="flex flex-col gap-1">
+        <Label>{t('doctor.handoff.summary')}</Label>
+        <p data-testid="handoff-summary" dir="auto" className="text-start text-base whitespace-pre-wrap">
+          {summary ? <bdi>{summary}</bdi> : <span className="text-muted">{DASH}</span>}
         </p>
       </div>
       <div className="flex flex-col gap-1">

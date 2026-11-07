@@ -7,7 +7,7 @@ export const MAX_TEXT = 2000
 /** Mirrors the backend's NOT_A_QUESTION: the stored slot of a turn that asked nothing. */
 export const SUMMARY_SLOT = 'summary'
 
-/** endpoints.sendChat takes no signal, and the 45 s limit has to end the request. */
+/** Carries a signal, because the 45 s limit has to end the request. */
 export const postTurn = (id: string, text: string, signal: AbortSignal) =>
   api<ChatResponse>(
     'POST',

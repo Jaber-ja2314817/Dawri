@@ -62,6 +62,7 @@ function Visit({ visitId }: { visitId: string }) {
   const live = useStaffVisit(visitId)
   const actions = useCounterActions(counters[0]?.id ?? '', live.refetch)
   const [escalated, setEscalated] = useState(false)
+  const [unsavedEdit, setUnsavedEdit] = useState(false)
   const handled = (routed as { autoCompleted?: string[] } | null)?.autoCompleted ?? []
   const visit = live.data
   const back = <QuietLink to={QUEUE_PATH} testId="back-to-queue">{t('nurse.visit.back')}</QuietLink>
@@ -126,7 +127,13 @@ function Visit({ visitId }: { visitId: string }) {
       </div>
       {actions.error !== null && <ErrorBlock message={errorText(actions.error, t, lang)} />}
       <div className={BLOCKS}>
-        <IntakeCard visitId={visitId} visit={visit} editable={inTriage} refetch={live.refetch} />
+        <IntakeCard
+          visitId={visitId}
+          visit={visit}
+          editable={inTriage}
+          refetch={live.refetch}
+          onUnsaved={setUnsavedEdit}
+        />
         <PatientWords turns={visit.turns} />
         {emergency ? (
           <EmergencyResult />
@@ -135,6 +142,7 @@ function Visit({ visitId }: { visitId: string }) {
             key={visitId}
             visitId={visitId}
             visit={visit}
+            unsavedEdit={unsavedEdit}
             onEscalated={() => {
               setEscalated(true)
               void live.refetch()

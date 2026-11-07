@@ -108,7 +108,7 @@ export function DisplayScreen({ centre }: { centre: Centre }) {
         </span>
         <span className="flex-1" />
         <Clock />
-        <AiMode />
+        <AiMode both />
         <Link
           to="/staff/dashboard"
           data-testid="display-dashboard"

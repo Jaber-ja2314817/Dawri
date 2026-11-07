@@ -359,3 +359,99 @@ F08, F09, F10, F16, F20 and F21. F09 is ticked on the scripted path and a stand-
 - `field-sizing` on the T04 textarea was tested in Chrome only. Older Safari falls back to 8 rows with scrolling.
 - `frontend/e2e` and `frontend/scripts` are still not typechecked (Phase 4 gap).
 - The other Phase 3 and 4 gaps stand, including the ones marked before the demo: press Reset before going on stage, and a server left running past midnight does not reset. The live HF paths are untested, and the README must say so.
+
+## Phase 6: Integration and ship-ready (approved in review round 4 of 4, 7 Nov 2026)
+
+### Plan
+Close the build in two waves: fix the logged Phase 4 and 5 defects and write the container, then prove the whole app end to end. Headless Chrome against the production build served by FastAPI, in Arabic and English, through Fatima, Ahmed and Ravi, with patient and staff in separate browser contexts. A timed run of the [[Demo Script]]. A multi-stage image that runs as uid 1000 on 7860. `.env.example`. A README that is both the Space card and the setup guide. Nothing pushed, deployed or tagged for a registry.
+
+### What was built
+- Fixes for 18 of the logged gaps across the backend, nurse screens and patient screens, including the Yes gate at the summary, Arabic allergen and flag labels, the intake edit event, the stale-day check on restart, the draft id, the T03 scripted labels and the S06 reply following the toggle.
+- `Dockerfile`, `.dockerignore`, `requirements-dev.txt`, `frontend/scripts/docker-check.sh`, `frontend/scripts/e2e-container.sh`, `backend/tests/standin_server.py`, `test_ship_files.py`.
+- `frontend/e2e`: `acceptance`, `journeys`, `demo-timed` and `real-mode` specs, 23 spec files and 178 tests in all.
+- `README.md` and a commented `.env.example`.
+
+Round history. Round 1: the reset race, T03 labels in real mode, and README facts. Round 2: the reset race not fully closed, and pytest depending on the time of day. Round 3: two spec defects, `voice.spec` stopping a recording too early and a race in `shell.spec` `walk()`. Round 4 reviewed the two-line fixes for those and reran everything.
+
+### Verdict
+Approved in round 4. Every acceptance check passed on the orchestrator's own runs, with two disclosures, because the owner's own work overtook them during the review:
+
+1. **`hf` is on the PATH.** The check as written no longer holds. The owner ran the installer from their own prompt at 03:34 Doha, which the session transcript shows. No build agent ran it: I searched the tool calls of the agents that mention it. What the check protects still holds, since the build did no Hugging Face work.
+2. **The README has two status lines that are now out of date.** See "For the owner to read" below.
+
+### Acceptance tests of [[01 Enhanced Prompt]]
+
+| Test | Result | Evidence |
+|---|---|---|
+| A1 Arabic voice | Pass, on the stand-in server | عندي حرارة وكحة من ثلاث أيام: GP intake, T-014, 0 `ai.fallback` rows. Whisper and the microphone are stand-ins. The live model has not been tried on this path |
+| A2 chest pain | Pass | S06, `tel:999`, Hamad General Hospital, 0 ticket rows |
+| A3 refill | Pass | Refill route, 0 ticket rows, status `deflected_refill` |
+| A4 reserved until arrival | Pass | Reserved with no number or seq, a walk-in took T-014, activation gave T-015 at the end, 4 ahead |
+| A5 nurse edit | Pass | The T03 and T04 edits show on the doctor's T05, and the original summary does not |
+| A6 two browsers | Pass | No reload. To the table 40 to 50 ms, called 30 to 39, D ticket 48 to 64, P ticket 54 to 55, complete 32 to 53. Limits 1500 and 2000 |
+
+### Evidence
+- BUILD: `rm -rf node_modules`, `npm ci`, `typecheck`, `typecheck:e2e`, `test` (572 passed, 31 files), `build`: all exit 0. The package diff from `dd4fc93` is the 2 scripts, the `@types/node` 22.19.1 pin, and that pin's `undici-types` lock entry.
+- BACKEND: `.venv` Python 3.14 twice: 10730 passed, 0 skipped. Fresh Python 3.12.15 venv from `requirements-dev.txt`: pip exit 0, 3 runs of 10730, 0 skipped, the third beside `npm run e2e`. `compileall` exit 0 on both.
+- E2E: `npm run e2e` 3 in a row: 178 passed each, 0 failed, 0 skipped, 0 retries, exit 0, 23 of 23 spec files, 7.8 to 7.9 min, channel chrome, headless, `frontend/dist` on uvicorn. The grep for `.skip`, `.only` and `fixme` prints nothing. I read the acceptance, journeys, demo-timed and real-mode bodies: steps go through the UI and the assertions can fail.
+- Round 3 failures re-verified, both closed, each with a control. Voice: 30 of 30 with the hold, and removing the hold failed 1 of 4. `walk()`: a sweep of `/api/me` delays 0 to 44 ms passed 135 of 135, and removing the fix failed 27 of 45 with the reported signature.
+- JOURNEYS: `journeys.spec` passed all six in every run. My own two-context script on a temp DB: Fatima in Arabic and in English reached T-014, D-GP-023, P-031 and S11 with medicines in the screen's language, dir and lang right, no reload, 0 page errors, 0 failed `/api/` responses, updates in 31 to 109 ms.
+- TIMED RUN: at the assumed pace table, real time. Budgets Fatima 90, Ahmed 25, Ravi 25, whole 180. This is no human rehearsal.
+
+| Run | Fatima | Ahmed | Ravi | Total |
+|---|---|---|---|---|
+| 1 | 78.10 | 15.01 | 15.00 | 148.33 |
+| 2 | 78.03 | 15.00 | 15.01 | 148.28 |
+| 3 | 78.04 | 15.00 | 15.00 | 148.33 |
+| Container | 78.10 | 15.00 | 15.00 | 148.36 |
+
+- DOCKER: `docker build --no-cache -t dawri:local .` exit 0, node 22.23.4 and python 3.12.16, 313 MB, arm64, user 1000. `docker-check.sh` 9 of 9 PASS, stop 3406 ms with a stream open. This build had the real `.env` in the context. My scan of 7114 files in the image found no `.env` and 0 matches for the real token by hash. The 53 token-shaped strings are Rust symbol names in `hf_xet`.
+- AMD64: `--no-cache` build exit 0, 288 MB. `docker-check.sh` 9 of 9 PASS under emulation, stop 3352 ms.
+- CONTAINER E2E: read-only, uid 1000, `dawri:local` on 127.0.0.1:7860: 175 passed, 0 skipped, exit 0, 22 specs. `real-mode.spec` is not run, because the stand-in server is deliberately not in the image. Accepted.
+- SWITCH-ON: `--network none` and a dummy token: `ai_mode` real, chat fell back in 0.02 s against a 15 s limit, 1 `ai.fallback` row, `/api/asr` 502 with no transcript.
+- FIXES: I located a guard test or spec for every item, and no `frontend/src` or `backend` file changed since round 3. Browser, my own run: T05 Arabic shows البنسلين outside the nurse-signed card, Arabic flag pills, second nurse tab in 48 and 61 ms, S06 follows the toggle, S08 Yes disabled with text and enabled when empty, S07 Arabic medicine, T06 row warning, T08 both languages, no "AI summary" on simulated T03.
+- MUTATIONS: 10 of 10 killed on green controls. Yes gate: `safety.spec:179`. Red flag off: A2, no move to S06. Number at reserve: A4, stopped first by the database's own CHECK constraint, so that guarantee has two layers. Doctor shown the original: A5. Stream ignored: A6. Intake event removed: `staff-nurse.spec:352`. Stale check reverted: `test_a_restart_past_midnight_resets_once_the_new_day_has_a_row`. Arabic allergen reverted: 4 tests. T03 label: `staff-nurse.spec:332`. USER line removed: `test_dockerfile_runs_as_uid_1000_on_port_7860`, and docker-check FAIL 1 at `pid1_uid=0`.
+- README: `test_ship_files` passes, 57 tests. I read it whole: valid card, setup, env table, simulated and real, untested paths, microphone, iOS Safari, proxy and SSE, unreviewed red flags and regimens, both design exceptions, numbered Hugging Face steps, demo-day checklist. No banned claim. The timed line reads 148 s, which matches.
+- `.env.example`: keys equal the 9 in `config.py`, `HF_TOKEN` blank, one comment per key.
+- DESIGN: `npm run inspect` exit 0, 68 screens, 0 FAIL, 95 WARN. `kpi-size` only on S10 and T08, `colour-sprawl` only on S06, from `report.json`. Lint 0 FAIL, 3 WARN, exit 0. I read T03, T05, T06, S05, S11 from my own run. Greps clean: the only hits are `onBlur` and the CSS `::backdrop` selector. `#1d5fbf` is only the data token. 0 emoji. All 7 dictionary pairs have identical keys.
+- RED LINES: no "place held" or no-show in user-facing strings, the only hits being API paths and internal names. Footer and AI mode specs pass. Synthetic data only. The only images are the app's own icons.
+- SAFETY AND SCOPE: no token in any tracked or changed file. `main` equals `origin/main` at a2ac73a, also by `git ls-remote`. Only the GitHub remote. Local tags `dawri:local` and `dawri:amd64` only, no push, no prune, no deploy by the build. maghselty containers have the same StartedAt and restart counts. 0 dawri containers, my ports free, nothing staged, `.obsidian` unstaged, no `.env`, DB, `node_modules`, `dist` or `.dist-*` in git status.
+
+### Open issues from the builder reports
+Closed:
+- P6-R3-T1, the record language on the session restore path has no test. I tried it in the browser: Ravi restores in English, Fatima in Arabic, and a tapped language survives a reload. It works, so only the missing test remains, listed below.
+
+### Features ticked
+None added this phase, and F01 to F24 are unchanged. **F12 stays unticked: nothing has been deployed to a Hugging Face Space, because the build was told not to.** F22 and F23 stay dropped.
+
+### What is left for Hugging Face
+The README's numbered steps stand. Before following them, three things have changed since they were written:
+1. A token now exists, in the gitignored `.env`.
+2. The main session's live test on 7 Nov, run at the owner's request, found the default model failing on its provider (Fanar 9B on featherless, 0 of 4). The plan recorded at 04:05 Doha is to change the default after the build. This review changed nothing there, and did not test any other model.
+3. Then create the Space, add the secret, upload with the README's command, and check `ai_mode` is real, one Arabic chat turn, and one voice clip on a real phone. Only after that can F12 be ticked.
+
+### Known gaps
+**For the owner to read:**
+- `README.md` says "No token exists yet" and "None of these steps has been run", and says the live paths "have never run against the real API". The owner's work tonight overtook these: a token exists and model calls were tried from side scripts. The app's own routes have still not run live, so the README understates and does not overclaim. Correct both lines at switch-on, along with the model names if the default changes.
+- [[Build Decisions]] also still says no token exists on this machine. It is left unedited.
+- `load_dotenv()` runs at startup, so on this laptop a plain `.venv/bin/uvicorn backend.main:app` now runs in **real** mode and spends credits. To run simulated, start it with `HF_TOKEN=` set blank. The tests already force this: Playwright sets it blank and the pytest conftest patches `load_dotenv` out.
+- A copy of the real token sits in `scratchpad/r3t1/copy/.env`, because a builder's scratch copy took the whole tree after the token landed. It is in this session's private temp folder, it was never used, and nothing else has it. The owner should delete that folder.
+- A simulated preview server for the owner runs on port 8500 from the main session, with its own DB and a copy of `dist`. It is not part of this review and was left running.
+- A Chrome Quit event reached the test browser through the Dock once in round 3. If Chrome shows in the Dock during a test run, do not quit it.
+
+**Before the demo:** press Reset. The timed run rests on an assumed pace and typed words, and no person has rehearsed it. Nobody has checked the Arabic or the red-flag list.
+
+**Unverified:** a real microphone, iOS Safari, live Whisper, the live chat model through the app, the HF proxy and SSE through it, the Spaces builder, and `hf upload` as a live run. The browser suite did not run on the amd64 image, though docker-check did.
+
+**Clinician review:** the red-flag list and drug default regimens are unreviewed. New synonyms belong in that review.
+
+**Tests and code:**
+- No test guards the record language on the session restore path, `session.tsx` line 60. It works in my run. If that line broke, the suite would stay green.
+- Under the conftest shift every pytest run executes at 12:00 Doha by design, so midnight is covered only by tests that pin their own clock. Playwright and docker runs use the real clock, so a run crossing Doha midnight can fail. The README states the limit.
+- `conftest.py` pins two private `huggingface_hub` names, valid for 2.4.0. An upgrade that renames them fails loudly.
+- The Dockerfile comment says Node 20.19, while the correct floor is 22.22.2, as the README says. The image uses 22.23.4.
+- `race/inject.py` still shows 8 `database is locked` results from resetting on the route's own thread, ruled a harness artefact in round 3. A reset between `_service` and the draft's stale check answers 409 `draft_stale` rather than 404, and can leave a `handoff.drafted` row until the next reset.
+- A patient who taps Stop within about 100 ms is told the recording could not be read, not that it was too short. Nothing is uploaded, and no transcript is invented.
+- Why `voice.spec` passed until 01:10 on 7 Nov and failed after is not established. The hold does not depend on the cause.
+- Round 2's gaps stand: `emergency_today` ends at Doha midnight, a same-container restart keeps data only on the same day, `httpx2` arrives only through `huggingface_hub`, leaving T03 by navigation drops an unsaved edit, no auto-move to S06 after a full reload mid-turn, a hidden or polling staff tab keeps "Handled by a colleague" until its next Call next, `api/stream.ts` duplicates `openStream`, T05 always says "Summary from triage", Yes stays disabled while voice is starting, and the scripted-assistant note in real mode lasts for the page.
+- The nurse-signed card on T05 stays in English on an Arabic console, by design from round 1. T06's dose line (`500 mg · three times daily`) is also English on an Arabic console, as seen in my run. That one was not a stated decision, and the Arabic sentence sits directly under it.

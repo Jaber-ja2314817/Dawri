@@ -74,3 +74,9 @@ export function intakeChanges(before: IntakeForm, after: IntakeForm): IntakeChan
   }
   return fields
 }
+
+/** An invalid severity counts: the nurse typed something a save has yet to deal with. */
+export function hasUnsavedEdit(before: IntakeForm, after: IntakeForm): boolean {
+  const changes = intakeChanges(before, after)
+  return changes === undefined || Object.keys(changes).length > 0
+}

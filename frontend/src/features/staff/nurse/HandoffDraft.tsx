@@ -108,11 +108,11 @@ export function HandoffDraftForm({ visitId, onConfirmed }: HandoffDraftFormProps
   }, [write])
 
   const send = async () => {
-    if (doctorId === null || sending) return
+    if (draft === null || doctorId === null || sending) return
     setSending(true)
     setFailed(null)
     try {
-      onConfirmed(await confirmHandoff(visitId, text, doctorId))
+      onConfirmed(await confirmHandoff(visitId, text, doctorId, draft.draft_id))
     } catch (cause) {
       if (isStale(cause)) {
         // Never a silent send: the nurse reads the new draft and confirms again.

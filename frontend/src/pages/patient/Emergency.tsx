@@ -39,6 +39,7 @@ function NearestDepartment({ place }: { place: NearestEd }) {
 function EmergencyScreen({ visit, refetch }: { visit: Visit; refetch: () => Promise<void> }) {
   const { t, lang } = useI18n()
   const card = visit.emergency
+  const reply = (lang === 'ar' ? card?.reply_ar : card?.reply_en) ?? card?.reply
   const [route, setRoute] = useState<OverrideResponse | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<unknown>(null)
@@ -73,7 +74,7 @@ function EmergencyScreen({ visit, refetch }: { visit: Visit; refetch: () => Prom
           card?.self_harm ? 'text-xl font-medium' : 'text-base',
         )}
       >
-        {card?.reply ?? t('emergency.title')}
+        {reply ?? t('emergency.title')}
       </p>
       <EmergencyCall />
       {card?.nearest_ed && <NearestDepartment place={card.nearest_ed} />}

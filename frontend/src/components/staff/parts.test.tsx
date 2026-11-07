@@ -190,6 +190,25 @@ describe('PatientBanner', () => {
     expect(banner.textContent).toContain('6')
   })
 
+  it('shows the number in the data hue', () => {
+    show(
+      <PatientBanner number="T-014" patient={patient} arrivedAt={null} waitingMin={null} />,
+    )
+    const number = screen.getByTestId('banner-number')
+    expect(number.className).toContain('text-data')
+    expect(number.className).toContain('text-xl')
+  })
+
+  it('keeps a missing number a quiet dash at body size, with no hue', () => {
+    show(<PatientBanner number={null} patient={patient} arrivedAt={null} waitingMin={null} />)
+    const number = screen.getByTestId('banner-number')
+    expect(number.textContent).toBe('—')
+    expect(number.className).toContain('text-base')
+    expect(number.className).toContain('text-muted')
+    expect(number.className).not.toContain('text-data')
+    expect(number.className).not.toContain('text-xl')
+  })
+
   it('says no allergies are on record, in a neutral pill', () => {
     show(
       <PatientBanner
@@ -231,5 +250,36 @@ describe('AiMode', () => {
     const pill = screen.getByTestId('ai-mode')
     expect(pill.dataset.mode).toBe(data)
     expect(pill.textContent).toBe(text)
+  })
+
+  it('follows the viewer unless told otherwise', () => {
+    localStorage.setItem('dawri.lang', 'ar')
+    health.aiMode = 'simulated'
+    show(<AiMode />)
+    expect(screen.getByTestId('ai-mode').textContent).toBe('الذكاء الاصطناعي: محاكاة')
+  })
+
+  it.each([
+    ['en', 'simulated', 'AI: simulated / الذكاء الاصطناعي: محاكاة'],
+    ['ar', 'simulated', 'AI: simulated / الذكاء الاصطناعي: محاكاة'],
+  ] as const)('shows both languages for a %s viewer when asked', (viewer, mode, text) => {
+    localStorage.setItem('dawri.lang', viewer)
+    health.aiMode = mode
+    show(<AiMode both />)
+    const pill = screen.getByTestId('ai-mode')
+    expect(pill.dataset.mode).toBe(mode)
+    expect(pill.textContent).toBe(text)
+  })
+
+  it.each([
+    ['real', 'real'],
+    [null, 'unknown'],
+  ] as const)('keeps both languages and data-mode while %s', (mode, data) => {
+    health.aiMode = mode
+    show(<AiMode both />)
+    const pill = screen.getByTestId('ai-mode')
+    expect(pill.dataset.mode).toBe(data)
+    expect(pill.querySelector('[lang=en]')?.textContent).toMatch(/^AI: /)
+    expect(pill.querySelector('[lang=ar]')?.textContent).toMatch(/^الذكاء الاصطناعي/)
   })
 })

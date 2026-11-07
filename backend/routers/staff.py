@@ -14,7 +14,7 @@ from typing import Annotated, Any, Literal
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field, StringConstraints, field_validator
 
-from backend import db, mock_health, timeutil, visit_flow
+from backend import db, events, mock_health, timeutil, visit_flow
 from backend.adapters.queue_base import Ticket, TicketNotFound
 from backend.ai import audit, handoff, intake, medicines, redflags, session
 from backend.ai.audit import AiEvent
@@ -26,6 +26,7 @@ from backend.deps import (
     get_ai,
     get_conn,
     get_engine,
+    load_visit,
     own_counter,
     require_role,
     staff_member,
@@ -64,6 +65,7 @@ class HandoffConfirm(BaseModel):
         str, StringConstraints(strip_whitespace=True, min_length=1, max_length=4000)
     ]
     doctor_id: str
+    draft_id: str | None = None
 
 
 class PrescriptionLine(BaseModel):
@@ -95,7 +97,7 @@ class WalkIn(BaseModel):
 
 
 def _visit_status(conn: sqlite3.Connection, visit_id: str) -> str:
-    return conn.execute("SELECT status FROM visit WHERE id = ?", (visit_id,)).fetchone()["status"]
+    return load_visit(conn, visit_id)["status"]
 
 
 def _require_triage(conn: sqlite3.Connection, visit_id: str) -> None:
@@ -197,13 +199,16 @@ def _waiting_min(row: dict, now: datetime) -> int:
     return max(int(waited.total_seconds() // 60), 0)
 
 
-def _queue_row(conn: sqlite3.Connection, row: dict, now: datetime) -> dict:
+def _queue_row(conn: sqlite3.Connection, row: dict, now: datetime) -> dict | None:
+    """None for a row a demo reset removed after the snapshot: the counter itself is fine."""
     shown = {**row, "waiting_min": _waiting_min(row, now)}
     if row["simulated"]:
         return shown
     visit = conn.execute(
         "SELECT patient_id FROM visit WHERE id = ?", (row["visit_id"],)
     ).fetchone()
+    if visit is None:
+        return None
     patient = _patient_or_404(conn, visit["patient_id"])
     effective = intake.load_effective(conn, row["visit_id"]) or {}
     return {
@@ -229,7 +234,7 @@ def counter_queue(
     return {
         "counter": {key: counter[key] for key in ("id", "label", "label_ar", "stage", "prefix")},
         "wait": engine.counter_wait(counter["id"]),
-        "tickets": [_queue_row(conn, row, now) for row in rows],
+        "tickets": [shown for row in rows if (shown := _queue_row(conn, row, now)) is not None],
     }
 
 
@@ -301,6 +306,23 @@ def _red_flags_checked(conn: sqlite3.Connection, visit_id: str, denied_text: str
     return denied_text or _NONE_DETECTED
 
 
+def _intake_source(conn: sqlite3.Connection, visit_id: str) -> str:
+    """Who wrote the stored intake: 'model' only on the model's own word.
+
+    A walk-in has no ai.intake_ready row, as its intake is a template. "I still want a
+    visit" rewrites the intake from a template too, so refill.declined outranks any row
+    before it, and it names no source. A nurse's edit writes neither event.
+    """
+    row = conn.execute(
+        "SELECT payload FROM event "
+        "WHERE visit_id = ? AND type IN ('ai.intake_ready', 'refill.declined') "
+        "ORDER BY id DESC LIMIT 1",
+        (visit_id,),
+    ).fetchone()
+    source = None if row is None else json.loads(row["payload"]).get("source")
+    return "model" if source == "model" else "simulated"
+
+
 def _row_or_none(conn: sqlite3.Connection, table: str, visit_id: str) -> dict | None:
     row = conn.execute(f"SELECT * FROM {table} WHERE visit_id = ?", (visit_id,)).fetchone()
     return None if row is None else dict(row)
@@ -332,12 +354,14 @@ def staff_visit_detail(
         "SELECT * FROM prescription_item WHERE visit_id = ? ORDER BY id", (visit_id,)
     ).fetchall()
     ticket = engine.live_ticket(visit_id)
+    raised = _raised_flags(conn, visit_id)
     return {
         **view,
         "denied_text_en": redflags.denied_text(view["denied"], "en"),
         "denied_text_ar": redflags.denied_text(view["denied"], "ar"),
         "red_flags_checked": _red_flags_checked(conn, visit_id, view["denied_text"]),
-        "red_flags_raised": _raised_flags(conn, visit_id),
+        "red_flags_raised": raised,
+        "red_flags_raised_ar": [redflags.label_ar(label) for label in raised],
         "arrived_at": visit["arrived_at"],
         "patient": {
             "id": patient["id"],
@@ -357,6 +381,7 @@ def staff_visit_detail(
         "ticket": None if ticket is None else ticket_view(engine, conn, ticket),
         "service": _shown_service(visit, view),
         "ai_mode": ai.mode,
+        "intake_source": _intake_source(conn, visit_id),
     }
 
 
@@ -397,6 +422,7 @@ def edit_intake(
             [AiEvent("intake.edited", {"staff_id": staff["id"], "fields": changed})],
             at=engine.clock(),
         )
+    events.bus.publish(events.visit_channel(visit_id), {"type": "intake.edited"})
     return {"intake": edited, "edited": True, "draft_cleared": cleared}
 
 
@@ -473,7 +499,11 @@ def draft_handoff(
     basis = _draft_basis(conn, visit_id)
     if basis[1] is None:
         raise ApiError(409, "vitals_required", "Record the vitals before drafting the handoff.")
-    drafted = handoff.draft_for_visit(conn, ai, visit_id)
+    try:
+        drafted = handoff.draft_for_visit(conn, ai, visit_id)
+    except handoff.HandoffError:
+        _visit_status(conn, visit_id)  # A visit a reset removed is a 404, not a missing intake.
+        raise
     # The model call ran with no lock, so an edit can have landed while it was thinking.
     with db.transaction(conn):
         stale = _draft_basis(conn, visit_id) != basis
@@ -486,6 +516,7 @@ def draft_handoff(
     return {
         **drafted,
         "denied_text": redflags.denied_text(denied),
+        "draft_id": handoff.draft_id(drafted["text"]),
         # The fixed template, for reading only. The doctor gets final_text.
         "text_ar": handoff.template(basis[0], basis[1], patient, "ar"),
     }
@@ -520,6 +551,8 @@ def confirm_handoff(
         draft = _row_or_none(conn, "handoff", visit_id)
         if draft is None or not draft["ai_draft"]:
             raise ApiError(409, "draft_required", "Draft the handoff again before confirming.")
+        if body.draft_id is not None and body.draft_id != handoff.draft_id(draft["ai_draft"]):
+            raise ApiError(409, "draft_stale", "The intake changed. Draft the handoff again.")
         doctor = _doctor_counter(conn, body.doctor_id, visit["centre_id"])
         ticket = engine.live_ticket(visit_id)
         if ticket is None or ticket.state != "serving":
@@ -682,9 +715,7 @@ def _stop_open_visit(
     hit = session.desk_red_flag(conn, visit_id, complaint)
     if hit is None:
         return None
-    patient_id = conn.execute(
-        "SELECT patient_id FROM visit WHERE id = ?", (visit_id,)
-    ).fetchone()["patient_id"]
+    patient_id = load_visit(conn, visit_id)["patient_id"]
     visit_flow.leave_the_queue(engine, patient_id, visit_id)
     audit.record(
         conn, visit_id, [AiEvent("desk.red_flag", {"staff_id": staff["id"]})], at=engine.clock()

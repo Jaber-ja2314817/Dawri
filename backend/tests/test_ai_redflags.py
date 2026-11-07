@@ -1313,3 +1313,12 @@ def test_denied_text_takes_labels_from_a_result():
     result = check("no chest pain")
     labels = (hit.label_en for hit in result.denied)
     assert redflags.denied_text(labels) == "Patient denied: chest pain"
+
+
+def test_every_cue_label_has_its_arabic():
+    for cue in redflags.CUES:
+        assert redflags.label_ar(cue.label_en) == cue.label_ar
+
+
+def test_an_unknown_label_stays_as_it_is():
+    assert redflags.label_ar("something new") == "something new"

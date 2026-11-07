@@ -20,6 +20,10 @@ export function ChatScreen({ visit, refetch }: ChatScreenProps) {
   const voice = useVoice()
   const input = useRef<HTMLInputElement>(null)
   const { failure, summary } = chat
+  // Rules read only what is sent, so words still on their way hold back the Yes on the summary.
+  const voiceHolds =
+    voice.step === 'confirm' ? voice.transcript.trim() !== '' : voice.step !== 'idle'
+  const unsent = chat.draft.trim() !== '' || voiceHolds
 
   // The composer sticks to the bottom of the page, so the end of the page is the newest message.
   useEffect(() => {
@@ -43,6 +47,7 @@ export function ChatScreen({ visit, refetch }: ChatScreenProps) {
             summary={summary}
             scripted={chat.scripted.has(summary.index)}
             chat={chat}
+            unsent={unsent}
             onChange={() => {
               voice.clearError()
               input.current?.focus()

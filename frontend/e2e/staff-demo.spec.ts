@@ -218,7 +218,7 @@ async function ahmedHasNoVisit(windows: Windows, errors: string[]) {
   const visitId = visitIdOf(phone)
   await send(phone, AHMED_WORDS)
   await phone.waitForURL('**/refill')
-  await expect(phone.getByTestId('refill-medicine')).toHaveText('amlodipine 5 mg once daily')
+  await expect(phone.getByTestId('refill-medicine')).toHaveText('أملوديبين 5 ملغ مرة واحدة يومياً')
   await expect(phone.getByTestId('ticket-number')).toHaveCount(0)
   expect(ticketRows(visitId)).toBe(0)
   return visitId
@@ -342,7 +342,7 @@ test.describe('Demo Script, two browsers', () => {
     const { nurse, dashboard, visitId } = await fatimaToDoctor(phone, windows, errors)
 
     const skip = nurse.getByTestId('fast-forward')
-    await expect(skip).toHaveText(say('en', 'nurse.sent.skip'))
+    await expect(skip).toHaveText(say('en', 'nurse.sent.fastForward'))
     await expect(skip).toContainText('Demo')
     await skip.click()
 

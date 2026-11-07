@@ -7,6 +7,7 @@ import { PatientShell } from '../../components/PatientShell'
 import { Button, Card, ErrorBlock, Notice } from '../../components/ui'
 import { VisitGate } from '../../components/VisitGate'
 import { useI18n } from '../../i18n'
+import { recordTerm } from '../../i18n/record'
 import { pathFor } from '../../lib/stages'
 
 function RefillScreen({ visit, refetch }: { visit: Visit; refetch: () => Promise<void> }) {
@@ -16,6 +17,7 @@ function RefillScreen({ visit, refetch }: { visit: Visit; refetch: () => Promise
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<unknown>(null)
   const id = visit.visit_id
+  const medicine = visit.refill?.medicine
 
   const wantVisit = async () => {
     setBusy(true)
@@ -37,9 +39,9 @@ function RefillScreen({ visit, refetch }: { visit: Visit; refetch: () => Promise
       <Card className="flex flex-col gap-1">
         <h2 className="text-sm text-muted">{t('refill.medicine')}</h2>
         <p className="text-start text-base font-semibold">
-          {/* Stored in English: it sits on the screen's own side and keeps its own order. */}
+          {/* An unknown value stays in English: it keeps its own order on the screen's own side. */}
           <bdi dir="auto" data-testid="refill-medicine">
-            {visit.refill?.medicine ?? t('refill.usualMedicine')}
+            {medicine ? recordTerm(medicine, lang) : t('refill.usualMedicine')}
           </bdi>
         </p>
       </Card>

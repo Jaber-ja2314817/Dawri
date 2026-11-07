@@ -15,7 +15,7 @@ import pytest
 
 from backend import db, timeutil
 from backend.adapters.queue_base import InvalidTransition
-from backend.ai import runtime, session
+from backend.ai import runtime, session, simulated
 from backend.ai.asr import ASR_UNAVAILABLE_AR, ASR_UNAVAILABLE_EN
 from backend.ai.receptionist import TurnResult
 from backend.routers import centres as centres_router
@@ -614,6 +614,8 @@ def test_a_nurse_escalation_shows_the_emergency_card(api, fatima):
     assert state["go_to"] is None
     assert state["emergency"]["self_harm"] is False
     assert state["emergency"]["reply"]
+    assert state["emergency"]["reply_en"] == simulated.emergency_reply("en", False)
+    assert state["emergency"]["reply_ar"] == simulated.emergency_reply("ar", False)
     assert state["emergency"]["nearest_ed"]["id"] == "H-WAKRA"
 
 
@@ -1088,6 +1090,18 @@ def test_the_emergency_card_in_the_full_state(api, ravi):
     assert state["emergency"]["reply"] == reply
     assert state["emergency"]["self_harm"] is False
     assert state["emergency"]["nearest_ed"]["distance_km"] > 0
+    assert set(state["emergency"]) == {"reply", "reply_en", "reply_ar", "self_harm", "nearest_ed"}
+    assert state["emergency"]["reply_en"] == simulated.emergency_reply("en", False)
+    assert state["emergency"]["reply_ar"] == simulated.emergency_reply("ar", False)
+
+
+def test_the_emergency_card_keeps_self_harm_in_both_languages(api, ravi):
+    visit_id = start_visit(api, ravi)
+    say(api, ravi, visit_id, "I want to end my life")
+    card = _state(api, ravi, visit_id)["emergency"]
+    assert card["reply_en"] == simulated.emergency_reply("en", True)
+    assert card["reply_ar"] == simulated.emergency_reply("ar", True)
+    assert card["reply_en"] != simulated.emergency_reply("en", False)
 
 
 def test_the_nearest_ed_is_from_the_registered_centre(api, fatima):

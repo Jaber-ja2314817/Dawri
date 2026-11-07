@@ -71,11 +71,16 @@ export const recordVitals = (visitId: string, body: VitalsBody) =>
 export const draftHandoff = (visitId: string) =>
   api<HandoffDraft>('POST', `${visitPath(visitId)}/handoff/draft`, undefined, { auth })
 
-export const confirmHandoff = (visitId: string, finalText: string, doctorId: string) =>
+export const confirmHandoff = (
+  visitId: string,
+  finalText: string,
+  doctorId: string,
+  draftId: string,
+) =>
   api<HandoffConfirmResponse>(
     'POST',
     `${visitPath(visitId)}/handoff/confirm`,
-    { final_text: finalText, doctor_id: doctorId },
+    { final_text: finalText, doctor_id: doctorId, draft_id: draftId },
     { auth },
   )
 

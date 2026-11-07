@@ -1,9 +1,11 @@
 import {
   agree,
   expect,
+  fakeMicrophone,
   FATIMA_WORDS,
   login,
   RAVI_WORDS,
+  recordVoice,
   say,
   startCheckIn,
   test,
@@ -11,26 +13,6 @@ import {
   visitIdOf,
   type Page,
 } from './fixtures'
-
-/*
- * getUserMedia hangs under automation on this machine even with Chrome's fake device, so the
- * microphone alone is replaced: an oscillator through a real MediaStream. MediaRecorder,
- * decodeAudioData, the resample and the WAV encoder are the app's own and all run for real.
- */
-async function fakeMicrophone(page: Page) {
-  await page.addInitScript(() => {
-    navigator.mediaDevices.getUserMedia = async () => {
-      const audio = new AudioContext()
-      const oscillator = audio.createOscillator()
-      const destination = audio.createMediaStreamDestination()
-      oscillator.frequency.value = 220
-      oscillator.connect(destination)
-      oscillator.start()
-      await audio.resume()
-      return destination.stream
-    }
-  })
-}
 
 async function refuseMicrophone(page: Page) {
   await page.addInitScript(() => {
@@ -54,13 +36,6 @@ function countChatPosts(page: Page): () => number {
     if (request.method() === 'POST' && /\/api\/visits\/[^/]+\/chat$/.test(request.url())) posts += 1
   })
   return () => posts
-}
-
-async function record(page: Page) {
-  await page.getByTestId('chat-mic').click()
-  await expect(page.getByTestId('voice-stop')).toBeVisible()
-  await page.waitForTimeout(1_100)
-  await page.getByTestId('voice-stop').click()
 }
 
 /** Nothing about a recording may outlive it, in any browser store. */
@@ -111,7 +86,7 @@ test('the simulated server refuses voice: Arabic message, focus in the box, no t
   const chatPosts = countChatPosts(page)
 
   const answer = page.waitForResponse('**/api/asr')
-  await record(page)
+  await recordVoice(page)
   const response = await answer
   expect(response.status()).toBe(503)
   const body = await response.json()
@@ -139,7 +114,7 @@ test('the upload is 16 kHz mono PCM WAV, and nothing is sent until the patient s
     await route.fulfill({ json: { text: FATIMA_WORDS } })
   })
 
-  await record(page)
+  await recordVoice(page)
   const transcript = page.getByTestId('voice-transcript')
   await expect(transcript).toHaveValue(FATIMA_WORDS)
   await expect(page.getByTestId('voice-confirm')).toContainText(say('ar', 'voice.confirm.check'))
@@ -171,7 +146,7 @@ test('a confirmed spoken red flag reaches S06 with no ticket', async ({ page }) 
   const visitId = visitIdOf(page)
   await page.route('**/api/asr', (route) => route.fulfill({ json: { text: RAVI_WORDS } }))
 
-  await record(page)
+  await recordVoice(page)
   await expect(page.getByTestId('voice-transcript')).toHaveValue(RAVI_WORDS)
   expect(new URL(page.url()).pathname).toMatch(/\/chat$/)
 
@@ -200,6 +175,8 @@ test.describe('the states only a running flow can show', () => {
       await page.setViewportSize({ width: 390, height: 844 })
 
       await page.route('**/api/asr', (route) => route.fulfill({ json: { text: FATIMA_WORDS } }))
+      // A recording under about 150 ms cannot be decoded, so it would never reach the transcript.
+      await page.waitForTimeout(1_100)
       await page.getByTestId('voice-stop').click()
       await expect(page.getByTestId('voice-transcript')).toHaveValue(FATIMA_WORDS)
       await page.screenshot({ path: `${shots}/s05-confirm-${lang}-390.png` })

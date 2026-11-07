@@ -233,7 +233,7 @@ test.describe('one profile, many tabs', () => {
     const { nurse, doctor, pharmacy, desk, display, dashboard } = tabs
     const errors: string[] = []
     for (const tab of Object.values(tabs)) {
-      tab.on('pageerror', (error) => errors.push(error.message))
+      tab.on('pageerror', (error: Error) => errors.push(error.message))
     }
 
     expect(await openStreams(nurse)).toBe(1)
@@ -341,7 +341,7 @@ test.describe('one profile, many tabs', () => {
     const { nurse, doctor, pharmacy, desk, display, dashboard } = await openSixTabs(context)
     const errors: string[] = []
     for (const tab of [nurse, doctor, pharmacy, desk, display, dashboard]) {
-      tab.on('pageerror', (error) => errors.push(error.message))
+      tab.on('pageerror', (error: Error) => errors.push(error.message))
       await markThePage(tab)
     }
 

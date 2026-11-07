@@ -4,11 +4,32 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 from fastapi.testclient import TestClient
+from huggingface_hub.utils import _detect_agent
 
-from backend import db, seeding
-from backend.main import app
-from backend.queue_engine import SqliteQueueEngine
-from backend.tests.api_helpers import live_server
+from backend import timeutil
+
+# Ticket numbers and the one-emergency-a-day rule turn over at Doha midnight, and many tests
+# start a clock from utcnow and move it 45 minutes on. So the whole session runs from Doha
+# midday on a fixed date, whatever the hour or day it is started: time flows as usual, and no
+# run can cross midnight. A test about midnight pins its own clock.
+# This has to come before the imports below: SqliteQueueEngine takes utcnow as a default
+# argument, so it keeps whichever function is here when queue_engine is first imported.
+SUITE_START = datetime(2026, 11, 7, 9, 0, tzinfo=timezone.utc)  # 12:00 in Doha.
+_wall_clock = timeutil.utcnow
+_to_suite_start = SUITE_START - _wall_clock()
+timeutil.utcnow = lambda: _wall_clock() + _to_suite_start
+
+# The first request huggingface_hub makes in a process also refreshes its list of agent
+# harnesses, unless the home cache has a copy under a day old. Under a fake transport that
+# refresh takes the fake's answer, which breaks the client and overwrites the cache, so the
+# real-client tests turned red the moment the copy aged out. Holding the list empty means
+# neither the hour nor the home directory matters, and the suite never touches that file.
+_detect_agent._registry = _detect_agent._EMPTY_REGISTRY
+
+from backend import db, seeding  # noqa: E402
+from backend.main import app  # noqa: E402
+from backend.queue_engine import SqliteQueueEngine  # noqa: E402
+from backend.tests.api_helpers import live_server  # noqa: E402
 
 
 @pytest.fixture

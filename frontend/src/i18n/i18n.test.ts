@@ -38,7 +38,7 @@ const ERROR_CODES = `unauthorized forbidden unknown_qid invalid_otp consent_requ
   unknown_drug unknown_staff visit_not_in_doctor visit_not_in_pharmacy visit_not_in_triage
   visit_not_ready vitals_required wrong_centre wrong_role counter_busy ticket_not_found
   allergy_conflict no_patient not_found method_not_allowed http_error queue_error
-  frontend_not_built`.split(/\s+/)
+  frontend_not_built invalid_request`.split(/\s+/)
 
 const hasPrefix = (key: string, prefixes: string[]) =>
   prefixes.some((prefix) => key.startsWith(prefix))

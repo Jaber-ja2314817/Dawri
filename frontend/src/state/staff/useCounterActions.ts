@@ -1,6 +1,7 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { callNext, notHere as markNotHere, serveTicket } from '../../api/staff'
 import type { CallNext, StaffTicket } from '../../api/staffTypes'
+import { onDemoReset } from './demoReset'
 
 export interface CounterActions {
   /** Resolves to null on failure: the reason is in `error`, for errorText. */
@@ -9,7 +10,10 @@ export interface CounterActions {
   notHere: (ticketId: string) => Promise<StaffTicket | null>
   busy: boolean
   error: unknown
-  /** The last call's result, kept for "handled by a colleague" and for a call that found nobody. */
+  /**
+   * The last call's result, kept for "handled by a colleague" and for a call that found nobody.
+   * A demo reset clears it: the tickets it names are back in the queue.
+   */
   lastCall: CallNext | null
 }
 
@@ -19,6 +23,8 @@ export function useCounterActions(counterId: string, onDone?: () => void): Count
   const [error, setError] = useState<unknown>(null)
   const [lastCall, setLastCall] = useState<CallNext | null>(null)
   const running = useRef(false)
+
+  useEffect(() => onDemoReset(() => setLastCall(null)), [])
 
   const run = useCallback(
     async <T,>(action: () => Promise<T>): Promise<T | null> => {

@@ -270,9 +270,13 @@ test.describe('T07 front desk', () => {
     expect(await page.getByTestId('desk-queue').textContent()).not.toMatch(/no-show|nobody skips/i)
     await page.setViewportSize(PHONE)
     await expectNoSideScroll(page, 'desk at 390')
-    const form = await page.getByTestId('desk-submit').boundingBox()
-    const queue = await page.getByTestId('desk-queue').boundingBox()
-    expect(queue?.y).toBeGreaterThan((form?.y ?? 0) + (form?.height ?? 0) - 1)
+    // Both in one frame: the header folds on its own render, and shifts everything under it.
+    const gap = await page.evaluate(() => {
+      const box = (id: string) =>
+        document.querySelector(`[data-testid=${id}]`)?.getBoundingClientRect()
+      return (box('desk-queue')?.top ?? 0) - (box('desk-submit')?.bottom ?? 0)
+    })
+    expect(gap).toBeGreaterThan(-1)
     await page.setViewportSize(DESKTOP)
     const wide = await page.getByTestId('desk-queue').boundingBox()
     const field = await page.getByTestId('desk-qid').boundingBox()
@@ -296,6 +300,30 @@ test.describe('T07 front desk', () => {
 })
 
 test.describe('T08 waiting-room display', () => {
+  test('the AI pill reads in both languages whatever the viewer chose', async ({ page }) => {
+    const both = 'AI: simulated / الذكاء الاصطناعي: محاكاة'
+    await openDisplay(page)
+    const pill = page.getByTestId('ai-mode')
+    await expect(pill).toHaveText(both)
+    await expect(pill).toHaveAttribute('data-mode', 'simulated')
+    await expect(pill).toBeInViewport()
+
+    await page.goto('/staff/nurse')
+    await page.getByTestId('language-toggle').click()
+    await expect(page.locator('html')).toHaveAttribute('lang', 'ar')
+    await expect(pill).toHaveText(say('ar', 'footer.ai'))
+    await page.goto('/staff/display')
+    await expect(pill).toHaveText(both)
+
+    await page.setViewportSize({ width: 390, height: 844 })
+    await expect(pill).toBeInViewport()
+    const widths = await page.evaluate(() => ({
+      content: document.documentElement.scrollWidth,
+      screen: window.innerWidth,
+    }))
+    expect(widths.content).toBeLessThanOrEqual(widths.screen)
+  })
+
   test('shows Arabic and English at once, in triage, room, pharmacy order', async ({ page }) => {
     await openDisplay(page)
     await expect(page.locator('h1')).toHaveText('Now serving / الآن')

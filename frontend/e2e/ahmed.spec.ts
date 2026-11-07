@@ -21,12 +21,17 @@ test('Ahmed is sent to the refill route with no ticket, and can still ask for a 
 
   await send(page, AHMED_WORDS)
   await page.waitForURL('**/refill')
-  await expect(page.getByTestId('refill-medicine')).toHaveText('amlodipine 5 mg once daily')
+  await expect(page.getByTestId('refill-medicine')).toHaveText('أملوديبين 5 ملغ مرة واحدة يومياً')
   expect(ticketRows(visitId)).toBe(0)
 
   await page.reload()
-  await expect(page.getByTestId('refill-medicine')).toHaveText('amlodipine 5 mg once daily')
+  await expect(page.getByTestId('refill-medicine')).toHaveText('أملوديبين 5 ملغ مرة واحدة يومياً')
   expect(ticketRows(visitId)).toBe(0)
+
+  await page.getByTestId('language-toggle').click()
+  await expect(page.getByTestId('refill-medicine')).toHaveText('amlodipine 5 mg once daily')
+  await page.getByTestId('language-toggle').click()
+  await expect(page.getByTestId('refill-medicine')).toHaveText('أملوديبين 5 ملغ مرة واحدة يومياً')
 
   await page.getByTestId('refill-visit').click()
   await page.waitForURL('**/centre')

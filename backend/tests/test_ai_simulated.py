@@ -479,6 +479,107 @@ def test_correcting_after_the_summary_rebuilds_the_intake():
     assert corrected.intake["questions_asked"] == turn.intake["questions_asked"]
 
 
+def corrected_at_summary(answers, lang, correction):
+    history, turn = play(answers, lang)
+    history += [assistant(turn.reply, simulated.NOT_A_QUESTION), user(correction)]
+    return turn, next_turn(history, FATIMA, [], turn.language)
+
+
+ENGLISH_RUN = ["I have a rash for 2 days", "5", "no", "no", "no"]
+ARABIC_RUN = ["عندي كحة من يومين", "٥", "لا", "لا", "لا"]
+
+
+@pytest.mark.parametrize(
+    "words",
+    [
+        "actually it is 8",
+        "actually it's eight",
+        "it is 8",
+        "it's an 8",
+        "no, 8",
+        "no it was more like 8",
+        "my pain is 8",
+        "sorry, I meant 8",
+        "make it 8",
+        "change it to 8",
+        "8, not 5",
+        "not 5, 8",
+    ],
+)
+def test_a_severity_correction_in_a_sentence_changes_the_read_back(words):
+    first, corrected = corrected_at_summary(ENGLISH_RUN, "en", words)
+    assert "severity 5/10" in first.reply
+    assert corrected.intake["severity_0_10"] == 8
+    assert "severity 8/10" in corrected.reply
+    assert "severity 8/10" in corrected.intake["summary_for_nurse"]
+    assert corrected.intake["duration"] == first.intake["duration"]
+    assert corrected.intake["questions_asked"] == first.intake["questions_asked"]
+
+
+@pytest.mark.parametrize(
+    "words",
+    [
+        "لا، ثمانية",
+        "لا ثمانية",
+        "لا، ٨",
+        "لأ 8",
+        "قصدي ثمانية",
+        "الشدة ثمانية",
+        "لا هي ثمانية",
+        "خلها ثمانية",
+        "ثمانية مو خمسة",
+    ],
+)
+def test_an_arabic_severity_correction_changes_the_read_back(words):
+    first, corrected = corrected_at_summary(ARABIC_RUN, "ar", words)
+    assert "الشدة 5 من 10" in first.reply
+    assert corrected.intake["severity_0_10"] == 8
+    assert "الشدة 8 من 10" in corrected.reply
+    assert corrected.intake["duration"] == first.intake["duration"]
+
+
+@pytest.mark.parametrize(
+    "words",
+    [
+        "I took 2 tablets",
+        "I had 2 panadol",
+        "it is not 8",
+        "not 8",
+        "no",
+        "yes that is right",
+        "actually it is 12",
+        "it is 7.5",
+        "between 7 and 8",
+        "actually it is 8 or 9",
+        "there are 3 of us",
+    ],
+)
+def test_a_sentence_that_is_no_correction_leaves_the_severity_alone(words):
+    _, corrected = corrected_at_summary(ENGLISH_RUN, "en", words)
+    assert corrected.intake["severity_0_10"] == 5
+
+
+@pytest.mark.parametrize("words", ["أخذت 2 حبة", "مو ثمانية", "لا، مو ثمانية", "عندي 3 عيال"])
+def test_an_arabic_sentence_that_is_no_correction_leaves_the_severity_alone(words):
+    _, corrected = corrected_at_summary(ARABIC_RUN, "ar", words)
+    assert corrected.intake["severity_0_10"] == 5
+
+
+def test_a_number_mid_chat_is_not_taken_for_a_correction():
+    history, turn = play(["I have a rash", "2 days"], "en")
+    assert turn.slot == "severity"
+    history += [assistant(turn.reply, turn.slot), user("5")]
+    turn = next_turn(history, FATIMA, [], "en")
+    history += [assistant(turn.reply, turn.slot), user("actually it is 8")]
+    assert simulated._read(history).severity == 5
+
+
+def test_a_duration_correction_is_not_read_as_a_severity():
+    first, corrected = corrected_at_summary(ENGLISH_RUN, "en", "actually it is 8 days")
+    assert corrected.intake["duration"] == "8 days"
+    assert corrected.intake["severity_0_10"] == first.intake["severity_0_10"]
+
+
 @pytest.mark.parametrize(
     "history, expected",
     [

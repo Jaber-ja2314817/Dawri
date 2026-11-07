@@ -1,5 +1,5 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../../../api/client'
@@ -72,6 +72,9 @@ const visit = (over: Partial<StaffVisit> = {}): StaffVisit =>
     intake,
     edited: false,
     red_flags_raised: [],
+    red_flags_raised_ar: [],
+    ai_mode: 'simulated',
+    intake_source: 'simulated',
     patient: {
       id: 'P001',
       name: 'Fatima',
@@ -121,6 +124,7 @@ const draft = (over: Partial<HandoffDraft> = {}): HandoffDraft => ({
   source: 'simulated',
   suggestions: [noor, khalid],
   denied_text: '',
+  draft_id: 'draft-1',
   ...over,
 })
 
@@ -197,6 +201,16 @@ describe('IntakeCard', () => {
     expect(screen.queryByTestId('no-flags')).toBeNull()
   })
 
+  it('reads the raised flags in the console language', () => {
+    const flags = { red_flags_raised: ['chest pain'], red_flags_raised_ar: ['ألم في الصدر'] }
+    card(flags)
+    expect(screen.getByTestId('flags-raised').textContent).toBe('chest pain')
+    cleanup()
+    localStorage.setItem('dawri.lang', 'ar')
+    card(flags)
+    expect(screen.getByTestId('flags-raised').textContent).toBe('ألم في الصدر')
+  })
+
   it('shows what the patient denied, by language', () => {
     localStorage.setItem('dawri.lang', 'ar')
     card({ denied_text_en: 'Patient denied: chest pain', denied_text_ar: 'المريض نفى: ألم في الصدر' })
@@ -229,6 +243,67 @@ describe('IntakeCard', () => {
   it('marks an edited intake', () => {
     card({ edited: true })
     expect(screen.getByTestId('edited-pill').textContent).toBe('Edited by nurse')
+  })
+
+  describe.each([
+    ['en', 'Reason (scripted)', 'Summary (scripted)', 'Reason (AI)', 'AI summary'],
+    ['ar', 'السبب (مُعدّ مسبقاً)', 'الملخص (مُعدّ مسبقاً)', 'السبب (ذكاء اصطناعي)', 'ملخص الذكاء الاصطناعي'],
+  ])('the source of the text, %s', (lang, reason, summary, modelReason, modelSummary) => {
+    beforeEach(() => localStorage.setItem('dawri.lang', lang))
+
+    it('calls simulated text scripted, on the card and in the edit form', () => {
+      card({ ai_mode: 'simulated' })
+      expect(screen.getByTestId('intake-reason').parentElement?.textContent).toContain(reason)
+      expect(screen.getByTestId('ai-summary').parentElement?.textContent).toContain(summary)
+      expect(screen.getByTestId('intake-card').textContent).not.toContain(modelSummary)
+      expect(screen.getByTestId('intake-card').textContent).not.toContain(modelReason)
+
+      fireEvent.click(screen.getByTestId('intake-edit'))
+      expect(screen.getByLabelText(reason)).toBe(screen.getByTestId('edit-chief_complaint'))
+      expect(screen.getByLabelText(summary)).toBe(screen.getByTestId('edit-summary_for_nurse'))
+      expect(screen.getByTestId('intake-card').textContent).not.toContain(modelSummary)
+    })
+
+    it('keeps the AI labels in real mode when the model wrote the intake', () => {
+      card({ ai_mode: 'real', intake_source: 'model' })
+      expect(screen.getByTestId('intake-reason').parentElement?.textContent).toContain(modelReason)
+      expect(screen.getByTestId('ai-summary').parentElement?.textContent).toContain(modelSummary)
+      fireEvent.click(screen.getByTestId('intake-edit'))
+      expect(screen.getByLabelText(modelReason)).toBe(screen.getByTestId('edit-chief_complaint'))
+      expect(screen.getByLabelText(modelSummary)).toBe(screen.getByTestId('edit-summary_for_nurse'))
+    })
+
+    it.each([
+      ['real mode, scripted intake', 'real', 'simulated'],
+      ['simulated mode, a model row from an earlier run', 'simulated', 'model'],
+    ] as const)('calls it scripted on %s', (_name, mode, source) => {
+      card({ ai_mode: mode, intake_source: source })
+      expect(screen.getByTestId('intake-reason').parentElement?.textContent).toContain(reason)
+      expect(screen.getByTestId('ai-summary').parentElement?.textContent).toContain(summary)
+      expect(screen.getByTestId('intake-card').textContent).not.toContain(modelSummary)
+      expect(screen.getByTestId('intake-card').textContent).not.toContain(modelReason)
+
+      fireEvent.click(screen.getByTestId('intake-edit'))
+      expect(screen.getByLabelText(reason)).toBe(screen.getByTestId('edit-chief_complaint'))
+      expect(screen.getByLabelText(summary)).toBe(screen.getByTestId('edit-summary_for_nurse'))
+      expect(screen.getByTestId('intake-card').textContent).not.toContain(modelSummary)
+      expect(screen.getByTestId('intake-card').textContent).not.toContain(modelReason)
+    })
+
+    it('calls it scripted when the API sends no source at all', () => {
+      card({ ai_mode: 'real', intake_source: undefined })
+      expect(screen.getByTestId('ai-summary').parentElement?.textContent).toContain(summary)
+      expect(screen.getByTestId('intake-card').textContent).not.toContain(modelSummary)
+    })
+
+    it('keeps the source when a nurse has edited the intake', () => {
+      card({ ai_mode: 'real', intake_source: 'model', edited: true })
+      expect(screen.getByTestId('ai-summary').parentElement?.textContent).toContain(modelSummary)
+      cleanup()
+      card({ ai_mode: 'real', intake_source: 'simulated', edited: true })
+      expect(screen.getByTestId('ai-summary').parentElement?.textContent).toContain(summary)
+      expect(screen.getByTestId('intake-card').textContent).not.toContain(modelSummary)
+    })
   })
 
   it('offers no edit once locked', () => {
@@ -358,6 +433,101 @@ describe('VitalsForm', () => {
     expect(screen.getByTestId('path').textContent).toBe('/staff/nurse/V1')
   })
 
+  describe('with an edit left open on the intake card', () => {
+    /* The page's wiring, so a typed change reaches the primary action. */
+    function BothCards() {
+      const [unsaved, setUnsaved] = useState(false)
+      const called = visit()
+      return (
+        <>
+          <IntakeCard
+            visitId="V1"
+            visit={called}
+            editable
+            refetch={async () => {}}
+            onUnsaved={setUnsaved}
+          />
+          <VitalsForm visitId="V1" visit={called} onEscalated={() => {}} unsavedEdit={unsaved} />
+        </>
+      )
+    }
+    const typeAnEdit = () => {
+      fireEvent.click(screen.getByTestId('intake-edit'))
+      fireEvent.change(screen.getByTestId('edit-chief_complaint'), {
+        target: { value: 'dry cough' },
+      })
+    }
+
+    it('holds the primary action and says why, then lets go on cancel', () => {
+      show(<BothCards />)
+      fireEvent.click(screen.getByTestId('urgency-routine'))
+      expect(primary().disabled).toBe(false)
+
+      fireEvent.click(screen.getByTestId('intake-edit'))
+      expect(primary().disabled).toBe(false) // Open with nothing changed drops nothing.
+      expect(screen.queryByTestId('save-edit-first')).toBeNull()
+
+      fireEvent.change(screen.getByTestId('edit-chief_complaint'), {
+        target: { value: 'dry cough' },
+      })
+      expect(primary().disabled).toBe(true)
+      expect(screen.getByTestId('save-edit-first').textContent).toBe(
+        'Save or cancel your edit first.',
+      )
+
+      fireEvent.click(screen.getByTestId('intake-cancel'))
+      expect(primary().disabled).toBe(false)
+      expect(screen.queryByTestId('save-edit-first')).toBeNull()
+    })
+
+    it('says it in Arabic, and it takes the place of the urgency hint', () => {
+      localStorage.setItem('dawri.lang', 'ar')
+      show(<BothCards />)
+      typeAnEdit()
+      expect(screen.getByTestId('save-edit-first').textContent).toBe('احفظ تعديلك أو ألغِه أولاً.')
+      expect(screen.queryByTestId('urgency-hint')).toBeNull()
+    })
+
+    it('posts nothing on Enter while held', () => {
+      show(<BothCards />)
+      fireEvent.click(screen.getByTestId('urgency-routine'))
+      typeAnEdit()
+      fireEvent.submit(screen.getByTestId('vitals-form'))
+      expect(staffApi.recordVitals).not.toHaveBeenCalled()
+    })
+
+    it('lets go once the edit is saved', async () => {
+      staffApi.editIntake.mockResolvedValue({ draft_cleared: false })
+      show(<BothCards />)
+      fireEvent.click(screen.getByTestId('urgency-routine'))
+      typeAnEdit()
+      fireEvent.click(screen.getByTestId('intake-save'))
+      await waitFor(() => expect(primary().disabled).toBe(false))
+      expect(screen.queryByTestId('save-edit-first')).toBeNull()
+    })
+
+    it('never holds back sending a patient to emergency', () => {
+      show(<BothCards />)
+      typeAnEdit()
+      fireEvent.click(screen.getByTestId('urgency-urgent'))
+      expect(primary().disabled).toBe(false)
+      expect(primary().textContent).toBe('Send to emergency')
+      expect(screen.queryByTestId('save-edit-first')).toBeNull()
+    })
+
+    it('hides the way to the handoff while held', () => {
+      show(
+        <VitalsForm
+          visitId="V1"
+          visit={visit({ vitals: { urgency: 'routine' } as StaffVisit['vitals'] })}
+          onEscalated={() => {}}
+          unsavedEdit
+        />,
+      )
+      expect(screen.queryByTestId('to-handoff')).toBeNull()
+    })
+  })
+
   it('takes no vitals from a ticket not yet called', () => {
     form({ ticket: ticket({ state: 'active' }) })
     expect(screen.getByTestId('not-called').textContent).toContain('Call this patient first')
@@ -426,7 +596,7 @@ describe('HandoffDraftForm', () => {
     fireEvent.click(screen.getByTestId('doctor-KHALID'))
     fireEvent.click(screen.getByTestId('handoff-confirm'))
     await waitFor(() => expect(onConfirmed).toHaveBeenCalledOnce())
-    expect(staffApi.confirmHandoff).toHaveBeenCalledWith('V1', draft().text, 'KHALID')
+    expect(staffApi.confirmHandoff).toHaveBeenCalledWith('V1', draft().text, 'KHALID', 'draft-1')
   })
 
   it('uses the Arabic reason and room on an Arabic console', async () => {
@@ -446,7 +616,7 @@ describe('HandoffDraftForm', () => {
     fireEvent.change(await box(), { target: { value: 'Edited.' } })
     fireEvent.click(screen.getByTestId('handoff-confirm'))
     await waitFor(() =>
-      expect(staffApi.confirmHandoff).toHaveBeenCalledWith('V1', 'Edited.', 'NOOR'),
+      expect(staffApi.confirmHandoff).toHaveBeenCalledWith('V1', 'Edited.', 'NOOR', 'draft-1'),
     )
   })
 
@@ -489,6 +659,23 @@ describe('HandoffDraftForm', () => {
       expect(((await box()) as HTMLTextAreaElement).value).toBe('My text.')
     },
   )
+
+  it('confirms a re-draft with its own draft_id, not the one it replaced', async () => {
+    staffApi.draftHandoff
+      .mockResolvedValueOnce(draft())
+      .mockResolvedValueOnce(draft({ text: 'New draft.', draft_id: 'draft-2' }))
+    staffApi.confirmHandoff
+      .mockRejectedValueOnce(new ApiError(409, 'draft_stale', 'raw'))
+      .mockResolvedValueOnce({ ticket: ticket(), doctor: {} })
+    const onConfirmed = form()
+    await box()
+    fireEvent.click(screen.getByTestId('handoff-confirm'))
+    await screen.findByTestId('handoff-redrafted')
+    await waitFor(() => expect((screen.getByTestId('handoff-confirm') as HTMLButtonElement).disabled).toBe(false))
+    fireEvent.click(screen.getByTestId('handoff-confirm'))
+    await waitFor(() => expect(onConfirmed).toHaveBeenCalledOnce())
+    expect(staffApi.confirmHandoff).toHaveBeenLastCalledWith('V1', 'New draft.', 'NOOR', 'draft-2')
+  })
 
   it('drafts again when an edit lands during the first draft', async () => {
     staffApi.draftHandoff

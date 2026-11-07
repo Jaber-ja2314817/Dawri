@@ -11,7 +11,7 @@ from collections.abc import Iterable, Sequence
 from datetime import datetime
 
 from backend import db, timeutil
-from backend.adapters.queue_base import InvalidTransition, Ticket
+from backend.adapters.queue_base import InvalidTransition, Ticket, TicketNotFound
 from backend.ai import audit
 from backend.ai.audit import AiEvent
 from backend.deps import ApiError
@@ -20,6 +20,8 @@ from backend.queue_engine import SqliteQueueEngine
 # What stops a visit: the rules, the model, or a release by a nurse or a sibling's red flag.
 # Other rows, such as consent or a later override, say nothing about when that happened.
 _EMERGENCY_EVENTS = ("redflag.hit", "ai.emergency", "ticket.released")
+# Arabic for the allergens the seed holds, as in frontend/src/i18n/record.ts.
+_ALLERGEN_AR = {"penicillin": "البنسلين"}
 
 
 def emergency_today(
@@ -84,6 +86,11 @@ def _allergy_tags(drug: dict) -> list[str]:
     return db.loads_list(tags) if isinstance(tags, str) or tags is None else list(tags)
 
 
+def _allergen_ar(allergy: str) -> str:
+    """An unknown term stays as stored: a clinical word is never guessed."""
+    return _ALLERGEN_AR.get(allergy.strip().lower(), allergy)
+
+
 def allergy_conflict(patient: dict, drug: dict) -> dict | None:
     """The first allergy on the record that this drug hits, or None."""
     tags = {tag.strip().lower() for tag in _allergy_tags(drug)}
@@ -95,7 +102,8 @@ def allergy_conflict(patient: dict, drug: dict) -> dict | None:
                 "allergen": allergy,
                 "text_en": f"Allergy on record: {allergy}. Check before prescribing "
                 f"{drug['name_en']}.",
-                "text_ar": f"حساسية مسجلة: {allergy}. راجع قبل وصف {drug['name_ar']}.",
+                "text_ar": f"حساسية مسجلة: {_allergen_ar(allergy)}. "
+                f"راجع قبل وصف {drug['name_ar']}.",
             }
     return None
 
@@ -156,7 +164,9 @@ def pharmacy_counter(conn: sqlite3.Connection, centre_id: str) -> str:
 
 def _check_at_counter(conn: sqlite3.Connection, ticket: Ticket) -> None:
     row = conn.execute("SELECT state FROM ticket WHERE id = ?", (ticket.id,)).fetchone()
-    if row is None or row["state"] not in ("called", "serving"):
+    if row is None:
+        raise TicketNotFound(f"no ticket {ticket.id}")
+    if row["state"] not in ("called", "serving"):
         raise InvalidTransition("this patient has not been called to the counter")
 
 

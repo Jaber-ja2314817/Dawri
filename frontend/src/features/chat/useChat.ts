@@ -5,6 +5,7 @@ import { confirmIntake, getVisit } from '../../api/endpoints'
 import type { ChatMessage, ChatResponse, Intake, Service, Visit } from '../../api/types'
 import { pathFor } from '../../lib/stages'
 import { useHealth } from '../../state/session'
+import { getToken } from '../../state/token'
 import { isAbort, isStored, isUnknownOutcome, postTurn, SUMMARY_SLOT, TURN_TIMEOUT_MS } from './send'
 
 /** A turn the visit has not caught up with yet. It stops showing as soon as the visit has it. */
@@ -64,25 +65,23 @@ export function useChat(visit: Visit, refetch: () => Promise<void>): ChatState {
 
   const inFlight = useRef(false)
   const live = useRef(true)
-  const controller = useRef<AbortController | null>(null)
   const unresolved = useRef<Failure | null>(null)
   const stored = useRef(visit.chat.messages.length)
   useEffect(() => {
     stored.current = visit.chat.messages.length
   }, [visit.chat.messages.length])
 
+  // Leaving ends nothing: a turn in flight may be a red flag, and its answer has to be heard.
   useEffect(() => {
     live.current = true
     return () => {
       live.current = false
-      controller.current?.abort()
     }
   }, [])
 
-  /** Runs one request under the 45 s limit. Unmounting ends it too. */
+  /** Runs one request under the 45 s limit. */
   const timed = useCallback(async <T,>(request: (signal: AbortSignal) => Promise<T>) => {
     const current = new AbortController()
-    controller.current = current
     const timer = setTimeout(() => current.abort(), TURN_TIMEOUT_MS)
     try {
       return await request(current.signal)
@@ -91,14 +90,24 @@ export function useChat(visit: Visit, refetch: () => Promise<void>): ChatState {
     }
   }, [])
 
+  /** From any patient screen, for the patient who sent the turn. A new sign-in is someone else. */
+  const toEmergency = useCallback(
+    (sentBy: string | null) => {
+      if (getToken() !== sentBy) return
+      navigate(pathFor(id, 'emergency'), { replace: true, state: { redFlag: true } })
+    },
+    [id, navigate],
+  )
+
   const applyTurn = useCallback(
-    async (response: ChatResponse, baseline: number, text: string) => {
+    async (response: ChatResponse, baseline: number, text: string, sentBy: string | null) => {
       // The order matters: a red flag beats everything, and nothing may follow it.
       if (response.emergency) {
         // Before anything else, and with no second request: this answer alone is enough.
-        navigate(pathFor(id, 'emergency'), { replace: true, state: { redFlag: true } })
+        toEmergency(sentBy)
         return
       }
+      if (!live.current) return // Only a red flag may still move a patient who has left.
       if (response.refill) {
         navigate(pathFor(id, 'refill'), { replace: true })
         return
@@ -115,7 +124,7 @@ export function useChat(visit: Visit, refetch: () => Promise<void>): ChatState {
       })
       await refetch()
     },
-    [aiMode, id, navigate, refetch],
+    [aiMode, id, navigate, refetch, toEmergency],
   )
 
   const fail = useCallback((next: Failure) => {
@@ -125,6 +134,19 @@ export function useChat(visit: Visit, refetch: () => Promise<void>): ChatState {
     // The box was cleared on send, or holds something typed before a transcript went.
     setDraft((current) => (next.fromBox || current === '' ? next.text : current))
   }, [])
+
+  /** The turn failed after the patient left: only the visit can say if it was a red flag. */
+  const lookAfterLeaving = useCallback(
+    async (sentBy: string | null) => {
+      try {
+        const fresh = await timed((signal) => getVisit(id, { signal }))
+        if (fresh.stage === 'emergency') toEmergency(sentBy)
+      } catch {
+        // Nothing more to go on. Home still leads to S06 once the list shows the visit.
+      }
+    },
+    [id, timed, toEmergency],
+  )
 
   /** True when the visit shows the message landed, or that the chat is over anyway. */
   const landed = useCallback(
@@ -140,6 +162,7 @@ export function useChat(visit: Visit, refetch: () => Promise<void>): ChatState {
       const text = raw.trim()
       if (text === '' || inFlight.current) return
       inFlight.current = true
+      const sentBy = getToken()
 
       const earlier = unresolved.current?.text === text ? unresolved.current : null
       const baseline = earlier?.baseline ?? stored.current
@@ -151,13 +174,17 @@ export function useChat(visit: Visit, refetch: () => Promise<void>): ChatState {
 
       try {
         if (earlier !== null && (await landed(baseline, text))) {
-          await refetch()
+          if (live.current) await refetch()
+          else await lookAfterLeaving(sentBy)
           return
         }
         const response = await timed((signal) => postTurn(id, text, signal))
-        await applyTurn(response, baseline, text)
+        await applyTurn(response, baseline, text, sentBy)
       } catch (cause) {
-        if (!live.current) return
+        if (!live.current) {
+          await lookAfterLeaving(sentBy)
+          return
+        }
         if (cause instanceof ApiError && cause.code === 'visit_not_in_intake') {
           // The visit moved on. The gate takes the patient to where it is now.
           await refetch()
@@ -174,7 +201,10 @@ export function useChat(visit: Visit, refetch: () => Promise<void>): ChatState {
         } catch {
           // Still no answer. The retry looks again before it sends anything.
         }
-        if (!live.current) return
+        if (!live.current) {
+          await lookAfterLeaving(sentBy)
+          return
+        }
         if (arrived) await refetch()
         else fail({ text, baseline, error: cause, retry: true, fromBox })
       } finally {
@@ -182,7 +212,7 @@ export function useChat(visit: Visit, refetch: () => Promise<void>): ChatState {
         if (live.current) setThinking(false)
       }
     },
-    [applyTurn, fail, id, landed, refetch, timed],
+    [applyTurn, fail, id, landed, lookAfterLeaving, refetch, timed],
   )
 
   const submit = useCallback(() => void send(draft, true), [draft, send])

@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { editIntake } from '../../../api/staff'
 import { errorText } from '../../../api/client'
 import type { StaffVisit } from '../../../api/staffTypes'
@@ -7,10 +7,21 @@ import { Button, Card, ErrorBlock, Field, Ltr, Pill } from '../../../components/
 import { useI18n } from '../../../i18n'
 import { recordTerm } from '../../../i18n/record'
 import { CONTROL, Dash, TextBox } from './parts'
-import { intakeChanges, intakeForm, SERVICES, type IntakeForm } from './intakeEdit'
+import { hasUnsavedEdit, intakeChanges, intakeForm, SERVICES, type IntakeForm } from './intakeEdit'
 
 const SUMMARY_MAX = 400
 const COMPLAINT_MAX = 200
+
+/**
+ * Scripted text is never passed off as a model's. A real mode says nothing about this intake:
+ * a turn can fall back to the script, and a walk-in is a template.
+ */
+const fromModel = ({ ai_mode: mode, intake_source: source }: StaffVisit) =>
+  mode === 'real' && source === 'model'
+const reasonLabel = (visit: StaffVisit) =>
+  fromModel(visit) ? 'nurse.intake.reason' : 'nurse.intake.reasonScripted'
+const summaryLabel = (visit: StaffVisit) =>
+  fromModel(visit) ? 'nurse.intake.summary' : 'nurse.intake.summaryScripted'
 
 function Row({ label, testId, children }: { label: string; testId?: string; children: ReactNode }) {
   return (
@@ -30,9 +41,10 @@ function Text({ value }: { value: string | null | undefined }) {
 function RedFlags({ visit }: { visit: StaffVisit }) {
   const { t, lang } = useI18n()
   if (visit.red_flags_raised.length > 0) {
+    const labels = lang === 'ar' ? visit.red_flags_raised_ar : visit.red_flags_raised
     return (
       <span data-testid="flags-raised" className="flex flex-wrap gap-1">
-        {visit.red_flags_raised.map((label) => (
+        {labels.map((label) => (
           <Pill key={label} tone="negative">
             {label}
           </Pill>
@@ -54,7 +66,7 @@ function ReadView({ visit }: { visit: StaffVisit }) {
   const severity = intake?.severity_0_10 ?? null
   return (
     <dl className="flex flex-col">
-      <Row label={t('nurse.intake.reason')} testId="intake-reason">
+      <Row label={t(reasonLabel(visit))} testId="intake-reason">
         <Text value={intake?.chief_complaint} />
       </Row>
       <Row label={t('nurse.intake.duration')} testId="intake-duration">
@@ -94,7 +106,7 @@ function ReadView({ visit }: { visit: StaffVisit }) {
       <Row label={t('nurse.intake.concerns')}>
         <Text value={intake?.patient_concerns} />
       </Row>
-      <Row label={t('nurse.intake.summary')} testId="ai-summary">
+      <Row label={t(summaryLabel(visit))} testId="ai-summary">
         <Text value={intake?.summary_for_nurse} />
       </Row>
     </dl>
@@ -106,15 +118,22 @@ interface EditViewProps {
   visit: StaffVisit
   onCancel: () => void
   onSaved: (draftCleared: boolean) => void
+  onUnsaved?: (unsaved: boolean) => void
 }
 
-function EditView({ visitId, visit, onCancel, onSaved }: EditViewProps) {
+function EditView({ visitId, visit, onCancel, onSaved, onUnsaved }: EditViewProps) {
   const { t, lang } = useI18n()
   const [before] = useState(() => intakeForm(visit.intake!, visit.service))
   const [form, setForm] = useState<IntakeForm>(before)
   const [busy, setBusy] = useState(false)
   const [failed, setFailed] = useState<unknown>(null)
   const [severityError, setSeverityError] = useState(false)
+  const unsaved = hasUnsavedEdit(before, form)
+
+  useEffect(() => {
+    onUnsaved?.(unsaved)
+    return () => onUnsaved?.(false)
+  }, [unsaved, onUnsaved])
 
   const set = <K extends keyof IntakeForm>(key: K, value: IntakeForm[K]) =>
     setForm((current) => ({ ...current, [key]: value }))
@@ -149,7 +168,7 @@ function EditView({ visitId, visit, onCancel, onSaved }: EditViewProps) {
     >
       <Field
         data-testid="edit-chief_complaint"
-        label={t('nurse.intake.reason')}
+        label={t(reasonLabel(visit))}
         dir="auto"
         maxLength={COMPLAINT_MAX}
         value={form.chief_complaint}
@@ -206,7 +225,7 @@ function EditView({ visitId, visit, onCancel, onSaved }: EditViewProps) {
       </label>
       <TextBox
         data-testid="edit-summary_for_nurse"
-        label={t('nurse.intake.summary')}
+        label={t(summaryLabel(visit))}
         dir="auto"
         rows={3}
         maxLength={SUMMARY_MAX}
@@ -239,10 +258,12 @@ interface IntakeCardProps {
   visit: StaffVisit
   editable: boolean
   refetch: () => Promise<void>
+  /** Told while the edit form holds changes that are not saved. */
+  onUnsaved?: (unsaved: boolean) => void
 }
 
 /** Every AI output shown to staff can be edited, and the nurse confirms it at the next step. */
-export function IntakeCard({ visitId, visit, editable, refetch }: IntakeCardProps) {
+export function IntakeCard({ visitId, visit, editable, refetch, onUnsaved }: IntakeCardProps) {
   const { t } = useI18n()
   const [editing, setEditing] = useState(false)
   const [draftCleared, setDraftCleared] = useState(false)
@@ -281,6 +302,7 @@ export function IntakeCard({ visitId, visit, editable, refetch }: IntakeCardProp
           visitId={visitId}
           visit={visit}
           onCancel={() => setEditing(false)}
+          onUnsaved={onUnsaved}
           onSaved={(cleared) => {
             setDraftCleared(cleared)
             setEditing(false)

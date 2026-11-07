@@ -37,9 +37,14 @@ function TranscriptConfirm({ chat, voice }: { chat: ChatState; voice: VoiceState
       >
         {t('voice.confirm.send')}
       </Button>
-      <Button data-testid="voice-retry" variant="quiet" className="w-full" onClick={voice.start}>
-        {t('voice.confirm.retry')}
-      </Button>
+      <div className="flex gap-2">
+        <Button data-testid="voice-retry" variant="quiet" className="flex-1" onClick={voice.start}>
+          {t('voice.confirm.retry')}
+        </Button>
+        <Button data-testid="voice-clear" variant="quiet" className="flex-1" onClick={voice.reset}>
+          {t('voice.confirm.clear')}
+        </Button>
+      </div>
     </div>
   )
 }

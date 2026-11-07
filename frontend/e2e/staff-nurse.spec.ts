@@ -317,6 +317,103 @@ test.describe('T03, the intake card', () => {
     expect((await staffVisit(api, visitId)).red_flags_raised.length).toBeGreaterThan(0)
   })
 
+  test('a raised flag reads in Arabic on an Arabic console', async ({ page, api }) => {
+    await arrivedThenCalled(page, api)
+    await api.walkIn(QID.fatima, 'chest pain going to my left arm')
+    await page.reload()
+    const flags = page.getByTestId('flags-raised')
+    await expect(flags).toContainText('chest pain')
+
+    await page.getByTestId('language-toggle').click()
+    await expect(flags).toContainText('ألم في الصدر')
+    await expect(flags).not.toHaveText(/[A-Za-z]/)
+  })
+
+  test('simulated text is labelled scripted, and no label says AI', async ({ page, api }) => {
+    await fatimaAtTriage(page, api)
+    const card = page.getByTestId('intake-card')
+    await expect(card).toContainText('Reason (scripted)')
+    await expect(card).toContainText('Summary (scripted)')
+    await expect(card).not.toContainText('AI summary')
+    await expect(card).not.toContainText('Reason (AI)')
+    await expect(page.getByTestId('ai-summary')).toBeVisible()
+
+    await page.getByTestId('intake-edit').click()
+    await expect(page.getByLabel('Summary (scripted)')).toBeVisible()
+    await expect(card).not.toContainText('AI summary')
+    await page.getByTestId('intake-cancel').click()
+
+    await page.getByTestId('language-toggle').click()
+    await expect(card).toContainText('السبب (مُعدّ مسبقاً)')
+    await expect(card).toContainText('الملخص (مُعدّ مسبقاً)')
+    await expect(card).not.toContainText('ذكاء اصطناعي')
+  })
+
+  test('a second tab on the same T03 shows an edit within 2 s, with no reload', async ({
+    page,
+    api,
+  }) => {
+    const { visitId } = await fatimaAtTriage(page, api)
+    const second = await page.context().newPage()
+    await second.goto(`/staff/nurse/${visitId}`)
+    await expect(second.getByTestId('intake-card')).toBeVisible()
+    await expect(second.getByTestId('live-state')).toHaveAttribute('data-live', 'live')
+    await expect(second.getByTestId('edited-pill')).toHaveCount(0)
+    await markThePage(second)
+
+    await editIntakeField(page, 'chief_complaint', 'dry cough with fever')
+
+    await expect(second.getByTestId('intake-reason')).toHaveText('dry cough with fever', {
+      timeout: 2_000,
+    })
+    await expect(second.getByTestId('edited-pill')).toBeVisible({ timeout: 2_000 })
+    await expectNotReloaded(second)
+    await second.close()
+  })
+
+  test('an unsaved edit holds the primary action, and a save lets it reach the draft', async ({
+    page,
+    api,
+  }) => {
+    const { visitId } = await fatimaAtTriage(page, api)
+    await fillVitals(page)
+    await page.getByTestId('urgency-routine').check()
+    const primary = page.getByTestId('vitals-submit')
+    await expect(primary).toBeEnabled()
+
+    await page.getByTestId('intake-edit').click()
+    await expect(primary).toBeEnabled()
+    await page.getByTestId('edit-chief_complaint').fill('dry cough with fever')
+    await expect(primary).toBeDisabled()
+    const held = page.getByTestId('save-edit-first')
+    await expect(held).toHaveText('Save or cancel your edit first.')
+    await page.getByTestId('language-toggle').click()
+    await expect(held).toHaveText('احفظ تعديلك أو ألغِه أولاً.')
+    await page.getByTestId('language-toggle').click()
+    expect((await staffVisit(api, visitId)).vitals).toBeNull()
+
+    await page.getByTestId('intake-save').click()
+    await expect(page.getByTestId('intake-form')).toHaveCount(0)
+    await expect(held).toHaveCount(0)
+    await expect(primary).toBeEnabled()
+    await primary.click()
+    await page.waitForURL(`**/staff/nurse/${visitId}/handoff`)
+    await expect(page.getByTestId('handoff-text')).toHaveValue(/dry cough with fever/)
+  })
+
+  test('a half-typed edit never holds back sending a patient to emergency', async ({
+    page,
+    api,
+  }) => {
+    await fatimaAtTriage(page, api)
+    await page.getByTestId('intake-edit').click()
+    await page.getByTestId('edit-chief_complaint').fill('dry cough')
+    await page.getByTestId('urgency-urgent').check()
+    await expect(page.getByTestId('vitals-submit')).toBeEnabled()
+    await expect(page.getByTestId('vitals-submit')).toHaveText('Send to emergency')
+    await expect(page.getByTestId('save-edit-first')).toHaveCount(0)
+  })
+
   test('a missing value is a grey dash, and severity 0 prints as 0', async ({ page, api }) => {
     const { visitId } = await arrivedThenCalled(page, api)
     await editIntakeField(page, 'severity_0_10', '٠')
@@ -664,6 +761,39 @@ test.describe('T04, the handoff', () => {
     await page.getByTestId('handoff-confirm').click()
     await expect(page.getByTestId('handoff-sent')).toBeVisible()
     expect((await staffVisit(api, visitId)).handoff.final_text).toBe(mine)
+  })
+
+  test('a tab on an older draft cannot confirm after another tab re-drafted', async ({
+    page,
+    api,
+  }) => {
+    const { visitId } = await fatimaAtTriage(page, api)
+    await toHandoff(page, visitId)
+    const older = await page.getByTestId('handoff-text').inputValue()
+    const mine = `${older} Checked by me.`
+    await page.getByTestId('handoff-text').fill(mine)
+
+    // The second tab, which edits and writes its own draft.
+    await api.asStaff(NURSE, 'PUT', `/api/visits/${visitId}/intake`, {
+      json: { severity_0_10: 9 },
+    })
+    const newer = await api.asStaff(NURSE, 'POST', `/api/visits/${visitId}/handoff/draft`)
+    expect(newer.text).not.toBe(older)
+
+    await page.getByTestId('handoff-confirm').click()
+
+    await expect(page.getByTestId('handoff-redrafted')).toHaveText(
+      say('en', 'nurse.handoff.redrafted'),
+    )
+    await expect(page.getByTestId('handoff-kept')).toContainText(mine)
+    await expect(page.getByTestId('handoff-text')).toHaveValue(newer.text)
+    const after = await staffVisit(api, visitId)
+    expect(after.status).toBe('in_triage')
+    expect(after.handoff.final_text).toBeNull()
+
+    await page.getByTestId('handoff-confirm').click()
+    await expect(page.getByTestId('handoff-sent')).toBeVisible()
+    expect((await staffVisit(api, visitId)).handoff.final_text).toBe(newer.text)
   })
 
   test('a blank summary cannot be sent', async ({ page, api }) => {

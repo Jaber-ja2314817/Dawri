@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import sqlite3
 import time
+from types import SimpleNamespace
 
 import pytest
 
@@ -21,6 +22,7 @@ from backend.tests.api_helpers import (
     staff_token,
 )
 from backend.tests.conftest import make_visit
+from backend.tests.test_api_staff import arrived
 
 T1 = "C-WAKRA-T1"
 OTHER_NURSE = "S-RAY-NURSE1"
@@ -206,6 +208,35 @@ def test_a_closed_stream_drops_its_subscription(live_api, conn):
     while events.visit_channel(visit_id) in events.bus._subs and time.monotonic() < deadline:
         time.sleep(0.01)
     assert events.visit_channel(visit_id) not in events.bus._subs
+
+
+def test_a_nurse_edit_reaches_a_second_tab_on_the_visit_stream(live_api):
+    api = live_api.http
+    visit_id = arrived(SimpleNamespace(app=app))
+    token = staff_token(api, NURSE)
+    with open_stream(live_api, f"/api/visits/{visit_id}/stream", token) as stream:
+        stream.until(": connected")
+        response = api.put(
+            f"/api/visits/{visit_id}/intake",
+            json={"json": {"chief_complaint": "dry cough"}},
+            headers=bearer(token),
+        )
+        assert response.status_code == 200, response.text
+        line = stream.until("intake.edited", timeout=2)[-1]
+    assert json.loads(line.removeprefix("data: ")) == {"type": "intake.edited"}
+
+
+def test_a_refused_edit_publishes_nothing(api, monkeypatch):
+    visit_id = arrived(api)
+    published = []
+    monkeypatch.setattr(events.bus, "publish", lambda *event: published.append(event))
+    response = api.put(
+        f"/api/visits/{visit_id}/intake",
+        json={"json": {"chief_complaint": ""}},
+        headers=bearer(staff_token(api, NURSE)),
+    )
+    assert response.status_code == 422
+    assert published == []
 
 
 # Display stream

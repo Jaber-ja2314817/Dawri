@@ -170,14 +170,25 @@ describe('S06 emergency', () => {
 })
 
 describe('S07 refill', () => {
-  it('shows the medicine exactly as stored', () => {
+  it('shows the medicine in Arabic on an Arabic screen', () => {
     mount(atRefill(), 'refill')
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(
       'يمكنك الحصول على دوائك دون زيارة',
     )
     const medicine = screen.getByTestId('refill-medicine')
-    expect(medicine.textContent).toBe('amlodipine 5 mg once daily')
+    expect(medicine.textContent).toBe('أملوديبين 5 ملغ مرة واحدة يومياً')
     expect(medicine.getAttribute('dir')).toBe('auto')
+  })
+
+  it('shows the medicine as stored on an English screen', () => {
+    window.localStorage.setItem('dawri.lang', 'en')
+    mount(atRefill(), 'refill')
+    expect(screen.getByTestId('refill-medicine').textContent).toBe('amlodipine 5 mg once daily')
+  })
+
+  it('keeps a medicine it has no Arabic for exactly as stored', () => {
+    mount(atRefill('lisinopril 10 mg once daily'), 'refill')
+    expect(screen.getByTestId('refill-medicine').textContent).toBe('lisinopril 10 mg once daily')
   })
 
   it('says the refill line is a demo and invents no number', () => {

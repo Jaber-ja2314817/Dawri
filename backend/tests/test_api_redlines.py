@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import re
+import time
 from collections.abc import Iterator
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import pytest
+from huggingface_hub.utils import _detect_agent
 
 from backend import timeutil
 from backend.ai import runtime
@@ -26,7 +28,7 @@ from backend.tests.api_helpers import (
     RAVI_TEXT,
     bearer,
 )
-from backend.tests.conftest import FakeClock
+from backend.tests.conftest import SUITE_START, FakeClock
 from backend.tests.test_api_e2e import (
     GATE_PASSING_REPLY,
     RAYYAN_NURSE,
@@ -775,6 +777,24 @@ def test_a_red_flag_before_doha_midnight_still_counts_after_it(api, monkeypatch)
     assert stored_visit(visit_id)["status"] == "redirected_emergency"
     ticket = all_tickets(visit_id)[0]
     assert ticket["number"] is None and ticket["seq"] is None
+
+
+def test_the_suite_runs_at_doha_midday_whenever_it_is_started(api):
+    """The route clock and the clock of the app's engine, which a default argument sets.
+
+    The tests that move a clock 45 minutes on from now rely on both being here.
+    """
+    for clock in (timeutil.utcnow, api.app.state.engine.clock):
+        now = clock()
+        assert timedelta(0) <= now - SUITE_START < timedelta(hours=12)
+        assert timeutil.doha_day(now) == "2026-11-07"
+        time.sleep(0.01)
+        assert clock() > now
+
+
+def test_the_suite_never_reads_the_hub_agent_list_from_the_home_cache():
+    """That copy lasts a day, so the real-client tests would pass or fail by its age."""
+    assert _detect_agent._registry is _detect_agent._EMPTY_REGISTRY
 
 
 def before_midnight(api, monkeypatch):

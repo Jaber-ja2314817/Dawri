@@ -23,9 +23,11 @@ interface VitalsFormProps {
   visitId: string
   visit: StaffVisit
   onEscalated: () => void
+  /** The intake form holds changes. A handoff from here would drop them. */
+  unsavedEdit?: boolean
 }
 
-export function VitalsForm({ visitId, visit, onEscalated }: VitalsFormProps) {
+export function VitalsForm({ visitId, visit, onEscalated, unsavedEdit = false }: VitalsFormProps) {
   const { t, lang } = useI18n()
   const navigate = useNavigate()
   const [values, setValues] = useState<VitalValues>(() => vitalsFrom(visit.vitals))
@@ -39,6 +41,8 @@ export function VitalsForm({ visitId, visit, onEscalated }: VitalsFormProps) {
   const atCounter = visit.ticket?.state === 'called' || visit.ticket?.state === 'serving'
   const gate = vitalsGate({ inTriage, atCounter, urgency })
   const open = inTriage && atCounter
+  // Sending a patient to emergency is never held back by a half-typed edit.
+  const held = unsavedEdit && open && urgency !== 'urgent'
   const { values: readings, errors } = parseVitals(values)
 
   const message = (field: VitalField, error: VitalError | undefined) => {
@@ -48,7 +52,7 @@ export function VitalsForm({ visitId, visit, onEscalated }: VitalsFormProps) {
   }
 
   const submit = async () => {
-    if (gate !== null || urgency === null || busy) return
+    if (gate !== null || urgency === null || busy || held) return
     if (Object.keys(errors).length > 0) {
       setTouched(Object.fromEntries(VITAL_FIELDS.map((field) => [field, true])))
       setArmed(false)
@@ -171,7 +175,7 @@ export function VitalsForm({ visitId, visit, onEscalated }: VitalsFormProps) {
               type="submit"
               data-testid="vitals-submit"
               data-armed={armed}
-              disabled={gate !== null}
+              disabled={gate !== null || held}
               loading={busy}
               className="w-full"
             >
@@ -187,15 +191,21 @@ export function VitalsForm({ visitId, visit, onEscalated }: VitalsFormProps) {
                 {t('nurse.vitals.keep')}
               </Button>
             )}
-            {gate === 'no-urgency' && (
-              <p data-testid="urgency-hint" className="text-sm text-muted">
-                {t('nurse.vitals.chooseUrgency')}
+            {held ? (
+              <p data-testid="save-edit-first" role="status" className="text-sm text-muted">
+                {t('nurse.vitals.saveEditFirst')}
               </p>
+            ) : (
+              gate === 'no-urgency' && (
+                <p data-testid="urgency-hint" className="text-sm text-muted">
+                  {t('nurse.vitals.chooseUrgency')}
+                </p>
+              )
             )}
           </div>
         </fieldset>
       </form>
-      {open && visit.vitals !== null && (
+      {open && visit.vitals !== null && !held && (
         <QuietLink to={handoffPath(visitId)} testId="to-handoff">
           {t('nurse.visit.toHandoff')}
         </QuietLink>

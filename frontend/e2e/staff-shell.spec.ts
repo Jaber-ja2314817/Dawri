@@ -333,6 +333,70 @@ test('reset takes two taps, goes home and says so', async ({ page, api }) => {
   await expect(page.getByTestId('staff-name')).toContainText('Amal Al-Demo')
 })
 
+test('on a phone a reset closes the menu, so its notice is in plain view', async ({ page }) => {
+  await page.setViewportSize(PHONE)
+  await staffLogin(page, NURSE)
+  await page.getByTestId('staff-menu').click()
+  await page.getByTestId('reset-demo').click()
+  await page.getByTestId('reset-confirm').click()
+
+  await expect(page.getByTestId('staff-sheet')).toHaveCount(0)
+  await expect(page.getByTestId('staff-notice')).toBeInViewport()
+  await expect(page.getByTestId('staff-notice')).toHaveText(say('en', 'staff.reset.done'))
+  await expect(page.getByTestId('staff-menu')).toBeFocused()
+  expect(await page.evaluate(() => document.body.style.overflow)).toBe('')
+})
+
+test('on a phone a reset that fails keeps the menu open with the reason', async ({ page }) => {
+  await page.setViewportSize(PHONE)
+  await staffLogin(page, NURSE)
+  await page.route('**/api/demo/reset', (route) =>
+    route.fulfill({ status: 500, json: { error: 'internal_error' } }),
+  )
+  await page.getByTestId('staff-menu').click()
+  await page.getByTestId('reset-demo').click()
+  await page.getByTestId('reset-confirm').click()
+  await expect(page.getByTestId('reset-error')).toBeVisible()
+  await expect(page.getByTestId('staff-sheet')).toBeVisible()
+})
+
+test('the reset notice shows once, and a reload does not bring it back', async ({ page }) => {
+  await staffLogin(page, NURSE)
+  await page.getByTestId('reset-demo').click()
+  await page.getByTestId('reset-confirm').click()
+  await expect(page.getByTestId('staff-notice')).toHaveText(say('en', 'staff.reset.done'))
+  // It holds through the queue reading again, and history no longer carries it.
+  await expect(page.getByTestId('staff-notice')).toBeVisible()
+  expect(await page.evaluate(() => history.state?.usr ?? null)).toBeNull()
+
+  await page.reload()
+  await expect(page.getByTestId('queue-table')).toBeVisible()
+  await expect(page.getByTestId('staff-notice')).toHaveCount(0)
+})
+
+test('a demo reset clears what a colleague handled, from this console and from another', async ({
+  page,
+  api,
+}) => {
+  await staffLogin(page, NURSE)
+  await expect(page.getByTestId('live-state')).toHaveAttribute('data-live', 'live')
+  const handled = page.getByTestId('auto-completed')
+
+  // Only simulated tickets wait, so the call completes one and brings nobody.
+  await page.getByTestId('call-next').click()
+  await expect(handled).toContainText('T-011')
+  await api.reset()
+  await expect(handled).toHaveCount(0)
+  await expect(page.getByTestId('call-next')).toBeVisible()
+
+  await page.getByTestId('call-next').click()
+  await expect(handled).toContainText('T-011')
+  await page.getByTestId('reset-demo').click()
+  await page.getByTestId('reset-confirm').click()
+  await expect(page.getByTestId('staff-notice')).toBeVisible()
+  await expect(handled).toHaveCount(0)
+})
+
 test('the language toggle sets dir on the staff screens', async ({ page }) => {
   await staffLogin(page, NURSE)
   const root = page.locator('html')

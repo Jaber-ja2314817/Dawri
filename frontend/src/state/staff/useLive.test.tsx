@@ -1,12 +1,13 @@
 import { act, cleanup, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../../api/client'
+import { onDemoReset } from './demoReset'
 import { useLive } from './useLive'
 
 class FakeEventSource {
   static instances: FakeEventSource[] = []
   onopen: (() => void) | null = null
-  onmessage: (() => void) | null = null
+  onmessage: ((event?: { data: string }) => void) | null = null
   onerror: (() => void) | null = null
   closed = false
   url: string
@@ -66,6 +67,28 @@ afterEach(() => {
 })
 
 describe('useLive', () => {
+  it.each([
+    ['tells the tab about', '{"type":"demo.reset"}', 1],
+    ['says nothing of any other', '{"type":"queue.changed"}', 0],
+    ['shrugs off an unreadable', 'not json', 0],
+    ['shrugs off an empty', 'null', 0],
+  ])('%s event, and reads again either way', async (_name, data, heard) => {
+    const listener = vi.fn()
+    const stop = onDemoReset(listener)
+    mount()
+    await flush()
+    FakeEventSource.last.onopen?.()
+    await flush()
+    const reads = load.mock.calls.length
+    await act(async () => {
+      FakeEventSource.last.onmessage?.({ data })
+      await vi.advanceTimersByTimeAsync(0)
+    })
+    expect(listener).toHaveBeenCalledTimes(heard)
+    expect(load.mock.calls.length).toBe(reads + 1)
+    stop()
+  })
+
   it('loads and opens the stream it was given', async () => {
     const { result } = mount()
     expect(result.current.state).toBe('loading')

@@ -70,12 +70,6 @@ async function pharmacistCalls(page: Page) {
   await expect(page.getByTestId('handover')).toBeVisible()
 }
 
-async function prescribe(page: Page, drugId: string) {
-  await page.getByTestId(`drug-${drugId}`).check()
-  await page.getByTestId('consult-done').click()
-  await expect(page.getByTestId('doctor-empty')).toBeVisible()
-}
-
 async function signedInPatient(browser: Browser, baseURL: string, token: string, path: string) {
   const context = await browser.newContext({ baseURL, viewport: PHONE, locale: 'en-GB' })
   await context.addInitScript((value) => localStorage.setItem('dawri.token', value), token)
@@ -306,6 +300,82 @@ test('a 409 from the server shows its conflicts and moves nothing', async ({ pag
   await expect(page.getByTestId('moved-number')).toHaveText('P-031')
   expect(sent[1].acknowledge_allergy).toBe(true)
   expect(eventRows(visitId, OVERRIDE)).toBe(1)
+})
+
+async function amoxicillinAcknowledged(page: Page, api: DemoApi) {
+  const { visitId } = await fatimaAtDoctor(api)
+  await doctorCalls(page)
+  await page.getByTestId('drug-DR-AMOX').check()
+  await page.getByTestId('drug-DR-PARA').check()
+  await page.getByTestId('ack-allergy').check()
+  await page.getByTestId('consult-done').click()
+  await expect(page.getByTestId('moved-number')).toHaveText('P-031')
+  await page.getByTestId('staff-logout').click()
+  await page.waitForURL('**/staff/login')
+  return visitId
+}
+
+const rxRow = (page: Page, drugId: string) =>
+  page.locator(`[data-testid=rx-row][data-drug="${drugId}"]`)
+
+test('T06 warns on the row of an acknowledged override, in the console language, and on no other', async ({
+  page,
+  api,
+}) => {
+  await amoxicillinAcknowledged(page, api)
+  await pharmacistCalls(page)
+
+  const warning = rxRow(page, 'DR-AMOX').getByTestId('rx-warning')
+  await expect(warning).toContainText(say('en', 'doctor.allergy.pill'))
+  await expect(warning).toContainText(
+    'Allergy on record: penicillin. Check before prescribing amoxicillin.',
+  )
+  await expect(rxRow(page, 'DR-PARA')).toBeVisible()
+  await expect(rxRow(page, 'DR-PARA').getByTestId('rx-warning')).toHaveCount(0)
+  await expect(page.getByTestId('rx-warning')).toHaveCount(1)
+
+  await page.getByTestId('language-toggle').click()
+  await expect(warning).toContainText(say('ar', 'doctor.allergy.pill'))
+  await expect(warning).toContainText('راجع قبل وصف أموكسيسيلين.')
+  await page.getByTestId('language-toggle').click()
+
+  // It tells, and it holds nothing back.
+  await expect(page.getByTestId('dispensed')).toBeEnabled()
+  await page.getByTestId('dispensed').click()
+  await expect(page.getByTestId('dispensed-outcome')).toContainText('P-031')
+})
+
+test('T06 shows no warning at all on a safe prescription', async ({ page, api }) => {
+  const { visitId } = await fatimaAtDoctor(api)
+  await doctorCalls(page)
+  await page.getByTestId('drug-DR-PARA').check()
+  await page.getByTestId('consult-done').click()
+  await expect(page.getByTestId('moved-number')).toHaveText('P-031')
+  await page.getByTestId('staff-logout').click()
+  await page.waitForURL('**/staff/login')
+
+  const drugs = page.waitForResponse(`**/api/staff/visits/${visitId}/drugs`)
+  await pharmacistCalls(page)
+  expect((await drugs).status()).toBe(200)
+  await expect(page.getByTestId('rx-row')).toHaveCount(1)
+  await expect(page.getByTestId('rx-warning')).toHaveCount(0)
+  await expect(page.getByTestId('rx-warnings-unread')).toHaveCount(0)
+})
+
+test('T06 says so when the warnings cannot be read, and the handover still goes', async ({
+  page,
+  api,
+}) => {
+  await amoxicillinAcknowledged(page, api)
+  await page.route('**/api/staff/visits/*/drugs', (route) =>
+    route.fulfill({ status: 500, json: { error: 'internal_error' } }),
+  )
+  await pharmacistCalls(page)
+  await expect(page.getByTestId('rx-warnings-unread')).toHaveText(
+    say('en', 'pharmacy.warningsUnread'),
+  )
+  await expect(page.getByTestId('rx-warning')).toHaveCount(0)
+  await expect(page.getByTestId('dispensed')).toBeEnabled()
 })
 
 test('the patient moves to P-031 with no reload, and the pharmacy hands over to S11', async ({

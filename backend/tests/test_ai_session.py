@@ -161,6 +161,38 @@ def test_a_correction_after_the_summary_updates_the_intake_and_keeps_the_count(s
     assert row[0] == 0
 
 
+@pytest.mark.parametrize(
+    ("answers", "correction", "read_back"),
+    [
+        (("I have a rash for 2 days", "5", "no", "no", "no"), "actually it is 8", "severity 8/10"),
+        (("عندي كحة من يومين", "خمسة", "لا", "لا", "لا"), "لا، ثمانية", "الشدة 8 من 10"),
+    ],
+)
+def test_a_severity_correction_reaches_the_stored_intake(seeded, answers, correction, read_back):
+    visit_id = make_visit(seeded, "P003")
+    for text in answers:
+        first = session.handle_message(seeded, SIM, visit_id, text)
+    assert first.done and first.intake["severity_0_10"] == 5
+
+    second = session.handle_message(seeded, SIM, visit_id, correction)
+
+    assert second.done
+    assert read_back in second.reply
+    assert json.loads(stored_json(seeded, visit_id))["severity_0_10"] == 8
+    assert session.history(seeded, visit_id)["intake"]["severity_0_10"] == 8
+    assert session.staff_view(seeded, visit_id)["intake"]["severity_0_10"] == 8
+    assert session.staff_view(seeded, visit_id)["turns"][-2]["text"] == correction
+
+
+def test_rules_still_win_over_a_severity_correction(seeded):
+    visit_id = make_visit(seeded, "P003")
+    for text in ("I have a rash for 2 days", "5", "no", "no", "no"):
+        session.handle_message(seeded, SIM, visit_id, text)
+    result = session.handle_message(seeded, SIM, visit_id, "actually it is 8, and chest pain")
+    assert result.emergency
+    assert visit_status(seeded, visit_id) == "redirected_emergency"
+
+
 def test_red_flags_still_run_after_the_summary(seeded):
     visit_id = make_visit(seeded, "P003")
     for text in ("I have a rash for 2 days", "5", "no", "no", "no"):

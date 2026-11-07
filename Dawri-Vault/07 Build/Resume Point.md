@@ -46,3 +46,17 @@ Build resumed in a new session as run `wf_b653a907-cb4`, script `07 Build/orches
 - **Same session:** Workflow with that `scriptPath` and `resumeFromRunId: wf_b653a907-cb4`.
 - **New session:** check `git log` to see which phases landed, trim `ALL_PHASES.slice(3)` in the script to what is left, and remove `PHASES[0].resume` unless Phase 4 is still unreviewed.
 - Journal: `~/.claude/projects/-Users-jaberal-boenain-Desktop-Dawri/d2706c8e-316d-477a-8c11-293891467d78/subagents/workflows/wf_b653a907-cb4/journal.jsonl`
+
+## Update, Sat 7 Nov, about 05:10 Doha
+**Main build finished.** Read this section first, because the status table at the top is from 6 Nov.
+
+| Phase | Status |
+|---|---|
+| 1 to 5 | Approved, pushed |
+| 6. Integration and ship-ready | Approved in review round 4 of 4. Commit follows from the workflow |
+
+- Evidence, the acceptance table and known gaps are in [[Orchestrator Log]], Phase 6.
+- F12 stays unticked: nothing is deployed to a Hugging Face Space. F22 and F23 are dropped. Every other feature is ticked.
+- Next is the Hugging Face work, which the owner runs: the README's numbered steps, after the three changes listed under "What is left for Hugging Face" in the log.
+- `main` is untouched. The owner merges at the very end.
+- This machine now holds a real token in the gitignored `.env`, so a plain local uvicorn runs in real mode. Start it with `HF_TOKEN=` set blank for simulated.

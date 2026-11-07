@@ -1102,12 +1102,17 @@ def check_conversation(text: str, history: Sequence[dict] = ()) -> RedFlagResult
     )
 
 
+def label_ar(label: str) -> str:
+    """The Arabic for an English cue label. An unknown one stays as it is."""
+    return _LABEL_AR.get(label, label)
+
+
 def denied_text(labels: Iterable[str], lang: str = "en") -> str:
     """Build the nurse-facing line, or '' when nothing was denied."""
     unique = list(dict.fromkeys(labels))
     if not unique:
         return ""
     if lang.startswith("ar"):
-        arabic = [_LABEL_AR.get(label, label) for label in unique]
+        arabic = [label_ar(label) for label in unique]
         return "المريض نفى: " + "، ".join(arabic)
     return "Patient denied: " + ", ".join(unique)

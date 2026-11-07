@@ -1,11 +1,39 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ApiError } from '../../api/client'
-import { openEventStream, type EventStream } from '../../api/stream'
+import type { EventStream, EventStreamHandlers } from '../../api/stream'
+import { announceDemoReset } from './demoReset'
 
 export type LiveState = 'loading' | 'ready' | 'error' | 'gone'
 export type LiveMode = 'live' | 'polling'
 
 const REOPEN_MS = 15_000
+
+function isDemoReset(event: MessageEvent): boolean {
+  try {
+    return JSON.parse(event.data)?.type === 'demo.reset'
+  } catch {
+    return false
+  }
+}
+
+/**
+ * api/stream's openEventStream, which drops each message unread. Here every message still only
+ * means "read it again", and a reset is also told to what a read cannot clear.
+ */
+function openStream(url: string, handlers: EventStreamHandlers): EventStream | null {
+  if (typeof EventSource === 'undefined') return null
+  const source = new EventSource(url)
+  source.onopen = () => handlers.onOpen()
+  source.onmessage = (event) => {
+    if (isDemoReset(event)) announceDemoReset()
+    handlers.onEvent()
+  }
+  source.onerror = () => {
+    source.close()
+    handlers.onError()
+  }
+  return { close: () => source.close() }
+}
 
 export interface UseLiveOptions<T> {
   /** A new key starts over with no data. */
@@ -128,7 +156,7 @@ export function useLive<T>({
         startPolling()
         return
       }
-      const mine: EventStream | null = openEventStream(streamUrl, {
+      const mine: EventStream | null = openStream(streamUrl, {
         onOpen: () => {
           if (stream !== mine) return
           stopPolling()

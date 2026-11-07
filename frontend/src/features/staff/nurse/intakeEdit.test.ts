@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import type { StaffIntake } from '../../../api/staffTypes'
-import { intakeChanges, intakeForm, parseSeverity, SERVICES } from './intakeEdit'
+import {
+  hasUnsavedEdit,
+  intakeChanges,
+  intakeForm,
+  parseSeverity,
+  SERVICES,
+} from './intakeEdit'
 
 const intake = {
   chief_complaint: 'fever and cough',
@@ -91,5 +97,21 @@ describe('intakeChanges', () => {
     const stored = { ...intake, associated: ['pain, sharp'] } as StaffIntake
     const form = intakeForm(stored, 'gp')
     expect(intakeChanges(form, { ...form })).toEqual({})
+  })
+})
+
+describe('hasUnsavedEdit', () => {
+  it('is false until something real changed', () => {
+    expect(hasUnsavedEdit(before, before)).toBe(false)
+    expect(hasUnsavedEdit(before, { ...before, duration: ' 3 days ' })).toBe(false)
+  })
+
+  it('is true for any changed field', () => {
+    expect(hasUnsavedEdit(before, { ...before, chief_complaint: 'cough' })).toBe(true)
+    expect(hasUnsavedEdit(before, { ...before, service: 'dental' })).toBe(true)
+  })
+
+  it('counts a severity that would not save', () => {
+    expect(hasUnsavedEdit(before, { ...before, severity_0_10: 'twelve' })).toBe(true)
   })
 })

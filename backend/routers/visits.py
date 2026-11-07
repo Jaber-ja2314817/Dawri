@@ -363,6 +363,8 @@ def _emergency_card(conn: sqlite3.Connection, visit: sqlite3.Row, chat: dict) ->
     self_harm = bool(last.get("self_harm"))
     return {
         "reply": last.get("reply") or simulated.emergency_reply(chat["language"], self_harm),
+        "reply_en": simulated.emergency_reply("en", self_harm),
+        "reply_ar": simulated.emergency_reply("ar", self_harm),
         "self_harm": self_harm,
         "nearest_ed": centres.nearest_ed(conn, visit["patient_id"]),
     }

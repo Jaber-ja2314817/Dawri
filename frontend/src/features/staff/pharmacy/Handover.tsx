@@ -1,11 +1,18 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { errorText } from '../../../api/client'
-import { dispensed } from '../../../api/staff'
-import type { DispensedResponse, PrescriptionItem, StaffVisit } from '../../../api/staffTypes'
-import { Button, Card, ErrorBlock, Ltr } from '../../../components/ui'
+import { dispensed, visitDrugs } from '../../../api/staff'
+import type {
+  AllergyWarning,
+  DispensedResponse,
+  PrescriptionItem,
+  StaffVisit,
+} from '../../../api/staffTypes'
+import { Button, Card, ErrorBlock, Ltr, Pill } from '../../../components/ui'
 import { useI18n } from '../../../i18n'
+import { useLive } from '../../../state/staff/useLive'
 
 const DASH = '—'
+const WARNINGS_POLL_MS = 20_000
 
 function Amount({ item }: { item: PrescriptionItem }) {
   const { t } = useI18n()
@@ -16,6 +23,19 @@ function Amount({ item }: { item: PrescriptionItem }) {
       {' · '}
       <Ltr>{days ?? DASH}</Ltr> {t(days === 1 ? 'pharmacy.day' : 'pharmacy.days')}
     </span>
+  )
+}
+
+/** Shown, never a gate: the doctor acknowledged this one, and the pharmacist should see it too. */
+function RowWarning({ warning }: { warning: AllergyWarning }) {
+  const { t, lang } = useI18n()
+  return (
+    <p data-testid="rx-warning" className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+      <Pill tone="negative">{t('doctor.allergy.pill')}</Pill>
+      <span dir="auto" className="min-w-0 text-negative">
+        {lang === 'ar' ? warning.text_ar : warning.text_en}
+      </span>
+    </p>
   )
 }
 
@@ -32,6 +52,16 @@ export function Handover({ visit, visitId, onSending, onDone }: HandoverProps) {
   const [sending, setSending] = useState(false)
   const [failure, setFailure] = useState<unknown>(null)
   const medicines = visit.medicines[lang]
+  const load = useCallback((signal: AbortSignal) => visitDrugs(visitId, { signal }), [visitId])
+  const drugs = useLive({
+    key: `drugs:${visitId}`,
+    load,
+    stream: null,
+    pollMs: WARNINGS_POLL_MS,
+  })
+  const warningFor = (drugId: string) =>
+    drugs.data?.find((drug) => drug.id === drugId)?.allergy_warning ?? null
+  const warningsUnread = drugs.state === 'error' && drugs.data === null
 
   const hand = async () => {
     if (sending) return
@@ -59,6 +89,7 @@ export function Handover({ visit, visitId, onSending, onDone }: HandoverProps) {
         <ul className="border-t border-rule">
           {visit.prescription.map((item, index) => {
             const medicine = medicines[index]
+            const warning = warningFor(item.drug)
             return (
               <li
                 key={item.id}
@@ -75,10 +106,16 @@ export function Handover({ visit, visitId, onSending, onDone }: HandoverProps) {
                 <p data-testid="medicine-line" dir="auto" className="text-sm">
                   {medicine?.line ?? DASH}
                 </p>
+                {warning !== null && <RowWarning warning={warning} />}
               </li>
             )
           })}
         </ul>
+      )}
+      {warningsUnread && (
+        <p data-testid="rx-warnings-unread" role="status" className="px-4 pt-3 text-sm text-warning">
+          {t('pharmacy.warningsUnread')}
+        </p>
       )}
       <div className="flex flex-col gap-3 border-t border-border p-4">
         {failure !== null && <ErrorBlock message={errorText(failure, t, lang)} />}

@@ -3,14 +3,15 @@ import { useNavigate } from 'react-router-dom'
 import { errorText } from '../../api/client'
 import { resetDemo } from '../../api/staff'
 import { useI18n } from '../../i18n'
+import { announceDemoReset } from '../../state/staff/demoReset'
 import { roleHome } from '../../state/staff/roles'
 import { useStaff } from '../../state/staff/session'
 import { Button } from '../ui'
 
 const DISARM_MS = 6_000
 
-/** Two taps, because this wipes every open console. */
-export function ResetDemo() {
+/** Two taps, because this wipes every open console. `onDone` runs once the reset has worked. */
+export function ResetDemo({ onDone }: { onDone?: () => void }) {
   const { t, lang } = useI18n()
   const { staff } = useStaff()
   const navigate = useNavigate()
@@ -29,7 +30,9 @@ export function ResetDemo() {
     setFailed(null)
     try {
       await resetDemo()
+      announceDemoReset()
       setArmed(false)
+      onDone?.()
       if (staff !== null) {
         navigate(roleHome(staff.role), {
           replace: true,

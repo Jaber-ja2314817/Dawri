@@ -1,9 +1,10 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
-import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
+import { Link, MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../../api/client'
 import type { ChatResponse, Visit } from '../../api/types'
 import { I18nProvider } from '../../i18n'
+import { clearToken, setToken } from '../../state/token'
 import { RecorderError } from '../../voice/recorder'
 import { ChatScreen } from './ChatScreen'
 import { ID, intake, opening, summaryMessage, summaryText, turn, visitWith } from './fixtures'
@@ -62,6 +63,38 @@ function ui(visit: Visit) {
 }
 
 const mount = (visit: Visit = visitWith()) => render(ui(visit))
+
+/** Chat with a way out, so the screen really unmounts under a turn in flight. */
+function mountWithExit(visit: Visit = visitWith()) {
+  render(
+    <I18nProvider>
+      <MemoryRouter initialEntries={[`/visit/${ID}/chat`]}>
+        <Routes>
+          <Route
+            path="/visit/:id/chat"
+            element={
+              <>
+                <Link to="/home">leave</Link>
+                <ChatScreen visit={visit} refetch={refetch} />
+              </>
+            }
+          />
+          <Route path="*" element={<Where />} />
+        </Routes>
+      </MemoryRouter>
+    </I18nProvider>,
+  )
+}
+
+async function leave() {
+  fireEvent.click(screen.getByText('leave'))
+  await waitFor(() => expect(screen.getByTestId('at').textContent).toBe('/home'))
+}
+
+const atSummary = () =>
+  visitWith({ intake, chat: { language: 'ar', messages: [opening, summaryMessage] } })
+
+const yesButton = () => screen.getByTestId('chat-summary-yes') as HTMLButtonElement
 
 function typeAndSend(text: string) {
   fireEvent.change(screen.getByTestId('chat-input'), { target: { value: text } })
@@ -277,6 +310,172 @@ describe('the summary', () => {
     await waitFor(() =>
       expect(screen.getByTestId('chat-summary').textContent).toContain('ملخص جديد'),
     )
+  })
+})
+
+describe('words not yet sent at the summary', () => {
+  const unsentLine = () => screen.queryByTestId('chat-summary-unsent')
+  const type = (text: string) => fireEvent.change(box(), { target: { value: text } })
+
+  afterEach(() => localStorage.clear())
+
+  it('offers Yes while nothing waits to be sent', () => {
+    mount(atSummary())
+    expect(yesButton().disabled).toBe(false)
+    expect(unsentLine()).toBeNull()
+  })
+
+  it('holds Yes while the box has text, and says what to do', () => {
+    mount(atSummary())
+    type('chest pain')
+    expect(yesButton().disabled).toBe(true)
+    expect(unsentLine()?.textContent).toBe('أرسل رسالتك أو امسحها أولاً.')
+    fireEvent.click(yesButton())
+    expect(mocks.confirmIntake).not.toHaveBeenCalled()
+  })
+
+  it('says it in English too', () => {
+    localStorage.setItem('dawri.lang', 'en')
+    mount(atSummary())
+    type('chest pain')
+    expect(unsentLine()?.textContent).toBe('Send or clear your message first.')
+  })
+
+  it('gives Yes back when the box is emptied, and does not count spaces as words', () => {
+    mount(atSummary())
+    type('chest pain')
+    type('')
+    expect(yesButton().disabled).toBe(false)
+    expect(unsentLine()).toBeNull()
+    type('   ')
+    expect(yesButton().disabled).toBe(false)
+  })
+
+  it('reaches the emergency screen through Send, having confirmed nothing', async () => {
+    mocks.postTurn.mockResolvedValue(turn({ emergency: true, status: 'redirected_emergency' }))
+    mount(atSummary())
+    typeAndSend('chest pain')
+    await waitFor(() => expect(screen.getByTestId('at').textContent).toBe(`/visit/${ID}/emergency`))
+    expect(mocks.postTurn).toHaveBeenCalledWith(ID, 'chest pain', expect.any(AbortSignal))
+    expect(mocks.confirmIntake).not.toHaveBeenCalled()
+  })
+
+  it('holds Yes on a transcript waiting to be sent, and Clear gives it back', async () => {
+    mocks.transcribe.mockResolvedValue({ text: 'ألم في الصدر' })
+    mount(atSummary())
+    await record()
+    await screen.findByTestId('voice-transcript')
+    expect(yesButton().disabled).toBe(true)
+    expect(unsentLine()).not.toBeNull()
+
+    fireEvent.click(screen.getByTestId('voice-clear'))
+    expect(screen.queryByTestId('voice-transcript')).toBeNull()
+    expect(yesButton().disabled).toBe(false)
+    expect(unsentLine()).toBeNull()
+    expect(mocks.postTurn).not.toHaveBeenCalled()
+  })
+
+  it('gives Yes back when the transcript step is emptied by hand', async () => {
+    mocks.transcribe.mockResolvedValue({ text: 'ألم في الصدر' })
+    mount(atSummary())
+    await record()
+    fireEvent.change(await screen.findByTestId('voice-transcript'), { target: { value: ' ' } })
+    expect(yesButton().disabled).toBe(false)
+  })
+
+  it('holds Yes for the words a recording is about to bring', async () => {
+    mocks.startRecording.mockResolvedValue(heldRecording())
+    mount(atSummary())
+    fireEvent.click(screen.getByTestId('chat-mic'))
+    await screen.findByTestId('voice-stop')
+    expect(yesButton().disabled).toBe(true)
+    expect(unsentLine()).not.toBeNull()
+  })
+
+  it('keeps a failed Yes from going round the hold through its Retry', async () => {
+    mocks.confirmIntake.mockRejectedValue(new ApiError(0, 'network', 'Down'))
+    mount(atSummary())
+    fireEvent.click(yesButton())
+    const alert = await screen.findByRole('alert')
+    expect(within(alert).getByRole('button')).toBeTruthy()
+    type('chest pain')
+    expect(within(screen.getByRole('alert')).queryByRole('button')).toBeNull()
+  })
+})
+
+describe('leaving chat with a turn in flight', () => {
+  const held = () => {
+    const reply = deferred<ChatResponse>()
+    mocks.postTurn.mockReturnValue(reply.promise)
+    return reply
+  }
+
+  afterEach(() => clearToken())
+
+  it('goes to the emergency screen when the red flag lands, wherever the patient went', async () => {
+    const reply = held()
+    mountWithExit()
+    typeAndSend('chest pain')
+    await leave()
+
+    await act(async () => reply.resolve(turn({ emergency: true })))
+    await waitFor(() => expect(screen.getByTestId('at').textContent).toBe(`/visit/${ID}/emergency`))
+  })
+
+  it('leaves the request running, so the reply can land at all', async () => {
+    held()
+    mountWithExit()
+    typeAndSend('chest pain')
+    const signal = mocks.postTurn.mock.calls[0][2] as AbortSignal
+    await leave()
+    expect(signal.aborted).toBe(false)
+  })
+
+  it.each([
+    ['a question', turn()],
+    ['a refill', turn({ refill: { medicine: 'x' } })],
+    ['a summary', turn({ done: true, intake })],
+  ])('moves nobody for %s', async (_name, answer) => {
+    const reply = held()
+    mountWithExit()
+    typeAndSend('hello')
+    await leave()
+    await act(async () => reply.resolve(answer))
+    expect(screen.getByTestId('at').textContent).toBe('/home')
+  })
+
+  it('moves nobody who signed out, or signed in as someone else', async () => {
+    setToken('fatima')
+    const reply = held()
+    mountWithExit()
+    typeAndSend('chest pain')
+    await leave()
+    setToken('ravi')
+    await act(async () => reply.resolve(turn({ emergency: true })))
+    expect(screen.getByTestId('at').textContent).toBe('/home')
+  })
+
+  it('asks the visit when the turn fails after leaving', async () => {
+    const reply = held()
+    mocks.getVisit.mockResolvedValue(
+      visitWith({ status: 'redirected_emergency', stage: 'emergency' }),
+    )
+    mountWithExit()
+    typeAndSend('chest pain')
+    await leave()
+    await act(async () => reply.reject(new ApiError(0, 'network', 'Down')))
+    await waitFor(() => expect(screen.getByTestId('at').textContent).toBe(`/visit/${ID}/emergency`))
+  })
+
+  it('stays put when the failed turn was no emergency', async () => {
+    const reply = held()
+    mocks.getVisit.mockResolvedValue(visitWith())
+    mountWithExit()
+    typeAndSend('hello')
+    await leave()
+    await act(async () => reply.reject(new ApiError(0, 'network', 'Down')))
+    await waitFor(() => expect(mocks.getVisit).toHaveBeenCalled())
+    expect(screen.getByTestId('at').textContent).toBe('/home')
   })
 })
 

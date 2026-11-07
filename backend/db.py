@@ -13,7 +13,8 @@ from uuid import uuid4
 from backend import config
 from backend.models import SCHEMA
 
-# Children before parents. session is left out on purpose: it survives a reset.
+# Children before parents, so read backwards it refills parents first. session is left
+# out on purpose: it survives a reset.
 _RESET_ORDER = (
     "event",
     "prescription_item",
@@ -78,11 +79,25 @@ def read_snapshot(conn: sqlite3.Connection) -> Iterator[sqlite3.Connection]:
             conn.execute("COMMIT")
 
 
-def reset_all(conn: sqlite3.Connection) -> None:
-    with transaction(conn):
-        for table in _RESET_ORDER:
-            conn.execute(f"DELETE FROM {table}")
-        conn.execute("DELETE FROM sqlite_sequence")
+def reset_all(conn: sqlite3.Connection, fresh: Path | None = None) -> None:
+    """Empties every table but session, and refills them from the `fresh` file if given.
+
+    One commit either way, so with `fresh` no other connection ever sees the tables empty:
+    a request reads the whole old set of rows or the whole new one.
+    """
+    if fresh is not None:
+        conn.execute("ATTACH DATABASE ? AS fresh", (str(fresh),))
+    try:
+        with transaction(conn):
+            for table in _RESET_ORDER:
+                conn.execute(f"DELETE FROM main.{table}")
+            conn.execute("DELETE FROM main.sqlite_sequence")
+            if fresh is not None:
+                for table in reversed(_RESET_ORDER):
+                    conn.execute(f"INSERT INTO main.{table} SELECT * FROM fresh.{table}")
+    finally:
+        if fresh is not None:
+            conn.execute("DETACH DATABASE fresh")
 
 
 def new_id(prefix: str) -> str:

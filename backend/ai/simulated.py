@@ -248,6 +248,20 @@ _AR_POINTS = {
 }
 _COUNTED_ENGLISH = re.compile(r"(\d+) (day|week|month|hour|year)s?")
 
+# All a correction at the read-back may hold beside its number, so that "I took 2 tablets"
+# changes nothing. A score is never read out of a sentence about something else.
+_CORRECTION_WORDS = frozenset(
+    word
+    for phrase in _phrases(
+        "actually no nope sorry oh wait well i mean meant said say would it it's its is was",
+        "the a an my pain severity score more like about around make change to now really",
+        "لا آسف عفوا قصدي أقصد يعني هو هي كان كانت صار صارت الشدة الألم الوجع",
+        "شدته شدتها خلها خله غيرها غيره إلى حوالي تقريبا بالأحرى",
+    )
+    for word in phrase
+)
+_NOT_THIS_NUMBER = re.compile(rf"(?<!\S)(?:not|مو|مش|ليس)\s+(?:\d+|{_NUMBER_PATTERN})(?!\S)")
+
 
 @dataclass(frozen=True)
 class SimTurn:
@@ -373,6 +387,18 @@ def parse_severity(text: str, loose: bool = False) -> int | None:
     return None
 
 
+def _corrected_severity(text: str) -> int | None:
+    """The score in a short correction at the read-back, as in "actually it is 8" or
+    "لا، ثمانية". "8, not 6" means 8, and "it is not 8" names no score."""
+    spoken = " ".join(token.text for token in tokenise(text))
+    words = _NOT_THIS_NUMBER.sub(" ", spoken).split()
+    numbers = [word for word in words if _number(word) is not None]
+    others = {word for word in words if _number(word) is None}
+    if len(numbers) != 1 or not others <= _CORRECTION_WORDS:
+        return None
+    return _in_range(_number(numbers[0]))
+
+
 def _means_no(tokens: Sequence[Token]) -> bool:
     if not tokens or len(tokens) > 3:
         return False
@@ -405,7 +431,9 @@ def _asked_slot(message: dict) -> str | None:
     return None
 
 
-def _absorb(facts: _Facts, text: str, slot: str | None, question: str) -> None:
+def _absorb(
+    facts: _Facts, text: str, slot: str | None, question: str, at_read_back: bool = False
+) -> None:
     tokens = tokenise(text)
     facts.add_complaints(find_complaints(text))
 
@@ -419,6 +447,8 @@ def _absorb(facts: _Facts, text: str, slot: str | None, question: str) -> None:
         if bare_allowed
         else parse_severity(text) if len(tokens) > 1 else None
     )
+    if severity is None and at_read_back and duration is None:
+        severity = _corrected_severity(text)
     if severity is not None:
         facts.severity = severity
 
@@ -440,16 +470,19 @@ def _read(history: list[dict]) -> _Facts:
     facts = _Facts()
     slot: str | None = "complaint"
     question = ""
+    at_read_back = False
     for message in history:
         if message["role"] == "assistant":
             slot = _asked_slot(message)
             question = message["content"]
+            at_read_back = message.get("slot") == NOT_A_QUESTION
             if slot:
                 facts.asked[slot] += 1
         else:
-            _absorb(facts, message["content"], slot, question)
+            _absorb(facts, message["content"], slot, question, at_read_back)
             slot = None
             question = ""
+            at_read_back = False
     return facts
 
 

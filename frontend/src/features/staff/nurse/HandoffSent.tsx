@@ -127,9 +127,9 @@ export function HandoffSent({ visitId, visit, confirmed, refetch }: HandoffSentP
               className="w-full"
               onClick={() => void skip()}
             >
-              {t('nurse.sent.skip')}
+              {t('nurse.sent.fastForward')}
             </Button>
-            <p className="text-sm text-muted">{t('nurse.sent.skipNote')}</p>
+            <p className="text-sm text-muted">{t('nurse.sent.fastForwardNote')}</p>
             {failed !== null && <ErrorBlock message={errorText(failed, t, lang)} />}
           </div>
         </Card>

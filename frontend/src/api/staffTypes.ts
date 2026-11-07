@@ -195,6 +195,7 @@ export interface StaffVisit {
   /** An English sentence for the record. Screens read red_flags_raised instead. */
   red_flags_checked: string
   red_flags_raised: string[]
+  red_flags_raised_ar: string[]
   arrived_at: string | null
   patient: StaffVisitPatient
   vitals: VitalsRow | null
@@ -204,6 +205,8 @@ export interface StaffVisit {
   ticket: StaffTicket | null
   service: Service | null
   ai_mode: AiMode
+  /** What wrote this intake. A real ai_mode alone does not say: a turn can fall back. */
+  intake_source: 'model' | 'simulated'
 }
 
 export interface IntakeEditResponse {
@@ -251,6 +254,8 @@ export interface HandoffDraft {
   source: 'simulated' | 'model'
   suggestions: DoctorSuggestion[]
   denied_text: string
+  /** Names this draft, so a confirm cannot land on a newer one from another tab. */
+  draft_id: string
 }
 
 export interface HandoffConfirmResponse {

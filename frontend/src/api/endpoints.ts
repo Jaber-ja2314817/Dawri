@@ -5,7 +5,6 @@ import type {
   AuthStartResponse,
   AuthVerifyResponse,
   CentreList,
-  ChatResponse,
   ConfirmResponse,
   CreateVisitResponse,
   DemoPatient,
@@ -48,9 +47,6 @@ export const listVisits = (options?: Options) =>
 
 export const getVisit = (id: string, options?: Options) =>
   api<Visit>('GET', visitPath(id), undefined, options)
-
-export const sendChat = (id: string, text: string) =>
-  api<ChatResponse>('POST', `${visitPath(id)}/chat`, { text })
 
 /** The recording goes up as a multipart field `audio`, named audio.wav. */
 export const transcribe = (blob: Blob, options?: Options) => {

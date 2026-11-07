@@ -63,7 +63,11 @@ async function signIn(browser: Browser, baseURL: string, token: string) {
     viewport: { width: 390, height: 844 },
     locale: 'en-GB',
   })
-  await context.addInitScript((value) => localStorage.setItem('dawri.token', value), token)
+  // The record language has its own test at the end of this file; walk() needs one that cannot change under it.
+  await context.addInitScript((value) => {
+    localStorage.setItem('dawri.token', value)
+    localStorage.setItem('dawri.lang.chosen', '1')
+  }, token)
   const page = await context.newPage()
   await serveTiles(page)
   return page
