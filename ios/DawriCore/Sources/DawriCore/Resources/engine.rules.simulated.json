@@ -1,0 +1,287 @@
+{
+"schema":1,
+"OPENING":[
+["en","What brings you in today?"],
+["ar","شو اللي يتعبك اليوم؟"]
+],
+"QUESTIONS":[
+["duration",[["en","Since when?"],["ar","من متى؟"]]],
+["severity",[["en","How bad is it from 0 to 10?"],["ar","كم شدته من 0 إلى 10؟"]]],
+["medicine",[["en","Did you take any medicine for it?"],["ar","أخذت أي دوا له؟"]]],
+["other",[["en","Anything else the nurse should know?"],["ar","في شي ثاني تبي الممرضة تعرفه؟"]]]
+],
+"FOLLOW_UPS":[
+["fever",[["en","Do you have a fever?"],["ar","عندك حرارة؟"]]],
+["pain",[["en","Where is the pain?"],["ar","وين الألم بالضبط؟"]]],
+["vomiting",[["en","Any vomiting?"],["ar","في ترجيع؟"]]]
+],
+"_EMERGENCY":[
+["en","This needs urgent care. Please go to the nearest emergency department now, or call 999."],
+["ar","هذا يحتاج رعاية عاجلة. توجه الآن إلى أقرب قسم طوارئ، أو اتصل على 999."]
+],
+"_SUPPORT":[
+["en","You are not alone. Please talk to someone right now, a person you trust or the team on 999."],
+["ar","أنت لست وحدك. كلم أحد الآن، شخص تثق فيه أو الفريق على 999."]
+],
+"_REFILL":[
+["en","Your usual medicine ({medicine}) can be handled without a visit. Please message your centre's refill line."],
+["ar","دواك المعتاد ({medicine}) ما يحتاج زيارة. راسل خط إعادة الصرف في مركزك."]
+],
+"_SUMMARY_INTRO":[
+["en","Thanks. Here is what I will tell the nurse:"],
+["ar","شكرا. هذا اللي بقوله للممرضة:"]
+],
+"_SUMMARY_CHECK":[
+["en","Is this right?"],
+["ar","هل هذا صحيح؟"]
+],
+"_SUMMARY_LABELS":[
+["en",[["severity","severity {}/10"],["took","took "],["and"," and "]]],
+["ar",[["severity","الشدة {} من 10"],["took","أخذت "],["and"," و"]]]
+],
+"_SUMMARY_PLAIN":[
+["en","Thanks, I have your details for the nurse. Please check the summary card."],
+["ar","شكرا، وصلتني معلوماتك للممرضة. راجع بطاقة الملخص لو سمحت."]
+],
+"_COMPLAINT_FORMS":[
+["fever",["fever","temperature","حرارة","سخونة"]],
+["cough",["cough","coughing","كحة","سعال"]],
+["headache",["headache","headaches","صداع","وجع راس","راسي يوجعني"]],
+["sore throat",["sore throat","throat pain","throat hurts","ألم في الحلق","ألم بالحلق","وجع في الحلق","وجع حلق","حلقي يوجعني"]],
+["stomach pain",["stomach pain","stomach ache","stomachache","tummy pain","abdominal pain","ألم في البطن","ألم بالبطن","ألم في بطني","وجع في البطن","وجع بطن","بطني يوجعني","مغص"]],
+["vomiting",["vomiting","vomit","throwing up","ترجيع","استفراغ","قيء"]],
+["diarrhoea",["diarrhoea","diarrhea","إسهال"]],
+["back pain",["back pain","backache","ألم في الظهر","ألم بالظهر","ألم في ظهري","وجع في الظهر","وجع ظهر","ظهري يوجعني"]],
+["ear pain",["ear pain","earache","ألم في الأذن","ألم بالأذن","ألم في أذني","وجع في الأذن","وجع أذن","أذني توجعني"]],
+["rash",["rash","طفح"]],
+["dizziness",["dizziness","dizzy","دوخة","دايخ","دوار"]],
+["tooth pain",["tooth pain","toothache","tooth hurts","ألم في السن","ألم في الضرس","ألم في ضرسي","وجع ضرس","وجع سن","ضرسي يوجعني"]]
+],
+"_COMPLAINTS":[
+["fever",[["fever"],["temperature"],["حراره"],["سخونه"]]],
+["cough",[["cough"],["coughing"],["كحه"],["سعال"]]],
+["headache",[["headache"],["headaches"],["صداع"],["وجع","راس"],["راسي","يوجعني"]]],
+["sore throat",[["sore","throat"],["throat","pain"],["throat","hurts"],["الم","في","الحلق"],["الم","بالحلق"],["وجع","في","الحلق"],["وجع","حلق"],["حلقي","يوجعني"]]],
+["stomach pain",[["stomach","pain"],["stomach","ache"],["stomachache"],["tummy","pain"],["abdominal","pain"],["الم","في","البطن"],["الم","بالبطن"],["الم","في","بطني"],["وجع","في","البطن"],["وجع","بطن"],["بطني","يوجعني"],["مغص"]]],
+["vomiting",[["vomiting"],["vomit"],["throwing","up"],["ترجيع"],["استفراغ"],["قيء"]]],
+["diarrhoea",[["diarrhoea"],["diarrhea"],["اسهال"]]],
+["back pain",[["back","pain"],["backache"],["الم","في","الظهر"],["الم","بالظهر"],["الم","في","ظهري"],["وجع","في","الظهر"],["وجع","ظهر"],["ظهري","يوجعني"]]],
+["ear pain",[["ear","pain"],["earache"],["الم","في","الاذن"],["الم","بالاذن"],["الم","في","اذني"],["وجع","في","الاذن"],["وجع","اذن"],["اذني","توجعني"]]],
+["rash",[["rash"],["طفح"]]],
+["dizziness",[["dizziness"],["dizzy"],["دوخه"],["دايخ"],["دوار"]]],
+["tooth pain",[["tooth","pain"],["toothache"],["tooth","hurts"],["الم","في","السن"],["الم","في","الضرس"],["الم","في","ضرسي"],["وجع","ضرس"],["وجع","سن"],["ضرسي","يوجعني"]]]
+],
+"_COMPLAINT_AR":[
+["fever","حرارة"],
+["cough","كحة"],
+["headache","صداع"],
+["sore throat","ألم في الحلق"],
+["stomach pain","ألم في البطن"],
+["vomiting","ترجيع"],
+["diarrhoea","إسهال"],
+["back pain","ألم في الظهر"],
+["ear pain","ألم في الأذن"],
+["rash","طفح جلدي"],
+["dizziness","دوخة"],
+["tooth pain","ألم في السن"]
+],
+"_PAIN_WORDS":[
+["pain"],
+["ache"],
+["hurt"],
+["hurts"],
+["hurting"],
+["الم"],
+["وجع"],
+["يوجعني"]
+],
+"_SERVICE_KEYWORDS":[
+["dental",[["tooth"],["teeth"],["toothache"],["dental"],["dentist"],["ضرس"],["ضرسي"],["سن"],["سني"],["اسنان"],["اسناني"]]],
+["vaccination",[["vaccine"],["vaccination"],["تطعيم"],["لقاح"]]],
+["lab_only",[["blood","test"],["lab","test"],["تحليل"]]],
+["womens_health",[["pregnant"],["period"],["حامل"],["الدوره"]]],
+["mental_health",[["anxiety"],["anxious"],["depression"],["قلق"],["اكتئاب"]]],
+["other",[["sick","note"],["sick","leave"],["certificate"],["شهاده"]]]
+],
+"_GULF_MARKERS":[
+["ابي"],
+["شو"],
+["عندي"],
+["ابغي"],
+["وايد"]
+],
+"_MEDICINES":[
+["paracetamol",[["paracetamol"],["acetaminophen"],["panadol"],["adol"],["tylenol"],["باراسيتامول"],["بنادول"],["ادول"]]],
+["dextromethorphan",[["dextromethorphan"],["ديكستروميثورفان"]]],
+["amoxicillin",[["amoxicillin"],["اموكسيسيلين"]]],
+["co-amoxiclav",[["co","amoxiclav"],["amoxiclav"],["augmentin"],["كلافولانيك"],["اوجمنتين"]]],
+["azithromycin",[["azithromycin"],["zithromax"],["ازيثرومايسين"]]],
+["ibuprofen",[["ibuprofen"],["brufen"],["nurofen"],["advil"],["ايبوبروفين"],["بروفين"]]],
+["cetirizine",[["cetirizine"],["zyrtec"],["سيتريزين"]]],
+["amlodipine",[["amlodipine"],["norvasc"],["املوديبين"]]],
+["metformin",[["metformin"],["glucophage"],["ميتفورمين"]]],
+["aspirin",[["aspirin"],["اسبرين"]]],
+["penicillin",[["penicillin"],["بنسلين"]]],
+["antibiotic",[["antibiotic"],["antibiotics"],["مضاد","حيوي"],["مضادات","حيويه"]]],
+["painkiller",[["painkiller"],["painkillers"],["مسكن"]]],
+["insulin",[["insulin"],["انسولين"]]],
+["antihistamine",[["antihistamine"],["antihistamines"],["مضاد","هيستامين"]]],
+["decongestant",[["decongestant"],["decongestants"]]],
+["cough syrup",[["cough","syrup"],["syrup"],["شراب","كحه"],["شراب"]]],
+["lozenges",[["lozenge"],["lozenges"]]],
+["nasal spray",[["nasal","spray"]]],
+["inhaler",[["inhaler"],["inhalers"],["بخاخ"]]],
+["ointment",[["ointment"],["مرهم"]]],
+["vitamin",[["vitamin"],["vitamins"],["فيتامين"]]]
+],
+"_NOT_TAKEN":[
+["didn't","take"],
+["didnt","take"],
+["did","not","take"],
+["haven't","taken"],
+["have","not","taken"],
+["ما","اخذت"],
+["ما","اخذيت"],
+["لم","اخذ"]
+],
+"_NOT_A_DOSE_TAKEN":[
+["didn't","take"],
+["didnt","take"],
+["did","not","take"],
+["haven't","taken"],
+["have","not","taken"],
+["ما","اخذت"],
+["ما","اخذيت"],
+["لم","اخذ"],
+["allergic","to"],
+["حساسيه","من"],
+["want"],
+["wants"],
+["would","like"],
+["need"],
+["can","i","get"],
+["can","i","have"],
+["can","i","take"],
+["should","i","take"],
+["should","i"],
+["try"],
+["ابي"],
+["ابغي"],
+["اريد"],
+["احتاج"],
+["ينفع"]
+],
+"_NO_WORDS":["nah","no","none","nope","nothing","خلاص","لا","ماشي","مافي"],
+"_NO_PHRASES":[
+["that's","all"],
+["thats","all"],
+["ما","في"],
+["ما","شي"],
+["بس","كذا"]
+],
+"_YES_WORDS":["yeah","yep","yes","yup","اكيد","اي","ايه","ايوه","نعم"],
+"_WHERE_WORDS":[
+["where"],
+["وين"],
+["اين"]
+],
+"_SLOT_HINTS":[
+["other",[["anything","else"],["should","know"],["شي","ثاني"],["شي","اخر"],["شيء","اخر"]]],
+["severity",[["how","bad"],["how","severe"],["how","strong"],["0","to","10"],["out","of","10"],["scale"],["شدته"],["شدتها"],["الشده"],["من","0"]]],
+["duration",[["since","when"],["how","long"],["when","did"],["how","many","days"],["started"],["من","متي"],["منذ","متي"],["متي"],["كم","يوم"]]],
+["medicine",[["medicine"],["medicines"],["medication"],["painkiller"],["take"],["took"],["دوا"],["دواء"],["علاج"],["اخذت"],["مسكن"]]],
+["followup",[["fever"],["temperature"],["where"],["vomiting"],["حراره"],["وين"],["اين"],["ترجيع"],["استفراغ"]]]
+],
+"_NUMBER_WORDS":[
+["zero",0],
+["one",1],
+["two",2],
+["three",3],
+["four",4],
+["five",5],
+["six",6],
+["seven",7],
+["eight",8],
+["nine",9],
+["ten",10],
+["صفر",0],
+["واحد",1],
+["واحده",1],
+["اثنين",2],
+["ثنين",2],
+["اثنان",2],
+["ثلاث",3],
+["ثلاثه",3],
+["اربع",4],
+["اربعه",4],
+["خمس",5],
+["خمسه",5],
+["ست",6],
+["سته",6],
+["سبع",7],
+["سبعه",7],
+["ثمان",8],
+["ثماني",8],
+["ثمانيه",8],
+["تسع",9],
+["تسعه",9],
+["عشر",10],
+["عشره",10]
+],
+"_UNITS":[
+["day","day"],
+["days","day"],
+["يوم","day"],
+["ايام","day"],
+["week","week"],
+["weeks","week"],
+["اسبوع","week"],
+["اسابيع","week"],
+["month","month"],
+["months","month"],
+["شهر","month"],
+["اشهر","month"],
+["شهور","month"],
+["hour","hour"],
+["hours","hour"],
+["ساعه","hour"],
+["ساعات","hour"],
+["year","year"],
+["years","year"],
+["سنه","year"],
+["سنوات","year"],
+["سنين","year"]
+],
+"_DUALS":[
+["يومين","day"],
+["اسبوعين","week"],
+["شهرين","month"],
+["ساعتين","hour"],
+["سنتين","year"]
+],
+"_AR_UNITS":[
+["day",["يوم","يومين","أيام"]],
+["week",["أسبوع","أسبوعين","أسابيع"]],
+["month",["شهر","شهرين","أشهر"]],
+["hour",["ساعة","ساعتين","ساعات"]],
+["year",["سنة","سنتين","سنوات"]]
+],
+"_AR_POINTS":[
+["since yesterday","من أمس"],
+["since last night","من البارحة"],
+["since this morning","من الصبح"],
+["since today","من اليوم"]
+],
+"_CORRECTION_WORDS":["a","about","actually","an","around","change","i","is","it","it's","its","like","make","mean","meant","more","my","no","nope","now","oh","pain","really","said","say","score","severity","sorry","the","to","wait","was","well","would","اسف","اقصد","الالم","الشده","الوجع","الي","بالاحري","تقريبا","حوالي","خله","خلها","شدته","شدتها","صار","صارت","عفوا","غيره","غيرها","قصدي","كان","كانت","لا","هو","هي","يعني"],
+"MAX_QUESTIONS":6,
+"NOT_A_QUESTION":"summary",
+"_MAX_COMPLAINT":200,
+"_MAX_PATIENT_WORDS":1000,
+"_MAX_SUMMARY":400,
+"_MAX_CONCERNS":500,
+"_SEVERITY_ASKS":2,
+"session":{"_MAX_TEXT":2000,"_RULES_ONLY":["redirected_emergency","deflected_refill","reserved","expired"],"_TAKES_RULES":["intake","redirected_emergency","deflected_refill","reserved","expired"],"_KEEPS_REFUSED":["deflected_refill","reserved","expired"]},
+"receptionist":{"_STAFF_ONLY":["summary_for_nurse","chief_complaint","duration","associated","patient_concerns"]},
+"intake":{"SERVICES":["gp","dental","refill","vaccination","lab_only","womens_health","mental_health","other"],"LANGUAGES":["ar-gulf","ar-msa","en"]},
+"literals":{"read_back_joiner":{"ar":"، ","en":", "},"complaint_joiner":{"ar":" و","en":" and "},"complaint_split":" and ","read_back_end":".","slots":{"complaint":"complaint","duration":"duration","severity":"severity","followup":"followup","medicine":"medicine","other":"other"},"follow_up":{"pain":"pain","fever":"fever","vomiting":"vomiting","stomach_pain":"stomach pain","diarrhoea":"diarrhoea","dental":"dental"},"intake_language":{"en":"en","gulf":"ar-gulf","msa":"ar-msa"},"tagged_prefix":"from ","since":"since","complaints_joiner":" and ","location_joiner":", ","default_service":"gp","confidence":{"matched":0.85,"unmatched":0.6},"nurse":{"severity_prefix":"severity ","severity_suffix":"/10","took":"took ","medicines_joiner":" and ","joiner":", ","end":"."},"refill_visit":{"fallback":"medicine","complaint_suffix":" refill","asked":", patient asked for a visit","service":"gp","confidence":0.85}}
+}

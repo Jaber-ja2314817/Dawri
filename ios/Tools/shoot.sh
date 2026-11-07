@@ -76,6 +76,7 @@ for lang in ar en; do
   done
   shoot "pushed-s02-$lang-light" 2.5 -demoScreen s02 -demoLang $lang -demoTheme light
   shoot "pushed-s02-$lang-dark" 2.5 -demoScreen s02 -demoLang $lang -demoTheme dark
+  shoot "pushed-s09-$lang-light" 2.5 -demoScreen s09 -demoLang $lang -demoTheme light
   shoot "pushed-s10-$lang-light" 2.5 -demoScreen s10 -demoLang $lang -demoTheme light
   # No theme argument: this screen sets its own, for the white status bar.
   shoot "emergency-$lang" 2.5 -demoScreen s06 -demoLang $lang

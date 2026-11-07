@@ -1,0 +1,24 @@
+{
+ "schema": 1,
+ "unidata_version": "16.0.0",
+ "sources": {
+  "backend/ai/filters.py": "161b9e7e04a769c5f24d8c406de9a1beddd2e660b6d2e93bebf0512c2089bf59",
+  "backend/ai/intake.py": "a50fe5aa65818eeb943f1ea11b89e2dbafc1f35edad71f5eb9fda8cf521d8a86",
+  "backend/ai/prompts.py": "7d34b83b1e134a6881cacddaa74c6c79af99023a95391608b8a5ae8fb69601d1",
+  "backend/ai/receptionist.py": "467c6b299281022590244823a885e48a7454f3c9cb13ef3aea2044c2d8ec13c2",
+  "backend/ai/redflags.py": "617e9043e512c6154b6a3ec3a24996b9c0dab498095b16f3624fe561ca85d67d",
+  "backend/ai/refill.py": "44def37f8684e49d697569b913367f038cff50efa0285e5ff221a6c645f46ecc",
+  "backend/ai/session.py": "ceac236074b74b9fa0331d0c54b6bc87f6ef0f1f177b513f1a1f35f961340094",
+  "backend/ai/simulated.py": "69ccfe1918ef4a8fcd1301f656b83dea9d2f2f813d1615f1cd8c0a5bad6a1a73",
+  "backend/ai/text.py": "1614459b0deba4a33786eb25fa69b67d74011ff7c244c5280b996f70cc64fc43"
+ },
+ "files": {
+  "engine.rules.filters.json": "325dad86a5a6e10de75be63d928f626f426c43df793847aa3e7776f01f5a72c0",
+  "engine.rules.redflags.json": "4f2d9cca84a928ede5336848c6e618612bcd6efd307d14fc3f7297e257eb22cc",
+  "engine.rules.refill.json": "2d176229798726bb35f4dfa8ba1d556b295b0142df1fea4b6d0528f0ca61e32c",
+  "engine.rules.regex.json": "27bd9fcff419fc3b8434de1d9f3aa8248f2bf1072cd7476266649aa37184a92e",
+  "engine.rules.simulated.json": "d47cf2448fb23ed4c668d8b2fa6b38e4d0637962c3221e4b27c5759d1cf52ba4",
+  "engine.rules.text.json": "b99627c9a22ee8c9db3f282cd54dc7d7a81d680f1102471aa7eb2db2bf00877b",
+  "engine.rules.unicode.json": "49e8058c8b11d67fc3950a93a7c43f08cafb4c90ba6fee5062c0d08f903c52bd"
+ }
+}

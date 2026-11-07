@@ -17,6 +17,10 @@ final class AppModel {
     var path: [Route]
     /// Set when a visit vanished, so S03 can say so, as the web's `demoReset` route state does.
     private(set) var showsDemoReset = false
+    #if DEBUG
+    /// The staged visit, for the test controls.
+    @ObservationIgnored var demoVisitId: String?
+    #endif
 
     init(
         service: any ClinicService, language: LanguageState, isSignedIn: Bool = false,
@@ -29,14 +33,16 @@ final class AppModel {
         self.direction = DirectionBridge(initial: language.lang)
     }
 
-    /// The normal launch. Phase 1 uses the stub. `LocalClinicService` replaces it here, and
-    /// nothing else in the app changes, because screens only know the protocol.
+    /// The normal launch: the clinic on this phone, so the app works from first launch with
+    /// nothing else running. Its state lives in Application Support. Screens only know the
+    /// protocol.
     static func launch() -> AppModel {
         #if DEBUG
         if let demo = DemoLaunch.current { return demo.makeModel() }
         #endif
         return AppModel(
-            service: StubClinicService(), language: LanguageState(store: UserDefaults.standard))
+            service: LocalClinicService(store: FileClinicStore()),
+            language: LanguageState(store: UserDefaults.standard))
     }
 
     /// `.welcome` is the stack's root before login and `.home` after.

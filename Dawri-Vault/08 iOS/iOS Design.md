@@ -87,6 +87,7 @@ Two changes from the web, both on purpose. The selected map pin is ink, not the 
 | `emergencyCard` | `#ffffff` | `#ffffff` | Nearest department card |
 | `emergencyCardText` | `#0a0a0a` | `#0a0a0a` | Card text and map link |
 | `emergencyCardMuted` | `#6b6b6b` | `#6b6b6b` | Card label |
+| `emergencyLink` | `#0a0a0a` | `#0a0a0a` | Map link on the nearest department card. The same as `emergencyCardText` at rest, with its own Increase Contrast value in section 1.3 |
 
 The emergency set is the same in both themes on purpose. S06 must read the same at night, and it must be recognised at once. Its tokens do not depend on the colour scheme. Only Increase Contrast changes them.
 
@@ -372,7 +373,7 @@ Shows the other language in its own script: `العربية` when in English, `E
 | iOS 18 to 25, in the bar | `surface` fill, 1 pt `control`, radius 6, 12 side padding, as on the web |
 | S06, on all systems | Clear fill, 1 pt `emergencyText`, `emergencyText` label, pressed `emergencyPressed` |
 
-Its VoiceOver label is in the target language, with `.accessibilityLanguage`. It sits in the top-trailing place on every screen, so in Arabic it is on the left. Behaviour is in section 7.
+Its VoiceOver label is in the target language. SwiftUI has no modifier for this, so the language travels on the string: the label is an `AttributedString` with `languageIdentifier` set to the target language, passed through `.accessibilityLabel(Text(_:))`. It sits in the top-trailing place on every screen, so in Arabic it is on the left. Behaviour is in section 7.
 
 ### 4.5 Stage track: `StageTrack`
 
@@ -607,14 +608,14 @@ Examples: `ticket.goNow` with `Triage 1`, `reserved.tooFar`, `emergency.distance
 | --- | --- |
 | Default | Arabic, with no launch argument. `LanguageState` holds it: a tapped choice outranks the record until logout |
 | Where state lives | Language, the navigation path, drafts and in-flight work sit in stores above the `NavigationStack` |
-| How it applies | Set the root `\.locale` and `\.layoutDirection`, then rebuild the stack with `.id(language)`, so UIKit's bar and swipe gesture pick up the new direction. `UIView.appearance().semanticContentAttribute` is set before the rebuild |
+| How it applies | Every change goes through `AppModel.switchLanguage`, which sets the language and calls `DirectionBridge.apply`. The root `\.locale` and `\.layoutDirection` follow the language, but they do not reach the UIKit that hosts the stack, so `DirectionBridge` does that: the appearance proxies for views made later, then `semanticContentAttribute` and `traitOverrides.layoutDirection` on the window, and `semanticContentAttribute` on the navigation controller's view, its bar and the bar's subviews. That moves the back chevron and the swipe edge in place. **Never rebuild the stack with `.id(language)`.** The stack has no `.id`, and adding one breaks the path |
 | Path | Kept exactly. The patient stays on the same screen |
 | Input | Login fields, chat draft and transcript survive, because they live in the stores, not in `@State` of a screen |
 | In-flight work | Requests, the countdown, the listening session and the demo timer continue. The speech recogniser restarts in the new language if listening |
 | Chat | Messages already sent keep their language. New replies use the new language |
 | Server-written text | Any field with an `_ar` and `_en` pair swaps at once, such as `reply_ar`, `message_ar` and suggestion reasons |
 | Motion | `.crossfade` over the stack. No slide. Scroll position may reset, except that chat returns to the newest message |
-| S06 cover | Attached above the `.id`, so a switch does not dismiss it. It re-renders in place |
+| S06 cover | Attached above the `NavigationStack`, so a switch does not dismiss it. It re-renders in place |
 | Live Activity | Its `lang` is fixed for its life, so a switch ends it and starts a new one in the new language, while the app is in front |
 | System text | Permission prompts follow the phone's language, not the in-app choice. Localise `InfoPlist.strings` in both, and accept this limit |
 
@@ -963,7 +964,7 @@ Source: `frontend/public/icons/icon-512.png`, 512 by 512, no alpha. Measured: gr
 
 | Rule | Detail |
 | --- | --- |
-| Method | `ios/Tools/make-icon.swift` builds a mask from the source: `mask = (groundLuma - pixelLuma) / (groundLuma - inkLuma)`, clamped. Upscale 2x in high quality with Core Graphics, sharpen with `smoothstep(0.25, 0.75, mask)` so the edges stay clean, then `pixel = background × (1 - mask) + wordmark × mask` |
+| Method | `ios/Tools/make-icon.swift` builds a mask from the source: `mask = (groundLuma - pixelLuma) / (groundLuma - inkLuma)`, clamped. Resample to 4x icon size, 4096 by 4096, in high quality with Core Graphics, sharpen there with `smoothstep(0.25, 0.75, mask)` so the edges stay clean, average each 4 by 4 block down to 1024, then `pixel = background × (1 - mask) + wordmark × mask` |
 | Output | 1024 by 1024, RGB, no alpha, in all three. `sips -g hasAlpha` says no |
 | Placement | Same relative size and position as the source. Rounding is the system's. No mask of ours |
 | Forbidden | Hue, gradient, tile, gloss, shadow, border, or any second mark. The tinted file holds only greys, so the system's tint works |
@@ -1002,7 +1003,7 @@ Screenshots cover what they can. Motion, haptics, VoiceOver order, Reduce Motion
 
 ## 12. Swift names
 
-These are the exact names. The app target holds them in `ios/Dawri/DesignSystem/`. The hex table goes in `ios/DawriCore/Sources/DawriCore/Design/`, so the Live Activity and the contrast test read the same values.
+These are the exact names. The app target holds them in `ios/Dawri/Design/`. The hex table goes in `ios/DawriCore/Sources/DawriCore/Design/`, so the Live Activity and the contrast test read the same values.
 
 `DS.Type` cannot exist: Swift refuses a nested type named `Type`, checked with `swiftc` ("type member must not be named 'Type'"). The role type is `DS.TextRole`. All other API named here passed `swiftc -typecheck` for `arm64-apple-ios18.0-simulator` in Swift 6 mode, against SDK 27.2. That checks that the names exist, not how they behave at run time.
 
@@ -1012,7 +1013,7 @@ These are the exact names. The app target holds them in `ios/Dawri/DesignSystem/
 | --- | --- |
 | DawriCore | `public struct DSHex { light, dark, lightHigh, darkHigh: UInt32 }`, `public enum DSPalette` with one static per token in section 1 |
 | `DS.Color` | `ground`, `surface`, `raised`, `skeleton`, `hairline`, `rule`, `control`, `ink`, `muted`, `primaryFill`, `primaryPressed`, `primaryText`, `disabledFill`, `disabledText`, `hue`, `positive`, `negative`, `warning`, `pillPositiveFill`, `pillPositiveText`, `pillNegativeFill`, `pillNegativeText`, `pillWarningFill`, `pillWarningText`, `pillNeutralFill`, `pillNeutralText`, `noticeFill`, `noticeEdge`, `noticeText` |
-| `DS.Emergency` | `field`, `pressed`, `text`, `callFill`, `callText`, `callPressed`, `card`, `cardText`, `cardMuted`, which are `emergencyField` and so on in section 1. Theme-independent: only `colorSchemeContrast` changes them, through section 1.3 |
+| `DS.Emergency` | `field`, `pressed`, `text`, `callFill`, `callText`, `callPressed`, `card`, `cardText`, `cardMuted`, `link`, which are `emergencyField` and so on in section 1. Theme-independent: only `colorSchemeContrast` changes them, through section 1.3 |
 | `DS.TextRole` | `barTitle`, `screenTitle`, `emergencyTitle`, `lead`, `urgent`, `section`, `body`, `bodyStrong`, `secondary`, `secondaryStrong`, `label`, `caption`, `pill`, `button`, `callButton`, `statValue`, `countdown`, `badge`, `ticketNumber` |
 | `DS.Space` | `xxs` 2, `xs` 4, `s` 8, `m` 12, `l` 16, `xl` 24, `xxl` 32 |
 | `DS.Radius` | `card` 8, `control` 6 |
@@ -1079,6 +1080,7 @@ New keys the design needs, for `ios/Tools/strings/ios.en.json` and `ios.ar.json`
 | `reserved.codeLabel` | Door code | رمز الباب |
 | `reserved.codeSubmit` | Check in | سجّل الوصول |
 | `demo.nextStep` | Demo: next step | تجريبي: الخطوة التالية |
+| `track.stepOf` | step {step} of {total} | الخطوة {step} من {total} |
 | `voice.unavailableOnDevice` | Voice is not available on this phone. Please type your message. | الصوت غير متاح على هذا الهاتف. يرجى كتابة رسالتك. |
 | `live.ahead` | {count} ahead | {count} أمامك |
 | `live.go` | Go now | توجه الآن |

@@ -7,13 +7,15 @@ final class StageTableTests: XCTestCase {
         let stage: String
         let confirmed: Bool
         let screen: String
+        var patient = "DEMO-10001"
     }
 
     private let rows = [
         Row(stage: "intake", confirmed: false, screen: "chat"),
         Row(stage: "intake", confirmed: true, screen: "centre"),
         Row(stage: "emergency", confirmed: false, screen: "emergency"),
-        Row(stage: "refill", confirmed: false, screen: "refill"),
+        // The real route needs active medicines, which Fatima has none of.
+        Row(stage: "refill", confirmed: false, screen: "refill", patient: "DEMO-10002"),
         Row(stage: "reserved", confirmed: true, screen: "reserved"),
         Row(stage: "expired", confirmed: true, screen: "reserved"),
         Row(stage: "triage", confirmed: true, screen: "ticket"),
@@ -30,7 +32,7 @@ final class StageTableTests: XCTestCase {
     @MainActor
     private func check(_ row: Row, confirmed: Bool) {
         let app = launch(
-            "-demoLang", "en", "-demoPatient", "DEMO-10001", "-demoScreen", "chat",
+            "-demoLang", "en", "-demoPatient", row.patient, "-demoScreen", "chat",
             "-demoStage", row.stage, "-demoConfirmed", confirmed ? "1" : "0")
         let context = "\(row.stage), confirmed \(confirmed)"
         assertShown(app.element("screen-\(row.screen)"), context)

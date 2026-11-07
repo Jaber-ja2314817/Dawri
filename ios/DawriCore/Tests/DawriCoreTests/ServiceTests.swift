@@ -78,176 +78,89 @@ struct ClinicErrorTests {
     }
 }
 
-@Suite("StubClinicService smoke")
-struct StubTests {
-    private func next(_ iterator: inout AsyncStream<VisitUpdate>.Iterator) async -> VisitUpdate? {
-        await iterator.next(isolation: nil)
+/// What the app relies on from `LocalClinicService` and the contract suite does not pin:
+/// exact seeded values through the protocol, and the core's navigation rules on real visits.
+@Suite("LocalClinicService through the protocol")
+struct LocalServiceTests {
+    private func signedIn(_ qid: String) async throws -> any ClinicService {
+        let service: any ClinicService = LocalClinicService(store: MemoryClinicStore())
+        _ = try await service.authVerify(qid: qid, otp: "0000")
+        return service
     }
 
-    @Test func `health says simulated`() async {
-        #expect(await StubClinicService().health().aiMode == .simulated)
+    /// The backend lists every patient who is not a dependent, so the three lead the list and
+    /// are not all of it. The login chips are the web's fixed three.
+    @Test func `the demo patients start with the real three`() async {
+        let patients = await LocalClinicService(store: MemoryClinicStore()).demoPatients()
+        let three = patients.prefix(3)
+        #expect(three.map(\.id) == ["P001", "P002", "P003"])
+        #expect(three.map(\.qidDemo) == ["DEMO-10001", "DEMO-10002", "DEMO-10003"])
+        #expect(three.map(\.fullNameEn) == ["Fatima Al-Demo", "Ahmed Al-Demo", "Ravi Demo"])
+        #expect(three.map(\.fullNameAr) == ["فاطمة التجريبية", "أحمد التجريبي", "رافي"])
     }
 
-    @Test func `the demo patients are the real three`() async {
-        let patients = await StubClinicService().demoPatients()
-        #expect(patients.map(\.id) == ["P001", "P002", "P003"])
-        #expect(patients.map(\.qidDemo) == ["DEMO-10001", "DEMO-10002", "DEMO-10003"])
-        #expect(patients.map(\.fullNameEn) == ["Fatima Al-Demo", "Ahmed Al-Demo", "Ravi Demo"])
-        #expect(patients.map(\.fullNameAr) == ["فاطمة التجريبية", "أحمد التجريبي", "رافي"])
-    }
-
-    @Test func `login with OTP 0000, refused otherwise`() async throws {
-        let service = StubClinicService()
-        #expect(await service.isSignedIn == false)
-        #expect(try await service.authStart(qid: "DEMO-10001").otpSent)
-        await #expect(throws: ClinicError(
-            status: 401, code: "invalid_otp", message: "That code is not correct."
-        )) {
-            try await service.authVerify(qid: "DEMO-10001", otp: "1234")
-        }
-        #expect(await service.isSignedIn == false)
-        let patient = try await service.authVerify(qid: "DEMO-10001", otp: "0000")
-        #expect(patient.id == "P001")
-        #expect(await service.isSignedIn)
-        await service.signOut()
-        #expect(await service.isSignedIn == false)
-    }
-
-    @Test func `an unknown QID is refused`() async {
-        await #expect {
-            try await StubClinicService().authStart(qid: "DEMO-99999")
-        } throws: { error in
-            (error as? ClinicError)?.code == "unknown_qid"
-        }
-    }
-
-    @Test func `Fatima has dependents and Ravi does not`() async throws {
-        let service = StubClinicService()
-        _ = try await service.authVerify(qid: "DEMO-10001", otp: "0000")
+    @Test func `Fatima chooses who the visit is for and Ravi goes to consent`() async throws {
+        let service = try await signedIn("DEMO-10001")
         #expect(checkInRoute(try await service.getMe()) == .who)
         _ = try await service.authVerify(qid: "DEMO-10003", otp: "0000")
         #expect(checkInRoute(try await service.getMe()) == .consent(patientId: "P003"))
     }
 
-    @Test(arguments: VisitStage.allCases, [false, true])
-    func `starts at any stage with any flag`(stage: VisitStage, confirmed: Bool) async throws {
-        let service = StubClinicService(stage: stage, confirmedByPatient: confirmed)
-        let visit = try await service.getVisit(visitId: StubClinicService.startingVisitId)
-        #expect(visit.stage == stage)
-        #expect(visit.confirmedByPatient == confirmed)
-        #expect(visit.status.stage == stage)
+    @Test func `the first question is the receptionist's own line`() async throws {
+        let service = try await signedIn("DEMO-10001")
+        #expect(try await service.createVisit(patientId: nil).opening == "شو اللي يتعبك اليوم؟")
     }
 
-    @Test func `advancing walks the whole visit and tells the stream`() async throws {
-        let id = StubClinicService.startingVisitId
-        let service = StubClinicService(stage: .intake)
-        var updates = await service.visitUpdates(visitId: id).makeAsyncIterator()
-        #expect(await next(&updates) == .open)
-
-        var stages: [VisitStage] = []
-        var flags: [Bool] = []
-        for _ in 0..<6 {
-            try await service.advance(visitId: id)
-            #expect(await next(&updates) == .changed)
-            let visit = try await service.getVisit(visitId: id)
-            stages.append(visit.stage)
-            flags.append(visit.confirmedByPatient)
-        }
-        #expect(stages == [.intake, .reserved, .triage, .doctor, .pharmacy, .completed])
-        #expect(flags == [true, true, true, true, true, true])
-
-        await #expect(throws: ClinicError.self) { try await service.advance(visitId: id) }
-    }
-
-    @Test func `a dropped stream says so and ends`() async {
-        let id = StubClinicService.startingVisitId
-        let service = StubClinicService(stage: .triage)
-        var updates = await service.visitUpdates(visitId: id).makeAsyncIterator()
-        #expect(await next(&updates) == .open)
-        await service.dropUpdates(visitId: id)
-        #expect(await next(&updates) == .dropped)
-        #expect(await next(&updates) == nil)
-    }
-
-    @Test func `the demo patient's visit, from chat to rating`() async throws {
-        let service = StubClinicService()
-        _ = try await service.authVerify(qid: "DEMO-10001", otp: "0000")
-        let created = try await service.createVisit(patientId: nil)
-        let id = created.visitId
-        #expect(created.opening == "شو اللي يتعبك اليوم؟")
-
-        var reply: ChatResponse?
-        for text in ["حرارة", "٦", "بنادول", "لا"] {
-            reply = try await service.sendChat(visitId: id, text: text)
-        }
-        #expect(reply?.done == true)
-        #expect(try await service.getVisit(visitId: id).chat.messages.count == 9)
-
-        #expect(try await service.confirmIntake(visitId: id, service: nil).service == .gp)
-        let centres = try await service.listCentres(
-            service: "gp", visitId: id, lat: nil, lng: nil)
-        #expect(centres.defaultCentreId == "C-WAKRA")
-        #expect(centres.centres.first?.registered == true)
-
-        let reserved = try await service.reserve(visitId: id, centreId: "C-WAKRA")
-        #expect(reserved.ticket.number == nil)
-        #expect(reserved.message == "Check-in valid for 45 minutes")
-        #expect(Timestamp.date(from: reserved.expiresAt) != nil)
-
-        let arrived = try await service.arrive(visitId: id, body: .button)
-        #expect(arrived.ticket.number == "T-014")
-        #expect(arrived.goTo != nil)
-
-        for _ in 0..<3 { try await service.advance(visitId: id) }
-        #expect(try await service.getVisit(visitId: id).stage == .completed)
-        #expect(try await service.rateVisit(visitId: id, stars: 5).rating == 5)
-        await #expect(throws: ClinicError.self) {
-            try await service.rateVisit(visitId: id, stars: 4)
-        }
+    @Test func `a finished visit is in history but no longer active`() async throws {
+        let (service, visitId) = try await LocalClinicService.staged(stage: .completed)
         let rows = try await service.listVisits()
-        #expect(rows.map(\.visitId) == [id])
+        #expect(rows.map(\.visitId) == [visitId])
         #expect(rows.first?.active == false)
     }
 
-    @Test func `Ravi's visit stops at emergency with no ticket`() async throws {
-        let service = StubClinicService()
-        _ = try await service.authVerify(qid: "DEMO-10003", otp: "0000")
-        let id = try await service.createVisit(patientId: nil).visitId
-        let reply = try await service.sendChat(visitId: id, text: "x")
-        #expect(reply.emergency)
-        #expect(reply.status == .redirectedEmergency)
-        let override = try await service.emergencyOverride(visitId: id)
-        #expect(override.ticket == nil)
-        let visit = try await service.getVisit(visitId: id)
-        #expect(visit.ticket == nil)
+    @Test func `after an emergency the gate sends a request for chat to the emergency screen`() async throws {
+        let service = try await signedIn("DEMO-10003")
+        let visitId = try await service.createVisit(patientId: nil).visitId
+        _ = try await service.sendChat(visitId: visitId, text: "Chest pain going to my left arm.")
+        let visit = try await service.getVisit(visitId: visitId)
         #expect(gatedScreen(for: visit, requested: .chat) == .emergency)
     }
 
-    @Test func `Ahmed's visit takes the refill route with no ticket`() async throws {
-        let service = StubClinicService()
-        _ = try await service.authVerify(qid: "DEMO-10002", otp: "0000")
-        let id = try await service.createVisit(patientId: nil).visitId
-        let reply = try await service.sendChat(visitId: id, text: "x")
+    @Test func `Ahmed's refill names his medicine, and carrying on opens the centres`() async throws {
+        let service = try await signedIn("DEMO-10002")
+        let visitId = try await service.createVisit(patientId: nil).visitId
+        let reply = try await service.sendChat(
+            visitId: visitId, text: "I need my usual blood pressure tablets.")
         #expect(reply.refill?.medicine == "amlodipine 5 mg once daily")
-        #expect(try await service.getVisit(visitId: id).ticket == nil)
-        let moved = try await service.continueRefill(visitId: id)
-        #expect(moved.service == .gp)
-        #expect(gatedScreen(for: try await service.getVisit(visitId: id), requested: nil) == .centre)
+        _ = try await service.continueRefill(visitId: visitId)
+        let visit = try await service.getVisit(visitId: visitId)
+        #expect(gatedScreen(for: visit, requested: nil) == .centre)
     }
 
-    @Test func `an unknown visit is a 404`() async {
-        await #expect {
-            try await StubClinicService().getVisit(visitId: "V-NOPE")
-        } throws: { error in
-            (error as? ClinicError)?.status == 404
+    /// The method `-demoConfirmed` uses for a flag no route can reach. Chat is offered for an
+    /// open, unconfirmed intake and for nothing else, whichever way the flag points.
+    @Test(arguments: VisitStage.allCases, [false, true])
+    func `a saved confirmed flag reaches the visit at every stage`(
+        stage: VisitStage, confirmed: Bool
+    ) async throws {
+        let store = MemoryClinicStore()
+        let (_, visitId) = try await LocalClinicService.staged(
+            patientId: stage == .refill ? "P002" : "P001",
+            stage: stage == .cancelled && confirmed ? .intake : stage, confirmed: confirmed,
+            store: store)
+        var state = try #require(store.load())
+        state.chats[visitId]?.confirmedByPatient = confirmed
+        if stage == .cancelled {
+            let row = try #require(state.clinic.visits.firstIndex { $0.id == visitId })
+            state.clinic.visits[row].status = .cancelled
         }
-    }
 
-    @Test func `screens get nothing before a login`() async {
-        await #expect {
-            try await StubClinicService().getMe()
-        } throws: { error in
-            (error as? ClinicError)?.code == "unauthorized"
-        }
+        let rebuilt = LocalClinicService(store: try MemoryClinicStore(state: state))
+        let visit = try await rebuilt.getVisit(visitId: visitId)
+        #expect(visit.stage == stage)
+        #expect(visit.confirmedByPatient == confirmed)
+        #expect(visit.status.stage == stage)
+        let offersChat = gatedScreen(for: visit, requested: .chat) == .chat
+        #expect(offersChat == (stage == .intake && !confirmed))
     }
 }

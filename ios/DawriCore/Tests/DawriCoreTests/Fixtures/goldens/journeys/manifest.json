@@ -1,0 +1,105 @@
+{
+ "schema": 1,
+ "unidata_version": "16.0.0",
+ "sources": {
+  "backend/ai/filters.py": "161b9e7e04a769c5f24d8c406de9a1beddd2e660b6d2e93bebf0512c2089bf59",
+  "backend/ai/handoff.py": "eb595fc24d0324fd008eed0448c9b61b6247e53224b39ccbc2444d0bb37a4138",
+  "backend/ai/intake.py": "a50fe5aa65818eeb943f1ea11b89e2dbafc1f35edad71f5eb9fda8cf521d8a86",
+  "backend/ai/medicines.py": "bfbe5e5ada581afd3bf0f5cdfcb31d8b53097749d9de9a8eb7f99a825c9727e4",
+  "backend/ai/receptionist.py": "467c6b299281022590244823a885e48a7454f3c9cb13ef3aea2044c2d8ec13c2",
+  "backend/ai/redflags.py": "617e9043e512c6154b6a3ec3a24996b9c0dab498095b16f3624fe561ca85d67d",
+  "backend/ai/refill.py": "44def37f8684e49d697569b913367f038cff50efa0285e5ff221a6c645f46ecc",
+  "backend/ai/session.py": "ceac236074b74b9fa0331d0c54b6bc87f6ef0f1f177b513f1a1f35f961340094",
+  "backend/ai/simulated.py": "69ccfe1918ef4a8fcd1301f656b83dea9d2f2f813d1615f1cd8c0a5bad6a1a73",
+  "backend/ai/text.py": "1614459b0deba4a33786eb25fa69b67d74011ff7c244c5280b996f70cc64fc43",
+  "backend/centres.py": "9495ef26e1ab57fa036701b982550dcb3474de4c8bfde5964026fe30a5c69bb8",
+  "backend/deps.py": "68131cfe6100021349597b90d6752b39187efd58e9f28e53c9e0f13451f15eb1",
+  "backend/main.py": "b3f7378a77981b49dc860ef62f9a148146ae8aeb782a8225c128f5437ed606d4",
+  "backend/mock_health.py": "d1c52216aef746a6e5458fd9640de17c60a2f35a1e3503c53919e6ff79084084",
+  "backend/queue_engine.py": "11a4220918005c2fa95b083ea11df9249fbc3654494d0735b73bec248611e211",
+  "backend/routers/auth.py": "a0fb8a05b75d2e749fee9a1ecde90e60f32febebf9db701130e03b38ebae0f82",
+  "backend/routers/centres.py": "95ecf9130cc1ab86e5fa61f68d69c807b145b80f92dc64b3e8ac53c3c2bfbe71",
+  "backend/routers/demo.py": "072d05064f6741f7917ccdde892dc5edc83237c020a2f5ef939c0fb5174c1854",
+  "backend/routers/staff.py": "65a59a79a69f5c25f610b9d463b41fc16f7b385be7f7dadfae2156a1f553fe40",
+  "backend/routers/visits.py": "7f2471b177a3c3a3e973bc55044b91c8e0b09e5c6a6f891b5a4d0905cb18d545",
+  "backend/views.py": "c1ab952db3c661afd1d0df80a21f008bb2f7a37c4713e510bcc5bc9ff8b43ef9",
+  "backend/visit_flow.py": "20cbed8762fb114eb1d0245eb7fe3bcf0f747b5288c88799b1bbfffbf6cd15cf"
+ },
+ "families": {
+  "api": {
+   "count": 366,
+   "minimum": 1
+  },
+  "refusals": {
+   "count": 61,
+   "minimum": 30
+  },
+  "sessions": {
+   "count": 3498,
+   "minimum": 2000
+  }
+ },
+ "files": {
+  "api.json": {
+   "family": "api",
+   "count": 366,
+   "sha256": "171950c30436512d6eba4ccfc2c94ab983b4d828b39a616f5ad46c16ff88d4b9",
+   "bytes": 279173
+  },
+  "refusals.json": {
+   "family": "refusals",
+   "count": 61,
+   "sha256": "800d763c17ac4d47f7ce93cc8295a9ae69a1a4723955be9cb533263e51efca4d",
+   "bytes": 36463
+  },
+  "sessions.json": {
+   "family": "sessions",
+   "count": 3498,
+   "sha256": "8adacab6fc0e8fa23aec18a3ca010dc9aa24f0b05d699fae2d1312131ac08554",
+   "bytes": 8641483
+  }
+ },
+ "excluded": [
+  {
+   "file": "sessions.json",
+   "input": "cough syrup",
+   "reason": "the real function raised ValueError: invalid literal for int() with base 10: '፩'"
+  },
+  {
+   "file": "sessions.json",
+   "input": "nothing",
+   "reason": "the real function raised ValueError: invalid literal for int() with base 10: '፩'"
+  }
+ ],
+ "notes": {
+  "refusal_codes": [
+   "active_visit",
+   "already_rated",
+   "arrival_method_required",
+   "consent_required",
+   "emergency_today",
+   "forbidden",
+   "intake_not_confirmed",
+   "invalid_otp",
+   "invalid_request",
+   "invalid_text",
+   "invalid_transition",
+   "no_intake",
+   "no_reservation",
+   "not_emergency",
+   "service_not_offered",
+   "ticket_expired",
+   "too_far",
+   "unauthorized",
+   "unknown_centre",
+   "unknown_qid",
+   "unknown_service",
+   "visit_has_live_ticket",
+   "visit_not_completed",
+   "visit_not_deflected",
+   "visit_not_found",
+   "visit_not_in_intake",
+   "wrong_door"
+  ]
+ }
+}

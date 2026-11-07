@@ -1,0 +1,35 @@
+{
+ "schema": 1,
+ "unidata_version": "16.0.0",
+ "sources": {
+  "backend/adapters/queue_base.py": "d13a4062790576bb272a1da29a1a8c7b8b6c268303aaf1c1b323e098e5a1b7a1",
+  "backend/ai/audit.py": "7d5d10067637090d915f2caa815d4675418801bb69cd41db82ef755d0a7563ce",
+  "backend/ai/doctors.py": "79c6558d989817ddbc3ec442e3d6b3a0ae2d1f9aa98d72c6db9b246406b69afd",
+  "backend/ai/medicines.py": "bfbe5e5ada581afd3bf0f5cdfcb31d8b53097749d9de9a8eb7f99a825c9727e4",
+  "backend/auth.py": "48a5a9d57a58dcbd215300d376b14257c16ce942b72987a2073da24e4cb89ef4",
+  "backend/centres.py": "9495ef26e1ab57fa036701b982550dcb3474de4c8bfde5964026fe30a5c69bb8",
+  "backend/geo.py": "b5dd85716cdac8e81d196c3a0f30fff17705e122919b2af984aa0eda902dff5d",
+  "backend/main.py": "b3f7378a77981b49dc860ef62f9a148146ae8aeb782a8225c128f5437ed606d4",
+  "backend/mock_health.py": "d1c52216aef746a6e5458fd9640de17c60a2f35a1e3503c53919e6ff79084084",
+  "backend/queue_engine.py": "11a4220918005c2fa95b083ea11df9249fbc3654494d0735b73bec248611e211",
+  "backend/routers/auth.py": "a0fb8a05b75d2e749fee9a1ecde90e60f32febebf9db701130e03b38ebae0f82",
+  "backend/routers/centres.py": "95ecf9130cc1ab86e5fa61f68d69c807b145b80f92dc64b3e8ac53c3c2bfbe71",
+  "backend/routers/demo.py": "072d05064f6741f7917ccdde892dc5edc83237c020a2f5ef939c0fb5174c1854",
+  "backend/routers/visits.py": "7f2471b177a3c3a3e973bc55044b91c8e0b09e5c6a6f891b5a4d0905cb18d545",
+  "backend/seed/centres.json": "81bf13f3b61175d8595c2c16c261da7a209d706d2a782b7ccdbc2c5839c09b89",
+  "backend/seed/counters.json": "819546c0c74ad093cc70e2bfa36def67fbb633926cacf17c46ff03084aa9080c",
+  "backend/seed/dependents.json": "0f825145bb330b271b62fbfab1d5b694c1e168688c7a208556c2a4540704f864",
+  "backend/seed/doctors.json": "e65d2fd62dd946cd8167d36a424d19a4eb6b602881cbf68f0078776d1ce24183",
+  "backend/seed/drugs.json": "be6b28a5fac7ec082b65902fdf6ba20aa96bbfeea72c6b4743795a78df4a08bb",
+  "backend/seed/patients.json": "fff9d721fecc11e2f7e6c325385485e81c8a87ac149e2f2f998f6eb3a27d549a",
+  "backend/seed/staff.json": "f1f4387c804f245f742fcf65c30bd6d6041d458769504773b00df3d31b25a4be",
+  "backend/simulate.py": "dc7504fed99d787b64ddb14785a33e805618d602a611115b97f9c39407ae6424",
+  "backend/timeutil.py": "2db5fa21cd5d68c3489cc0b49b2075950c09f5ec8ca5cf367ccc78346974707b",
+  "backend/views.py": "c1ab952db3c661afd1d0df80a21f008bb2f7a37c4713e510bcc5bc9ff8b43ef9",
+  "backend/visit_flow.py": "20cbed8762fb114eb1d0245eb7fe3bcf0f747b5288c88799b1bbfffbf6cd15cf"
+ },
+ "files": {
+  "engine.clinic.seed.json": "3e802a15e39c711b17dbf71c85789799956ea8b8cc2cba95ef64f6d00550813f",
+  "engine.clinic.text.json": "1d1d87714be5036ce414095c17baab27033c4da352cf209e94820d6e079b7aa2"
+ }
+}

@@ -1,0 +1,187 @@
+{
+ "schema": 1,
+ "unidata_version": "16.0.0",
+ "sources": {
+  "backend/ai/filters.py": "161b9e7e04a769c5f24d8c406de9a1beddd2e660b6d2e93bebf0512c2089bf59",
+  "backend/ai/intake.py": "a50fe5aa65818eeb943f1ea11b89e2dbafc1f35edad71f5eb9fda8cf521d8a86",
+  "backend/ai/prompts.py": "7d34b83b1e134a6881cacddaa74c6c79af99023a95391608b8a5ae8fb69601d1",
+  "backend/ai/receptionist.py": "467c6b299281022590244823a885e48a7454f3c9cb13ef3aea2044c2d8ec13c2",
+  "backend/ai/redflags.py": "617e9043e512c6154b6a3ec3a24996b9c0dab498095b16f3624fe561ca85d67d",
+  "backend/ai/refill.py": "44def37f8684e49d697569b913367f038cff50efa0285e5ff221a6c645f46ecc",
+  "backend/ai/session.py": "ceac236074b74b9fa0331d0c54b6bc87f6ef0f1f177b513f1a1f35f961340094",
+  "backend/ai/simulated.py": "69ccfe1918ef4a8fcd1301f656b83dea9d2f2f813d1615f1cd8c0a5bad6a1a73",
+  "backend/ai/text.py": "1614459b0deba4a33786eb25fa69b67d74011ff7c244c5280b996f70cc64fc43"
+ },
+ "families": {
+  "next_turn": {
+   "count": 6659,
+   "minimum": 5000
+  },
+  "parsers": {
+   "count": 5417,
+   "minimum": 5000
+  },
+  "readback": {
+   "count": 6742,
+   "minimum": 3000
+  },
+  "redflags_conversation": {
+   "count": 5979,
+   "minimum": 5000
+  },
+  "redflags_single": {
+   "count": 83288,
+   "minimum": 60000
+  },
+  "refill": {
+   "count": 9943,
+   "minimum": 8000
+  },
+  "regex": {
+   "count": 9145,
+   "minimum": 2000
+  },
+  "text": {
+   "count": 16370,
+   "minimum": 5000
+  }
+ },
+ "files": {
+  "next_turn.json": {
+   "family": "next_turn",
+   "count": 2501,
+   "sha256": "8a2591c84a3acf24420382f3d46a81ac82c3c816a5f83bed1a3569285be93677",
+   "bytes": 1050338
+  },
+  "parsers.json": {
+   "family": "parsers",
+   "count": 4546,
+   "sha256": "2bd4c0b196d0471de019c50a7810874b4477a0425a759f4e88f3901b348bd750",
+   "bytes": 359403
+  },
+  "parsers_question_count.json": {
+   "family": "parsers",
+   "count": 871,
+   "sha256": "78b72ab86045a371e106411e21ccc171994486cff136a7584282a4becabfd275",
+   "bytes": 174133
+  },
+  "readback.json": {
+   "family": "readback",
+   "count": 3744,
+   "sha256": "5bc612279e32af5754808147547e48c6add72e2a9068c851138cf8cce59c91c2",
+   "bytes": 280192
+  },
+  "readback_summary.json": {
+   "family": "readback",
+   "count": 2998,
+   "sha256": "a918398556916ea97e28b83355bc915bafcc63d8af272e7b7ca6f8bc475fe8dd",
+   "bytes": 1124063
+  },
+  "redflags_conversation.json": {
+   "family": "redflags_conversation",
+   "count": 5979,
+   "sha256": "fa6c37fb00e6f7f6898884b68da052d8a3af0f443bf8a5e19c67d3a985d59e02",
+   "bytes": 802475
+  },
+  "redflags_single.json": {
+   "family": "redflags_single",
+   "count": 83288,
+   "sha256": "b9c8846280a550e29657b6356d0592b0c7040cb02e6198d163b1f0eba8fbfc29",
+   "bytes": 5159941
+  },
+  "refill.json": {
+   "family": "refill",
+   "count": 9943,
+   "sha256": "6c6c433fb302ab8eb38d3c4eb85b36906b9e2b0b4cb5f7e06448d5d6cfb84cc0",
+   "bytes": 648122
+  },
+  "regex.json": {
+   "family": "regex",
+   "count": 9145,
+   "sha256": "d927cbf9ed5c7ad2fa2c66a2e14443b33f846d8ea80851c72f4204db0d5cfd62",
+   "bytes": 459082
+  },
+  "run_turn.json": {
+   "family": "next_turn",
+   "count": 4158,
+   "sha256": "dde7a2f4b23cbdb1e4cf43e4100b4d7585598023dca628ce4acf94ab5385b057",
+   "bytes": 1946520
+  },
+  "text.json": {
+   "family": "text",
+   "count": 8475,
+   "sha256": "da9530d5ee33aa06b62c392a33957eb94b7a56bb03117c493a835f18d463f02f",
+   "bytes": 1904434
+  },
+  "text_negation.json": {
+   "family": "text",
+   "count": 4663,
+   "sha256": "f607eb6e0288526e2ef6fa9f65793b4e2e62cdf17f2e07cb2b68ae48c572ce19",
+   "bytes": 553108
+  },
+  "text_proclitics.json": {
+   "family": "text",
+   "count": 3232,
+   "sha256": "7dc0d96a370f913c61283bcbf297d607f9075d4b2f33cd4adda96c9f00011d64",
+   "bytes": 191168
+  }
+ },
+ "excluded": [
+  {
+   "file": "parsers.json",
+   "input": "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111... (4306 code points)",
+   "reason": "the real function raised ValueError: Exceeds the limit (4300 digits) for integer string conversion: value has 4301 digits; use sys.set_int_max_str_digits() to increase the limit"
+  },
+  {
+   "file": "run_turn.json",
+   "input": "፩",
+   "reason": "the real function raised ValueError: invalid literal for int() with base 10: '፩'"
+  },
+  {
+   "file": "next_turn.json",
+   "input": "፩",
+   "reason": "the real function raised ValueError: invalid literal for int() with base 10: '፩'"
+  }
+ ],
+ "notes": {
+  "harvest": {
+   "passed_tests": 7172,
+   "failed_tests": [],
+   "left_out": 2
+  },
+  "redflags_single": {
+   "by_language": {
+    "en": 30303,
+    "ar": 52985
+   },
+   "cues": 736,
+   "fewest_cases_for_a_cue": 44,
+   "cues_with_under_10_cases": [],
+   "cues_matched_but_shadowed_by_an_earlier_cue_of_the_same_label": [
+    "a stroke",
+    "my chest aches",
+    "my lips are swollen",
+    "my lips swelled up",
+    "my throat is swollen",
+    "my tongue is swelling",
+    "throat is closing up",
+    "took an overdose",
+    "أغمي علي",
+    "بنتي الرضيعة ما ترضع",
+    "ضيق التنفس",
+    "ضيق بالتنفس",
+    "كتمة بصدري",
+    "كتمة في الصدر",
+    "كتمة في صدري",
+    "ما أقدر أخذ نفسي",
+    "ما اقدر اخذ نفسي",
+    "مب قادر اتنفس",
+    "ولدي الرضيع ما يرضع"
+   ]
+  },
+  "readback_summary": {
+   "plain_line_cases": 183,
+   "read_back_cases": 2815
+  }
+ }
+}

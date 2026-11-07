@@ -47,6 +47,7 @@ extension XCUIApplication {
     }
 }
 
+@MainActor
 func assertShown(
     _ element: XCUIElement, _ message: String = "", file: StaticString = #filePath, line: UInt = #line
 ) {
