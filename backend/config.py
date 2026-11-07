@@ -61,6 +61,11 @@ def hf_token() -> str:
     return os.environ.get("HF_TOKEN", "").strip()
 
 
+def demo_passcode() -> str:
+    """Blank leaves Reset open, for local work. A public Space sets this as a secret."""
+    return os.environ.get("DEMO_PASSCODE", "").strip()
+
+
 def llm_timeout_sec() -> float:
     try:
         timeout = float(os.environ.get("LLM_TIMEOUT_SEC", ""))

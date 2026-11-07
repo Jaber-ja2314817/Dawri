@@ -30,6 +30,7 @@ ENV_KEYS = {
     "SIMULATE_LOAD",
     "DAWRI_DB",
     "DAWRI_STATIC_DIR",
+    "DEMO_PASSCODE",
 }
 BANNED_PHRASES = ("place held", "no-show", "nobody skips")
 SECRET_SHAPES = (

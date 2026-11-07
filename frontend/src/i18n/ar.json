@@ -105,6 +105,7 @@
   "error.not_called": "نادِ هذا المريض إلى الكاونتر أولاً.",
   "error.not_next_in_queue": "مريض آخر هو التالي عند هذا الكاونتر.",
   "error.not_your_counter": "هذا المريض عند كاونتر زميل.",
+  "error.passcode_required": "أدخل رمز العرض التجريبي لإعادة الضبط.",
   "error.patient_not_found": "لا يوجد سجل مريض لهذه الزيارة.",
   "error.unknown_counter": "لم نجد هذا الكاونتر.",
   "error.unknown_doctor": "اختر طبيباً مناوباً في هذا المركز.",

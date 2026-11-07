@@ -105,5 +105,5 @@ export const display = (centreId: string, options?: Options) =>
 export const fastForward = (visitId: string) =>
   api<FastForwardResponse>('POST', `/api/demo/fast-forward/${part(visitId)}`, undefined, { auth })
 
-export const resetDemo = () =>
-  api<ResetResponse>('POST', '/api/demo/reset', undefined, { auth })
+export const resetDemo = (passcode?: string) =>
+  api<ResetResponse>('POST', '/api/demo/reset', passcode ? { passcode } : undefined, { auth })

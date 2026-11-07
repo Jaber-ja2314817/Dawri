@@ -27,6 +27,7 @@
   "staff.reset.start": "Reset demo",
   "staff.reset.confirm": "Confirm reset",
   "staff.reset.cancel": "Cancel",
+  "staff.reset.passcode": "Demo passcode",
   "staff.reset.done": "The demo was reset.",
   "staff.notFound.title": "Staff page not found",
   "staff.notFound.body": "This staff page does not exist.",

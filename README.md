@@ -95,7 +95,7 @@ MedGemma and text-to-speech were dropped. The same chat model writes the nurse's
 
 - Data lives in `/tmp` in the image. It is lost when the container is replaced, as on a Space restart, and reseeded.
 - Run one process only. The event bus is in-process, so a second worker would miss events.
-- Staff login has no password, and anyone with the URL can press Reset. A public Space can be reset by a visitor.
+- Staff login has no password, so a visitor can open the consoles. Set `DEMO_PASSCODE` as a Space secret, and Reset then asks for it.
 - A stream token sits in the URL, because EventSource cannot send headers. The image turns the access log off, but a local uvicorn logs it.
 - The waiting-room display (T08) needs a staff login.
 - QR arrival is a backend route with no camera UI.

@@ -105,6 +105,7 @@
   "error.not_called": "Call this patient to the counter first.",
   "error.not_next_in_queue": "Another patient is next at this counter.",
   "error.not_your_counter": "This patient is at a colleague's counter.",
+  "error.passcode_required": "Enter the demo passcode to reset.",
   "error.patient_not_found": "This visit has no patient record.",
   "error.unknown_counter": "We could not find this counter.",
   "error.unknown_doctor": "Pick a doctor on shift at this centre.",

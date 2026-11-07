@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { errorText } from '../../api/client'
+import { ApiError, errorText } from '../../api/client'
 import { resetDemo } from '../../api/staff'
 import { useI18n } from '../../i18n'
 import { announceDemoReset } from '../../state/staff/demoReset'
@@ -18,20 +18,29 @@ export function ResetDemo({ onDone }: { onDone?: () => void }) {
   const [armed, setArmed] = useState(false)
   const [busy, setBusy] = useState(false)
   const [failed, setFailed] = useState<unknown>(null)
+  const [needsCode, setNeedsCode] = useState(false)
+  const [code, setCode] = useState('')
 
   useEffect(() => {
-    if (!armed || busy) return
+    if (!armed || busy || needsCode) return
     const timer = setTimeout(() => setArmed(false), DISARM_MS)
     return () => clearTimeout(timer)
-  }, [armed, busy])
+  }, [armed, busy, needsCode])
+
+  const cancel = () => {
+    setArmed(false)
+    setNeedsCode(false)
+    setCode('')
+    setFailed(null)
+  }
 
   const confirm = async () => {
     setBusy(true)
     setFailed(null)
     try {
-      await resetDemo()
+      await resetDemo(code)
       announceDemoReset()
-      setArmed(false)
+      cancel()
       onDone?.()
       if (staff !== null) {
         navigate(roleHome(staff.role), {
@@ -40,6 +49,7 @@ export function ResetDemo({ onDone }: { onDone?: () => void }) {
         })
       }
     } catch (cause) {
+      if (cause instanceof ApiError && cause.code === 'passcode_required') setNeedsCode(true)
       setFailed(cause)
     } finally {
       setBusy(false)
@@ -50,6 +60,18 @@ export function ResetDemo({ onDone }: { onDone?: () => void }) {
     <span className="inline-flex flex-wrap items-center gap-2">
       {armed ? (
         <>
+          {needsCode && (
+            <input
+              type="password"
+              data-testid="reset-passcode"
+              aria-label={t('staff.reset.passcode')}
+              placeholder={t('staff.reset.passcode')}
+              value={code}
+              autoComplete="off"
+              className="h-11 w-36 rounded-md border border-control bg-white px-3 text-sm"
+              onChange={(event) => setCode(event.target.value)}
+            />
+          )}
           <Button
             variant="secondary"
             data-testid="reset-confirm"
@@ -64,7 +86,7 @@ export function ResetDemo({ onDone }: { onDone?: () => void }) {
             data-testid="reset-cancel"
             disabled={busy}
             className="px-3 text-sm"
-            onClick={() => setArmed(false)}
+            onClick={cancel}
           >
             {t('staff.reset.cancel')}
           </Button>

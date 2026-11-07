@@ -34,7 +34,7 @@ const ERROR_CODES = `unauthorized forbidden unknown_qid invalid_otp consent_requ
   arrival_method_required ticket_expired visit_not_eligible visit_has_live_ticket invalid_transition
   asr_unavailable bad_audio asr_failed audio_too_large not_emergency visit_not_deflected
   visit_not_completed already_rated internal_error network draft_required draft_stale invalid_intake
-  not_called not_next_in_queue not_your_counter patient_not_found unknown_counter unknown_doctor
+  not_called not_next_in_queue not_your_counter passcode_required patient_not_found unknown_counter unknown_doctor
   unknown_drug unknown_staff visit_not_in_doctor visit_not_in_pharmacy visit_not_in_triage
   visit_not_ready vitals_required wrong_centre wrong_role counter_busy ticket_not_found
   allergy_conflict no_patient not_found method_not_allowed http_error queue_error

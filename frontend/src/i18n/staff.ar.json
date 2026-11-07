@@ -27,6 +27,7 @@
   "staff.reset.start": "إعادة ضبط العرض",
   "staff.reset.confirm": "تأكيد إعادة الضبط",
   "staff.reset.cancel": "إلغاء",
+  "staff.reset.passcode": "رمز العرض التجريبي",
   "staff.reset.done": "تمت إعادة ضبط العرض.",
   "staff.notFound.title": "صفحة الطاقم غير موجودة",
   "staff.notFound.body": "هذه الصفحة غير موجودة.",

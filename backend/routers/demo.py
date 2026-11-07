@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import hmac
 import sqlite3
 
 from fastapi import APIRouter, Depends
+from pydantic import BaseModel
 
 from backend import bootstrap, config, events, mock_health, timeutil, visit_flow
 from backend.adapters.queue_base import Ticket
@@ -18,16 +20,30 @@ router = APIRouter(prefix="/api")
 _AT_COUNTER = ("called", "serving")
 
 
+class ResetBody(BaseModel):
+    passcode: str | None = None
+
+
+def _require_passcode(body: ResetBody | None) -> None:
+    """Staff login has no password, so on a public Space this is what stops a visitor."""
+    expected = config.demo_passcode()
+    given = "" if body is None or body.passcode is None else body.passcode.strip()
+    if expected and not hmac.compare_digest(given.encode(), expected.encode()):
+        raise ApiError(403, "passcode_required", "Enter the demo passcode to reset.")
+
+
 def _ids(conn: sqlite3.Connection, table: str) -> list[str]:
     return [row["id"] for row in conn.execute(f"SELECT id FROM {table}")]
 
 
 @router.post("/demo/reset")
 def reset(
+    body: ResetBody | None = None,
     staff: dict = Depends(staff_member),
     conn: sqlite3.Connection = Depends(get_conn),
 ) -> dict:
     """Sessions survive, and open consoles refetch on the event sent after the reset."""
+    _require_passcode(body)
     visit_ids = _ids(conn, "visit")
     bootstrap.reset_demo()
     now = timeutil.utcnow()

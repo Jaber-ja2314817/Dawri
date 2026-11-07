@@ -23,6 +23,7 @@ from backend.ai.llm import Llm, LlmError
 from backend.ai.runtime import AiRuntime
 from backend.ai.text import (
     Token,
+    has_arabic,
     is_negated,
     normalise,
     phrase_starts,
@@ -165,22 +166,68 @@ def _who_line(patient: dict, ar: bool) -> str:
     return ", ".join(part for part in (patient.get("full_name_en"), who) if part) + "."
 
 
-def _complaint_line(intake: dict, w: dict) -> str:
+# The seed's record terms, so an Arabic card does not break into English mid-line.
+_RECORD_AR = {
+    "hypertension": "ارتفاع ضغط الدم",
+    "type 2 diabetes": "السكري من النوع الثاني",
+    "penicillin": "البنسلين",
+    "amlodipine 5 mg once daily": "أملوديبين 5 ملغ مرة يوميا",
+    "metformin 500 mg twice daily": "ميتفورمين 500 ملغ مرتين يوميا",
+}
+_DURATION_AR = {
+    "since yesterday": "من أمس",
+    "since today": "من اليوم",
+    "since this morning": "من الصباح",
+}
+# Singular, then the plural Arabic uses for 3 to 10.
+_DURATION_UNITS_AR = {
+    "hour": ("ساعة", "ساعات"), "hours": ("ساعة", "ساعات"),
+    "day": ("يوم", "أيام"), "days": ("يوم", "أيام"),
+    "week": ("أسبوع", "أسابيع"), "weeks": ("أسبوع", "أسابيع"),
+    "month": ("شهر", "أشهر"), "months": ("شهر", "أشهر"),
+}
+
+
+def _duration_ar(duration: str) -> str:
+    """A form we know reads in Arabic. Anything else stays as stored."""
+    text = duration.strip().lower()
+    if text in _DURATION_AR:
+        return _DURATION_AR[text]
+    parts = text.split()
+    if len(parts) == 2 and parts[0].isdigit() and parts[1] in _DURATION_UNITS_AR:
+        singular, plural = _DURATION_UNITS_AR[parts[1]]
+        return f"{parts[0]} {plural if 3 <= int(parts[0]) <= 10 else singular}"
+    return duration
+
+
+def _complaint_line(intake: dict, w: dict, ar: bool = False) -> str:
     value = intake.get("severity_0_10")
     severity = w["severity_missing"] if value is None else f"{w['severity']} {value}/10"
+    complaint = _clean(intake.get("chief_complaint"))
+    duration = _clean(intake.get("duration"))
+    if ar:
+        words = _clean(intake.get("chief_complaint_patient_words"))
+        if words and has_arabic(words):
+            complaint = words
+        duration = _duration_ar(duration) if duration else duration
     parts = [
-        _clean(intake.get("chief_complaint")) or w["not_recorded"],
-        _clean(intake.get("duration")) or w["duration_missing"],
+        complaint or w["not_recorded"],
+        duration or w["duration_missing"],
         severity,
     ]
     return f"{w['complaint']}: {w['comma'].join(parts)}."
 
 
-def _history_line(intake: dict, patient: dict, w: dict) -> str:
+def _history_line(intake: dict, patient: dict, w: dict, ar: bool = False) -> str:
     comma = w["comma"]
-    chronic = _items(patient.get("chronic"))
-    meds = _items(patient.get("active_meds"))
-    allergies = _items(patient.get("allergies"))
+
+    def record(key: str) -> list[str]:
+        items = _items(patient.get(key))
+        return [_RECORD_AR.get(item, item) for item in items] if ar else items
+
+    chronic = record("chronic")
+    meds = record("active_meds")
+    allergies = record("allergies")
     took = _items(intake.get("self_medication"))
     sentences = [f"{w['history']}: {comma.join(chronic) or w['none_on_record']}."]
     if meds:
@@ -229,8 +276,8 @@ def template(intake: dict, vitals: dict | None, patient: dict, lang: str = "en")
     return "\n".join(
         (
             _who_line(patient, ar),
-            _complaint_line(intake, w),
-            _history_line(intake, patient, w),
+            _complaint_line(intake, w, ar),
+            _history_line(intake, patient, w, ar),
             _vitals_line(vitals, ar, w),
             _concerns_line(intake, lang, w),
         )
