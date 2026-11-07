@@ -1,0 +1,19 @@
+{
+  "check_in_valid_min": 45,
+  "expires_at": "2026-11-07T09:45:00.424304+00:00",
+  "message": "Check-in valid for 45 minutes",
+  "message_ar": "تسجيل الوصول صالح لمدة 45 دقيقة",
+  "ticket": {
+    "centre_id": "C-WAKRA",
+    "counter": "Triage 1",
+    "counter_ar": "الفرز 1",
+    "counter_id": "C-WAKRA-T1",
+    "est_wait_min": null,
+    "expires_at": "2026-11-07T09:45:00.424304+00:00",
+    "id": "tkt_c51d03883fba",
+    "number": null,
+    "people_ahead": null,
+    "state": "reserved",
+    "visit_id": "V_93046b9ef484"
+  }
+}

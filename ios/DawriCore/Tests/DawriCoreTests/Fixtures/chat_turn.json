@@ -1,0 +1,13 @@
+{
+  "ai_source": "simulated",
+  "denied": [],
+  "done": false,
+  "emergency": false,
+  "intake": null,
+  "nearest_ed": null,
+  "refill": null,
+  "reply": "كم شدته من 0 إلى 10؟",
+  "self_harm": false,
+  "status": "intake",
+  "transcript": null
+}

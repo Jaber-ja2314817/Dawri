@@ -1,0 +1,18 @@
+{
+  "intake": {
+    "chief_complaint_patient_words": "عندي حرارة وكحة من ثلاث أيام",
+    "denied_red_flags": [],
+    "emergency": false,
+    "language": "ar-gulf",
+    "questions_asked": 4,
+    "refill_request": null,
+    "self_medication": [
+      "paracetamol"
+    ],
+    "service": "gp",
+    "service_confidence": 0.85,
+    "severity_0_10": 6
+  },
+  "service": "gp",
+  "status": "intake"
+}

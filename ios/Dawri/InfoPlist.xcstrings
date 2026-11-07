@@ -1,0 +1,96 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "NSCameraUsageDescription" : {
+      "comment" : "Why the app asks for the camera: scanning the door QR code.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "يستخدم دوري الكاميرا لمسح رمز الباب في مركزك الصحي. لا يُحفظ ما تراه الكاميرا ولا يُرسل. يمكنك كتابة الرمز بدلاً من ذلك."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dawri uses the camera to scan the door code at your health centre. Nothing the camera sees is saved or sent. You can type the code instead."
+          }
+        }
+      }
+    },
+    "NSLocalNetworkUsageDescription" : {
+      "comment" : "Why the app asks for the local network: the optional Clinic server mode.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "يتصل دوري بخادم العيادة على شبكتك المحلية فقط إذا اخترت خادم العيادة في الإعدادات."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dawri connects to a clinic server on your local network only if you choose Clinic server in Settings."
+          }
+        }
+      }
+    },
+    "NSLocationWhenInUseUsageDescription" : {
+      "comment" : "Why the app asks for location: the arrival check at the health centre.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "يتأكد دوري من وصولك إلى مركزك الصحي عندما تضغط على «أنا هنا». يُستخدم موقعك لهذا التحقق فقط."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dawri checks that you have reached your health centre when you tap I'm here. Your location is used only for that check."
+          }
+        }
+      }
+    },
+    "NSMicrophoneUsageDescription" : {
+      "comment" : "Why the app asks for the microphone: speaking to the receptionist.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "يستخدم دوري الميكروفون لتتحدث إلى موظف الاستقبال بدلاً من الكتابة. يبقى كلامك على هذا الهاتف، ولا يُرسل الصوت ولا يُحفظ أبداً."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dawri uses the microphone so you can speak to the receptionist instead of typing. Speech stays on this phone. Audio is never sent or stored."
+          }
+        }
+      }
+    },
+    "NSSpeechRecognitionUsageDescription" : {
+      "comment" : "Why the app asks for speech recognition, which runs on the device only.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "يحوّل دوري كلامك إلى نص على هذا الهاتف، وتراجع النص قبل إرساله. يبقى كلامك على هذا الهاتف، ولا يُرسل الصوت ولا يُحفظ أبداً."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dawri turns your speech into text on this phone, and you check the text before it is sent. Speech stays on this phone. Audio is never sent or stored."
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

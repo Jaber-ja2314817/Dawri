@@ -1,0 +1,109 @@
+{
+  "dependents": [
+    {
+      "active_meds": [],
+      "age": 7,
+      "allergies": [],
+      "chronic": [],
+      "demo": true,
+      "dob": "2019-05-10",
+      "full_name_ar": "ليلى التجريبية",
+      "full_name_en": "Layla Al-Demo",
+      "id": "P004",
+      "preferred_lang": "ar",
+      "qid_demo": "DEMO-10004",
+      "registered_centre": {
+        "id": "C-WAKRA",
+        "name_ar": "مركز الوكرة الصحي",
+        "name_en": "Al Wakra Health Centre"
+      },
+      "sex": "F"
+    },
+    {
+      "active_meds": [
+        "amlodipine 5 mg once daily"
+      ],
+      "age": 78,
+      "allergies": [],
+      "chronic": [
+        "hypertension"
+      ],
+      "demo": true,
+      "dob": "1948-02-21",
+      "full_name_ar": "مريم التجريبية",
+      "full_name_en": "Mariam Al-Demo",
+      "id": "P005",
+      "preferred_lang": "ar",
+      "qid_demo": "DEMO-10005",
+      "registered_centre": {
+        "id": "C-WAKRA",
+        "name_ar": "مركز الوكرة الصحي",
+        "name_en": "Al Wakra Health Centre"
+      },
+      "sex": "F"
+    }
+  ],
+  "patient": {
+    "active_meds": [],
+    "age": 34,
+    "allergies": [
+      "penicillin"
+    ],
+    "chronic": [],
+    "demo": true,
+    "dob": "1992-03-14",
+    "full_name_ar": "فاطمة التجريبية",
+    "full_name_en": "Fatima Al-Demo",
+    "id": "P001",
+    "preferred_lang": "ar",
+    "qid_demo": "DEMO-10001",
+    "registered_centre": {
+      "id": "C-WAKRA",
+      "name_ar": "مركز الوكرة الصحي",
+      "name_en": "Al Wakra Health Centre"
+    },
+    "sex": "F"
+  },
+  "record": {
+    "demo": true,
+    "entry": [
+      {
+        "resource": {
+          "birthDate": "1992-03-14",
+          "gender": "female",
+          "id": "P001",
+          "identifier": [
+            {
+              "system": "urn:dawri:demo-qid",
+              "value": "DEMO-10001"
+            }
+          ],
+          "name": [
+            {
+              "language": "en",
+              "text": "Fatima Al-Demo"
+            },
+            {
+              "language": "ar",
+              "text": "فاطمة التجريبية"
+            }
+          ],
+          "resourceType": "Patient"
+        }
+      },
+      {
+        "resource": {
+          "code": {
+            "text": "penicillin"
+          },
+          "patient": {
+            "reference": "Patient/P001"
+          },
+          "resourceType": "AllergyIntolerance"
+        }
+      }
+    ],
+    "resourceType": "Bundle",
+    "type": "collection"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "patient": {
+    "active_meds": [],
+    "age": 34,
+    "allergies": [
+      "penicillin"
+    ],
+    "chronic": [],
+    "demo": true,
+    "dob": "1992-03-14",
+    "full_name_ar": "فاطمة التجريبية",
+    "full_name_en": "Fatima Al-Demo",
+    "id": "P001",
+    "preferred_lang": "ar",
+    "qid_demo": "DEMO-10001",
+    "registered_centre": {
+      "id": "C-WAKRA",
+      "name_ar": "مركز الوكرة الصحي",
+      "name_en": "Al Wakra Health Centre"
+    },
+    "sex": "F"
+  },
+  "token": "fixture-token-not-real"
+}

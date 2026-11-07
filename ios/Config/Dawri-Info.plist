@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>ar</string>
+	</array>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>Dawri uses the camera to scan the door code at your health centre. Nothing the camera sees is saved or sent. You can type the code instead.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Dawri connects to a clinic server on your local network only if you choose Clinic server in Settings.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Dawri checks that you have reached your health centre when you tap I'm here. Your location is used only for that check.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Dawri uses the microphone so you can speak to the receptionist instead of typing. Speech stays on this phone. Audio is never sent or stored.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Dawri turns your speech into text on this phone, and you check the text before it is sent. Speech stays on this phone. Audio is never sent or stored.</string>
+	<key>NSSupportsLiveActivities</key>
+	<true/>
+	<key>UILaunchScreen</key>
+	<dict>
+		<key>UIColorName</key>
+		<string>Ground</string>
+	</dict>
+</dict>
+</plist>

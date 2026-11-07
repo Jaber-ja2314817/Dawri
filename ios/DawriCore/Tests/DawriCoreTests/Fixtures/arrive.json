@@ -1,0 +1,19 @@
+{
+  "go_to": {
+    "counter": "Triage 1",
+    "counter_ar": "الفرز 1"
+  },
+  "ticket": {
+    "centre_id": "C-WAKRA",
+    "counter": "Triage 1",
+    "counter_ar": "الفرز 1",
+    "counter_id": "C-WAKRA-T1",
+    "est_wait_min": 12,
+    "expires_at": null,
+    "id": "tkt_c51d03883fba",
+    "number": "T-014",
+    "people_ahead": 3,
+    "state": "active",
+    "visit_id": "V_93046b9ef484"
+  }
+}

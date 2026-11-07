@@ -1,0 +1,13 @@
+// Settings shared by the app, the Live Activity extension and the UI tests.
+// Edit these in one place. project.pbxproj applies this file to the whole project.
+
+// The owner's free Personal Team (Xcode > Settings > Accounts). It cannot sign App Groups or
+// push, so nothing in this project asks for them.
+DEVELOPMENT_TEAM = 4Y4YQ65B78
+
+// The app. The extension is BUNDLE_ID_PREFIX.live and the UI tests BUNDLE_ID_PREFIX.uitests.
+BUNDLE_ID_PREFIX = com.jaber.dawri
+
+// The app and its extension must match, so both versions live here.
+MARKETING_VERSION = 0.1.0
+CURRENT_PROJECT_VERSION = 1

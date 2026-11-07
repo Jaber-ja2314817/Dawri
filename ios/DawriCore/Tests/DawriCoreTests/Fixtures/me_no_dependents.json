@@ -1,0 +1,80 @@
+{
+  "dependents": [],
+  "patient": {
+    "active_meds": [
+      "metformin 500 mg twice daily"
+    ],
+    "age": 44,
+    "allergies": [],
+    "chronic": [
+      "type 2 diabetes"
+    ],
+    "demo": true,
+    "dob": "1981-11-20",
+    "full_name_ar": "رافي",
+    "full_name_en": "Ravi Demo",
+    "id": "P003",
+    "preferred_lang": "en",
+    "qid_demo": "DEMO-10003",
+    "registered_centre": {
+      "id": "C-AIRPORT",
+      "name_ar": "مركز المطار الصحي",
+      "name_en": "Airport Health Centre"
+    },
+    "sex": "M"
+  },
+  "record": {
+    "demo": true,
+    "entry": [
+      {
+        "resource": {
+          "birthDate": "1981-11-20",
+          "gender": "male",
+          "id": "P003",
+          "identifier": [
+            {
+              "system": "urn:dawri:demo-qid",
+              "value": "DEMO-10003"
+            }
+          ],
+          "name": [
+            {
+              "language": "en",
+              "text": "Ravi Demo"
+            },
+            {
+              "language": "ar",
+              "text": "رافي"
+            }
+          ],
+          "resourceType": "Patient"
+        }
+      },
+      {
+        "resource": {
+          "code": {
+            "text": "type 2 diabetes"
+          },
+          "resourceType": "Condition",
+          "subject": {
+            "reference": "Patient/P003"
+          }
+        }
+      },
+      {
+        "resource": {
+          "medicationCodeableConcept": {
+            "text": "metformin 500 mg twice daily"
+          },
+          "resourceType": "MedicationStatement",
+          "status": "active",
+          "subject": {
+            "reference": "Patient/P003"
+          }
+        }
+      }
+    ],
+    "resourceType": "Bundle",
+    "type": "collection"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "ai_source": "rules",
+  "denied": [],
+  "done": false,
+  "emergency": true,
+  "intake": null,
+  "nearest_ed": {
+    "distance_km": 7.0,
+    "id": "H-HGH",
+    "lat": 25.29349,
+    "lng": 51.50222,
+    "name_ar": "مستشفى حمد العام",
+    "name_en": "Hamad General Hospital"
+  },
+  "refill": null,
+  "reply": "This needs urgent care. Please go to the nearest emergency department now, or call 999.",
+  "self_harm": false,
+  "status": "redirected_emergency",
+  "transcript": null
+}

@@ -1,0 +1,124 @@
+{
+  "arrived_at": "2026-11-07T09:00:00.429294+00:00",
+  "booked_by": "P001",
+  "centre": {
+    "id": "C-WAKRA",
+    "name_ar": "مركز الوكرة الصحي",
+    "name_en": "Al Wakra Health Centre"
+  },
+  "chat": {
+    "language": "ar",
+    "messages": [
+      {
+        "content": "شو اللي يتعبك اليوم؟",
+        "role": "assistant",
+        "slot": "complaint"
+      },
+      {
+        "content": "عندي حرارة وكحة من ثلاث أيام",
+        "role": "user",
+        "slot": null
+      },
+      {
+        "content": "كم شدته من 0 إلى 10؟",
+        "role": "assistant",
+        "slot": "severity"
+      },
+      {
+        "content": "٦",
+        "role": "user",
+        "slot": null
+      },
+      {
+        "content": "أخذت أي دوا له؟",
+        "role": "assistant",
+        "slot": "medicine"
+      },
+      {
+        "content": "بنادول",
+        "role": "user",
+        "slot": null
+      },
+      {
+        "content": "في شي ثاني تبي الممرضة تعرفه؟",
+        "role": "assistant",
+        "slot": "other"
+      },
+      {
+        "content": "لا",
+        "role": "user",
+        "slot": null
+      },
+      {
+        "content": "شكرا. هذا اللي بقوله للممرضة: حرارة وكحة، 3 أيام، الشدة 6 من 10، أخذت باراسيتامول. هل هذا صحيح؟",
+        "role": "assistant",
+        "slot": "summary"
+      }
+    ]
+  },
+  "completed_at": "2026-11-07T09:00:00.462208+00:00",
+  "confirmed_by_patient": true,
+  "created_at": "2026-11-07T09:00:00.381927+00:00",
+  "emergency": null,
+  "go_to": null,
+  "intake": {
+    "chief_complaint_patient_words": "عندي حرارة وكحة من ثلاث أيام",
+    "denied_red_flags": [],
+    "emergency": false,
+    "language": "ar-gulf",
+    "questions_asked": 4,
+    "refill_request": null,
+    "self_medication": [
+      "paracetamol"
+    ],
+    "service": "gp",
+    "service_confidence": 0.85,
+    "severity_0_10": 6
+  },
+  "medicines": {
+    "ar": [
+      {
+        "drug": "DR-PARA",
+        "line": "باراسيتامول (أقراص): الجرعة 500 ملغ، كل 6 ساعات عند الحاجة، لمدة 3 أيام.",
+        "name": "باراسيتامول"
+      },
+      {
+        "drug": "DR-DEXT",
+        "line": "ديكستروميثورفان (شراب): الجرعة 10 مل، كل 8 ساعات عند الحاجة، لمدة 3 أيام.",
+        "name": "ديكستروميثورفان"
+      }
+    ],
+    "en": [
+      {
+        "drug": "DR-PARA",
+        "line": "Paracetamol (tablet): take 500 mg, every 6 hours when needed, for 3 days.",
+        "name": "Paracetamol"
+      },
+      {
+        "drug": "DR-DEXT",
+        "line": "Dextromethorphan syrup: take 10 ml, every 8 hours when needed, for 3 days.",
+        "name": "Dextromethorphan syrup"
+      }
+    ]
+  },
+  "patient_id": "P001",
+  "rating": null,
+  "refill": null,
+  "service": "gp",
+  "stage": "completed",
+  "status": "completed",
+  "ticket": {
+    "centre_id": "C-WAKRA",
+    "counter": "Pharmacy",
+    "counter_ar": "الصيدلية",
+    "counter_id": "C-WAKRA-P1",
+    "est_wait_min": null,
+    "expires_at": null,
+    "id": "tkt_ebd4ae37db41",
+    "number": "P-031",
+    "people_ahead": null,
+    "state": "done",
+    "visit_id": "V_93046b9ef484"
+  },
+  "visit_id": "V_93046b9ef484"
+}

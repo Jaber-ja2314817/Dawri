@@ -1,0 +1,26 @@
+{
+  "ai_source": "simulated",
+  "denied": [],
+  "done": true,
+  "emergency": false,
+  "intake": {
+    "chief_complaint_patient_words": "عندي حرارة وكحة من ثلاث أيام",
+    "denied_red_flags": [],
+    "emergency": false,
+    "language": "ar-gulf",
+    "questions_asked": 4,
+    "refill_request": null,
+    "self_medication": [
+      "paracetamol"
+    ],
+    "service": "gp",
+    "service_confidence": 0.85,
+    "severity_0_10": 6
+  },
+  "nearest_ed": null,
+  "refill": null,
+  "reply": "شكرا. هذا اللي بقوله للممرضة: حرارة وكحة، 3 أيام، الشدة 6 من 10، أخذت باراسيتامول. هل هذا صحيح؟",
+  "self_harm": false,
+  "status": "intake",
+  "transcript": null
+}

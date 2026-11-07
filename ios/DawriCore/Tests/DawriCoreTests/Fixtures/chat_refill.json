@@ -1,0 +1,15 @@
+{
+  "ai_source": "rules",
+  "denied": [],
+  "done": false,
+  "emergency": false,
+  "intake": null,
+  "nearest_ed": null,
+  "refill": {
+    "medicine": "amlodipine 5 mg once daily"
+  },
+  "reply": "Your usual medicine (amlodipine 5 mg once daily) can be handled without a visit. Please message your centre's refill line.",
+  "self_harm": false,
+  "status": "deflected_refill",
+  "transcript": null
+}

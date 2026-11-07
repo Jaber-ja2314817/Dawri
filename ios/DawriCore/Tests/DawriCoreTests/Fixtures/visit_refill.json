@@ -1,0 +1,45 @@
+{
+  "arrived_at": null,
+  "booked_by": "P002",
+  "centre": null,
+  "chat": {
+    "language": "en",
+    "messages": [
+      {
+        "content": "شو اللي يتعبك اليوم؟",
+        "role": "assistant",
+        "slot": "complaint"
+      },
+      {
+        "content": "I need my usual blood pressure tablets.",
+        "role": "user",
+        "slot": null
+      },
+      {
+        "content": "Your usual medicine (amlodipine 5 mg once daily) can be handled without a visit. Please message your centre's refill line.",
+        "role": "assistant",
+        "slot": "summary"
+      }
+    ]
+  },
+  "completed_at": null,
+  "confirmed_by_patient": false,
+  "created_at": "2026-11-07T09:00:00.485686+00:00",
+  "emergency": null,
+  "go_to": null,
+  "intake": null,
+  "medicines": {
+    "ar": [],
+    "en": []
+  },
+  "patient_id": "P002",
+  "rating": null,
+  "refill": {
+    "medicine": "amlodipine 5 mg once daily"
+  },
+  "service": "refill",
+  "stage": "refill",
+  "status": "deflected_refill",
+  "ticket": null,
+  "visit_id": "V_c4994142ed4e"
+}

@@ -18,3 +18,9 @@ backend/data/
 test-results/
 playwright-report/
 Dawri-Vault/.obsidian/workspace.json
+ios/build/
+ios/**/.build/
+ios/**/.swiftpm/
+**/xcuserdata/
+*.xcuserstate
+DerivedData/

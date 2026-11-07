@@ -1,0 +1,105 @@
+{
+  "arrived_at": "2026-11-07T09:00:00.429294+00:00",
+  "booked_by": "P001",
+  "centre": {
+    "id": "C-WAKRA",
+    "name_ar": "مركز الوكرة الصحي",
+    "name_en": "Al Wakra Health Centre"
+  },
+  "chat": {
+    "language": "ar",
+    "messages": [
+      {
+        "content": "شو اللي يتعبك اليوم؟",
+        "role": "assistant",
+        "slot": "complaint"
+      },
+      {
+        "content": "عندي حرارة وكحة من ثلاث أيام",
+        "role": "user",
+        "slot": null
+      },
+      {
+        "content": "كم شدته من 0 إلى 10؟",
+        "role": "assistant",
+        "slot": "severity"
+      },
+      {
+        "content": "٦",
+        "role": "user",
+        "slot": null
+      },
+      {
+        "content": "أخذت أي دوا له؟",
+        "role": "assistant",
+        "slot": "medicine"
+      },
+      {
+        "content": "بنادول",
+        "role": "user",
+        "slot": null
+      },
+      {
+        "content": "في شي ثاني تبي الممرضة تعرفه؟",
+        "role": "assistant",
+        "slot": "other"
+      },
+      {
+        "content": "لا",
+        "role": "user",
+        "slot": null
+      },
+      {
+        "content": "شكرا. هذا اللي بقوله للممرضة: حرارة وكحة، 3 أيام، الشدة 6 من 10، أخذت باراسيتامول. هل هذا صحيح؟",
+        "role": "assistant",
+        "slot": "summary"
+      }
+    ]
+  },
+  "completed_at": null,
+  "confirmed_by_patient": true,
+  "created_at": "2026-11-07T09:00:00.381927+00:00",
+  "emergency": null,
+  "go_to": {
+    "counter": "Room 4",
+    "counter_ar": "غرفة 4"
+  },
+  "intake": {
+    "chief_complaint_patient_words": "عندي حرارة وكحة من ثلاث أيام",
+    "denied_red_flags": [],
+    "emergency": false,
+    "language": "ar-gulf",
+    "questions_asked": 4,
+    "refill_request": null,
+    "self_medication": [
+      "paracetamol"
+    ],
+    "service": "gp",
+    "service_confidence": 0.85,
+    "severity_0_10": 6
+  },
+  "medicines": {
+    "ar": [],
+    "en": []
+  },
+  "patient_id": "P001",
+  "rating": null,
+  "refill": null,
+  "service": "gp",
+  "stage": "doctor",
+  "status": "in_doctor",
+  "ticket": {
+    "centre_id": "C-WAKRA",
+    "counter": "Room 4",
+    "counter_ar": "غرفة 4",
+    "counter_id": "C-WAKRA-D4",
+    "est_wait_min": 0,
+    "expires_at": null,
+    "id": "tkt_3a372be60a6c",
+    "number": "D-GP-023",
+    "people_ahead": 0,
+    "state": "active",
+    "visit_id": "V_93046b9ef484"
+  },
+  "visit_id": "V_93046b9ef484"
+}

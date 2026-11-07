@@ -1,0 +1,16 @@
+{
+  "intake": {
+    "chief_complaint_patient_words": "I need my usual blood pressure tablets.",
+    "denied_red_flags": [],
+    "emergency": false,
+    "language": "en",
+    "questions_asked": 1,
+    "refill_request": "amlodipine 5 mg once daily",
+    "self_medication": [],
+    "service": "gp",
+    "service_confidence": 0.85,
+    "severity_0_10": null
+  },
+  "service": "gp",
+  "status": "intake"
+}

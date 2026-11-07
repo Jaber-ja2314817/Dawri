@@ -1,0 +1,575 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		DA1C0500000000000000001B /* DawriCore in Frameworks */ = {isa = PBXBuildFile; productRef = DA1C05000000000000000023 /* DawriCore */; };
+		DA1C0500000000000000001C /* DawriCore in Frameworks */ = {isa = PBXBuildFile; productRef = DA1C05000000000000000024 /* DawriCore */; };
+		DA1C0500000000000000001D /* DawriLiveExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = DA1C05000000000000000006 /* DawriLiveExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		DA1C0500000000000000001E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = DA1C05000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = DA1C0500000000000000000F;
+			remoteInfo = DawriLiveExtension;
+		};
+		DA1C0500000000000000001F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = DA1C05000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = DA1C0500000000000000000E;
+			remoteInfo = Dawri;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		DA1C05000000000000000014 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				DA1C0500000000000000001D /* DawriLiveExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		DA1C05000000000000000005 /* Dawri.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Dawri.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		DA1C05000000000000000006 /* DawriLiveExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = DawriLiveExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		DA1C05000000000000000007 /* DawriUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DawriUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		DA1C05000000000000000008 /* Shared.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Shared.xcconfig; sourceTree = "<group>"; };
+		DA1C05000000000000000009 /* Dawri-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Dawri-Info.plist"; sourceTree = "<group>"; };
+		DA1C0500000000000000000A /* DawriLive-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "DawriLive-Info.plist"; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		DA1C0500000000000000000B /* Dawri */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Dawri;
+			sourceTree = "<group>";
+		};
+		DA1C0500000000000000000C /* DawriLive */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = DawriLive;
+			sourceTree = "<group>";
+		};
+		DA1C0500000000000000000D /* DawriUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = DawriUITests;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		DA1C05000000000000000012 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DA1C0500000000000000001B /* DawriCore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DA1C05000000000000000016 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DA1C0500000000000000001C /* DawriCore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DA1C05000000000000000019 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		DA1C05000000000000000002 = {
+			isa = PBXGroup;
+			children = (
+				DA1C0500000000000000000B /* Dawri */,
+				DA1C0500000000000000000C /* DawriLive */,
+				DA1C0500000000000000000D /* DawriUITests */,
+				DA1C05000000000000000004 /* Config */,
+				DA1C05000000000000000003 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		DA1C05000000000000000003 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				DA1C05000000000000000005 /* Dawri.app */,
+				DA1C05000000000000000006 /* DawriLiveExtension.appex */,
+				DA1C05000000000000000007 /* DawriUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		DA1C05000000000000000004 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				DA1C05000000000000000008 /* Shared.xcconfig */,
+				DA1C05000000000000000009 /* Dawri-Info.plist */,
+				DA1C0500000000000000000A /* DawriLive-Info.plist */,
+			);
+			path = Config;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		DA1C0500000000000000000E /* Dawri */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = DA1C05000000000000000028 /* Build configuration list for PBXNativeTarget "Dawri" */;
+			buildPhases = (
+				DA1C05000000000000000011 /* Sources */,
+				DA1C05000000000000000012 /* Frameworks */,
+				DA1C05000000000000000013 /* Resources */,
+				DA1C05000000000000000014 /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				DA1C05000000000000000020 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				DA1C0500000000000000000B /* Dawri */,
+			);
+			name = Dawri;
+			packageProductDependencies = (
+				DA1C05000000000000000023 /* DawriCore */,
+			);
+			productName = Dawri;
+			productReference = DA1C05000000000000000005 /* Dawri.app */;
+			productType = "com.apple.product-type.application";
+		};
+		DA1C0500000000000000000F /* DawriLiveExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = DA1C0500000000000000002B /* Build configuration list for PBXNativeTarget "DawriLiveExtension" */;
+			buildPhases = (
+				DA1C05000000000000000015 /* Sources */,
+				DA1C05000000000000000016 /* Frameworks */,
+				DA1C05000000000000000017 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				DA1C0500000000000000000C /* DawriLive */,
+			);
+			name = DawriLiveExtension;
+			packageProductDependencies = (
+				DA1C05000000000000000024 /* DawriCore */,
+			);
+			productName = DawriLiveExtension;
+			productReference = DA1C05000000000000000006 /* DawriLiveExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		DA1C05000000000000000010 /* DawriUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = DA1C0500000000000000002E /* Build configuration list for PBXNativeTarget "DawriUITests" */;
+			buildPhases = (
+				DA1C05000000000000000018 /* Sources */,
+				DA1C05000000000000000019 /* Frameworks */,
+				DA1C0500000000000000001A /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				DA1C05000000000000000021 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				DA1C0500000000000000000D /* DawriUITests */,
+			);
+			name = DawriUITests;
+			productName = DawriUITests;
+			productReference = DA1C05000000000000000007 /* DawriUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		DA1C05000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2720;
+				LastUpgradeCheck = 2720;
+				TargetAttributes = {
+					DA1C0500000000000000000E = {
+						CreatedOnToolsVersion = 27.2;
+					};
+					DA1C0500000000000000000F = {
+						CreatedOnToolsVersion = 27.2;
+					};
+					DA1C05000000000000000010 = {
+						CreatedOnToolsVersion = 27.2;
+						TestTargetID = DA1C0500000000000000000E;
+					};
+				};
+			};
+			buildConfigurationList = DA1C05000000000000000025 /* Build configuration list for PBXProject "Dawri" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				ar,
+				Base,
+			);
+			mainGroup = DA1C05000000000000000002;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				DA1C05000000000000000022 /* XCLocalSwiftPackageReference "DawriCore" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = DA1C05000000000000000003 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				DA1C0500000000000000000E /* Dawri */,
+				DA1C0500000000000000000F /* DawriLiveExtension */,
+				DA1C05000000000000000010 /* DawriUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		DA1C05000000000000000013 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DA1C05000000000000000017 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DA1C0500000000000000001A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		DA1C05000000000000000011 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DA1C05000000000000000015 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DA1C05000000000000000018 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		DA1C05000000000000000020 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = DA1C0500000000000000000F /* DawriLiveExtension */;
+			targetProxy = DA1C0500000000000000001E /* PBXContainerItemProxy */;
+		};
+		DA1C05000000000000000021 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = DA1C0500000000000000000E /* Dawri */;
+			targetProxy = DA1C0500000000000000001F /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		DA1C05000000000000000026 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = DA1C05000000000000000008 /* Shared.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		DA1C05000000000000000027 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = DA1C05000000000000000008 /* Shared.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_VERSION = 6.0;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		DA1C05000000000000000029 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Config/Dawri-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = Dawri;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "$(BUNDLE_ID_PREFIX)";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		DA1C0500000000000000002A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Config/Dawri-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = Dawri;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "$(BUNDLE_ID_PREFIX)";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		DA1C0500000000000000002C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Config/DawriLive-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = Dawri;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "$(BUNDLE_ID_PREFIX).live";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		DA1C0500000000000000002D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Config/DawriLive-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = Dawri;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "$(BUNDLE_ID_PREFIX).live";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		DA1C0500000000000000002F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(BUNDLE_ID_PREFIX).uitests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_TARGET_NAME = Dawri;
+			};
+			name = Debug;
+		};
+		DA1C05000000000000000030 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(BUNDLE_ID_PREFIX).uitests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_TARGET_NAME = Dawri;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		DA1C05000000000000000025 /* Build configuration list for PBXProject "Dawri" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DA1C05000000000000000026 /* Debug */,
+				DA1C05000000000000000027 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		DA1C05000000000000000028 /* Build configuration list for PBXNativeTarget "Dawri" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DA1C05000000000000000029 /* Debug */,
+				DA1C0500000000000000002A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		DA1C0500000000000000002B /* Build configuration list for PBXNativeTarget "DawriLiveExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DA1C0500000000000000002C /* Debug */,
+				DA1C0500000000000000002D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		DA1C0500000000000000002E /* Build configuration list for PBXNativeTarget "DawriUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DA1C0500000000000000002F /* Debug */,
+				DA1C05000000000000000030 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		DA1C05000000000000000022 /* XCLocalSwiftPackageReference "DawriCore" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = DawriCore;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		DA1C05000000000000000023 /* DawriCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = DawriCore;
+		};
+		DA1C05000000000000000024 /* DawriCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = DawriCore;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = DA1C05000000000000000001 /* Project object */;
+}

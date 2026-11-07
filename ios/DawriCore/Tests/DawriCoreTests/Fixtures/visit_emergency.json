@@ -1,0 +1,56 @@
+{
+  "arrived_at": null,
+  "booked_by": "P003",
+  "centre": null,
+  "chat": {
+    "language": "en",
+    "messages": [
+      {
+        "content": "What brings you in today?",
+        "role": "assistant",
+        "slot": "complaint"
+      },
+      {
+        "content": "Chest pain going to my left arm.",
+        "role": "user",
+        "slot": null
+      },
+      {
+        "content": "This needs urgent care. Please go to the nearest emergency department now, or call 999.",
+        "role": "assistant",
+        "slot": "summary"
+      }
+    ]
+  },
+  "completed_at": null,
+  "confirmed_by_patient": false,
+  "created_at": "2026-11-07T09:00:00.473550+00:00",
+  "emergency": {
+    "nearest_ed": {
+      "distance_km": 7.0,
+      "id": "H-HGH",
+      "lat": 25.29349,
+      "lng": 51.50222,
+      "name_ar": "مستشفى حمد العام",
+      "name_en": "Hamad General Hospital"
+    },
+    "reply": "This needs urgent care. Please go to the nearest emergency department now, or call 999.",
+    "reply_ar": "هذا يحتاج رعاية عاجلة. توجه الآن إلى أقرب قسم طوارئ، أو اتصل على 999.",
+    "reply_en": "This needs urgent care. Please go to the nearest emergency department now, or call 999.",
+    "self_harm": false
+  },
+  "go_to": null,
+  "intake": null,
+  "medicines": {
+    "ar": [],
+    "en": []
+  },
+  "patient_id": "P003",
+  "rating": null,
+  "refill": null,
+  "service": null,
+  "stage": "emergency",
+  "status": "redirected_emergency",
+  "ticket": null,
+  "visit_id": "V_7618531aa64e"
+}
