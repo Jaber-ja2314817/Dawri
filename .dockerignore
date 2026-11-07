@@ -1,0 +1,42 @@
+# Repository and tooling
+.git
+.gitattributes
+.gitignore
+.venv
+Dawri-Vault
+.taste-skill
+.pytest_cache
+.DS_Store
+**/.DS_Store
+
+# Python leftovers
+**/__pycache__
+**/*.pyc
+
+# Secrets and local state
+.env
+.env.*
+**/.env
+**/.env.*
+*.db
+*.db-wal
+*.db-shm
+**/*.db
+**/*.db-wal
+**/*.db-shm
+backend/data
+backend/static
+
+# Tests never ship
+backend/tests
+
+# Frontend output and test material. The source, public/, index.html, package files,
+# tsconfig.json and vite.config.ts stay, because the build needs them.
+frontend/node_modules
+frontend/dist
+frontend/.dist-*
+frontend/.inspect-dist
+frontend/test-results
+frontend/playwright-report
+frontend/e2e
+frontend/scripts
