@@ -1,0 +1,167 @@
+1
+00:00:00,950 --> 00:00:04,326
+Most visits to Qatar's primary health centres are walk-ins.
+
+2
+00:00:04,346 --> 00:00:07,879
+Each one starts at the front desk, where staff record why you came.
+
+3
+00:00:07,899 --> 00:00:11,095
+Then come triage, the doctor and the pharmacy.
+
+4
+00:00:11,115 --> 00:00:15,730
+Qatar's apps, Nar'aakom and Lbaih, handle appointments and records.
+
+5
+00:00:15,750 --> 00:00:19,418
+But in our research, we found no digital path for walk-ins.
+
+6
+00:00:20,568 --> 00:00:22,368
+That is the gap.
+
+7
+00:00:22,891 --> 00:00:25,402
+This is Dawri, دوري, which means “my turn”.
+
+8
+00:00:27,252 --> 00:00:29,392
+Dawri is an AI front desk.
+
+9
+00:00:29,412 --> 00:00:35,893
+Fatima, 34, checks in on her phone before she arrives. This is a demo, with synthetic patients.
+
+10
+00:00:35,913 --> 00:00:42,383
+She tells the AI receptionist, in Arabic, by text or voice: fever and cough for three days.
+
+11
+00:00:42,403 --> 00:00:44,180
+It asks a few short questions,
+
+12
+00:00:44,180 --> 00:00:45,437
+one at a time.
+
+13
+00:00:45,437 --> 00:00:48,367
+She picks a centre on a map with estimated waits.
+
+14
+00:00:48,387 --> 00:00:51,346
+That is a reservation, not yet a place in line.
+
+15
+00:00:51,366 --> 00:00:57,426
+When she arrives, she taps “I'm here”. Her ticket activates and gets a number, T-014.
+
+16
+00:00:57,446 --> 00:01:03,456
+Order comes from arrival and the centre's own priority rule. Plain code, no AI.
+
+17
+00:01:04,256 --> 00:01:09,942
+At triage, the nurse sees her exact words, the AI's intake, and her penicillin allergy.
+
+18
+00:01:09,962 --> 00:01:13,734
+The nurse enters vitals and confirms the handoff to the doctor.
+
+19
+00:01:13,754 --> 00:01:19,244
+The doctor prescribes, and the system warns about amoxicillin, because of her penicillin allergy.
+
+20
+00:01:19,264 --> 00:01:21,658
+Then the pharmacy, and the visit is done.
+
+21
+00:01:22,808 --> 00:01:28,518
+Ahmed asks for his usual blood-pressure pills. He is offered the refill route, with no ticket.
+
+22
+00:01:28,538 --> 00:01:31,475
+Ravi types that he has chest pain spreading to his arm.
+
+23
+00:01:31,495 --> 00:01:37,123
+A rule catches it first. He sees “call 999” and the nearest hospital, and gets no ticket.
+
+24
+00:01:38,673 --> 00:01:40,923
+Safety does not depend on the model behaving.
+
+25
+00:01:40,943 --> 00:01:45,303
+Rules check every message for emergency wording, in Arabic and English,
+
+26
+00:01:45,323 --> 00:01:48,145
+and a hit stops the chat. The model cannot overrule it.
+
+27
+00:01:48,165 --> 00:01:53,125
+A model's reply reaches the patient only if it is one short, plain question.
+
+28
+00:01:53,145 --> 00:01:55,764
+The AI never diagnoses and never prescribes.
+
+29
+00:01:55,784 --> 00:02:01,435
+A nurse confirms everything before the doctor sees it, and the queue is code the AI cannot touch.
+
+30
+00:02:01,455 --> 00:02:05,618
+And we say plainly: no clinician has reviewed our red-flag list yet.
+
+31
+00:02:07,068 --> 00:02:11,768
+Under the hood: a FastAPI service with SQLite and a React app,
+
+32
+00:02:11,788 --> 00:02:14,349
+in one Docker container on a Hugging Face Space.
+
+33
+00:02:14,369 --> 00:02:22,049
+Chat, intake and the nurse's handoff draft run on Gemma 4 26B, through Hugging Face Inference Providers.
+
+34
+00:02:22,069 --> 00:02:24,935
+Whisper large-v3-turbo handles speech.
+
+35
+00:02:24,955 --> 00:02:28,841
+We wanted Qatar's Fanar, but its only provider had no capacity.
+
+36
+00:02:28,861 --> 00:02:31,041
+So we fine-tuned Fanar 9B ourselves.
+
+37
+00:02:31,061 --> 00:02:39,098
+Valid intakes rose from 6 to 56 of 63, but it lost emergency recognition, so it stays out of live chat.
+
+38
+00:02:40,648 --> 00:02:44,608
+Our aim: take the reception step off the walk-in's path,
+
+39
+00:02:44,628 --> 00:02:48,821
+and give nurses a structured intake, with people deciding everything clinical.
+
+40
+00:02:48,841 --> 00:02:54,590
+This is a prototype. Going live would need partnership, a clinical review and data-protection approval.
+
+41
+00:02:55,640 --> 00:02:56,700
+Dawri.
+
+42
+00:02:56,700 --> 00:02:58,745
+Arrive, don't register.

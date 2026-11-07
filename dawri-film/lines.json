@@ -1,0 +1,206 @@
+[
+ {
+  "id": "v01",
+  "text": "Most visits to Qatar's primary health centres are walk-ins.",
+  "voice": "en-US-AndrewNeural",
+  "asr": "Most visits to Qatar's primary health centers are walk-ins."
+ },
+ {
+  "id": "v02",
+  "text": "Each one starts at the front desk, where staff record why you came.",
+  "voice": "en-US-AndrewNeural"
+ },
+ {
+  "id": "v03",
+  "text": "Then come triage, the doctor and the pharmacy.",
+  "voice": "en-US-AndrewNeural",
+  "asr": "Then come Triov, the doctor and the pharmacy."
+ },
+ {
+  "id": "v04",
+  "text": "Qatar's apps, Nar-aakom and Lbaih, handle appointments and records.",
+  "voice": "en-US-AndrewNeural",
+  "say": "Qatar's apps, Nar aakom and Lbaih, handle appointments and records.",
+  "asr": "Katar's apps, NAR Akum and Labe, handle appointments and records."
+ },
+ {
+  "id": "v05",
+  "text": "But in our research, we found no digital path for walk-ins.",
+  "voice": "en-US-AndrewNeural"
+ },
+ {
+  "id": "v06",
+  "text": "That is the gap.",
+  "voice": "en-US-AndrewNeural"
+ },
+ {
+  "id": "v07",
+  "text": "This is Dawri, دوري, which means 'my turn'.",
+  "voice": "en-US-AndrewNeural",
+  "say": "This is Dowree, which means, my turn.",
+  "asr": "This is Dowry, which means my turn."
+ },
+ {
+  "id": "v08",
+  "text": "Dawri is an AI front desk.",
+  "voice": "en-US-AndrewNeural",
+  "say": "Dow-ree is an AI front desk.",
+  "asr": "Dowry is an AI front desk."
+ },
+ {
+  "id": "v09",
+  "text": "Fatima, 34, checks in on her phone before she arrives. This is a demo, with synthetic patients.",
+  "voice": "en-US-AndrewNeural",
+  "say": "Fatima, thirty four, checks in on her phone before she arrives. This is a demo, with synthetic patients."
+ },
+ {
+  "id": "v10",
+  "text": "She tells the AI receptionist, in Arabic, by text or voice: fever and cough for three days.",
+  "voice": "en-US-AndrewNeural"
+ },
+ {
+  "id": "v11",
+  "text": "It asks a few short questions,",
+  "voice": "en-US-AndrewNeural",
+  "rate": "+2%"
+ },
+ {
+  "id": "v12",
+  "text": "one at a time.",
+  "voice": "en-US-AndrewNeural"
+ },
+ {
+  "id": "v13",
+  "text": "She picks a centre on a map with estimated waits.",
+  "voice": "en-US-AndrewNeural",
+  "asr": "She picks a center on a map with estimated weights."
+ },
+ {
+  "id": "v14",
+  "text": "That is a reservation, not yet a place in line.",
+  "voice": "en-US-AndrewNeural"
+ },
+ {
+  "id": "v15",
+  "text": "When she arrives, she taps 'I'm here'. Her ticket activates and gets a number, T-014. Order comes from arrival and the centre's own priority rule. Plain code, no AI.",
+  "voice": "en-US-AndrewNeural",
+  "say": "When she arrives, she taps, I'm here. Her ticket activates and gets a number, T zero one four. Order comes from arrival and the centre's own priority rule. Plain code, no AI.",
+  "asr": "When she arrives, she taps I'm here. Her ticket activates and gets a number T014. Order comes from arrival and the center's own priority rule. Plain code, no AI.",
+  "rate": "+2%"
+ },
+ {
+  "id": "v16",
+  "text": "At triage, the nurse sees her exact words, the AI's intake, and her penicillin allergy.",
+  "voice": "en-US-AndrewNeural"
+ },
+ {
+  "id": "v17",
+  "text": "The nurse enters vitals and confirms the handoff to the doctor.",
+  "voice": "en-US-AndrewNeural"
+ },
+ {
+  "id": "v18",
+  "text": "The doctor prescribes, and the system warns about amoxicillin, because of her penicillin allergy.",
+  "voice": "en-US-AndrewNeural"
+ },
+ {
+  "id": "v19",
+  "text": "Then the pharmacy, and the visit is done.",
+  "voice": "en-US-AndrewNeural"
+ },
+ {
+  "id": "v20",
+  "text": "Ahmed asks for his usual blood-pressure pills. He is offered the refill route, with no ticket.",
+  "voice": "en-US-AndrewNeural",
+  "asr": "Akmed asks for his usual blood pressure pills. He is offered the refill route with no ticket."
+ },
+ {
+  "id": "v21",
+  "text": "Ravi types that he has chest pain spreading to his arm.",
+  "voice": "en-US-AndrewNeural"
+ },
+ {
+  "id": "v22",
+  "text": "A rule catches it first. He sees 'call 999' and the nearest hospital, and gets no ticket.",
+  "voice": "en-US-AndrewNeural",
+  "say": "A rule catches it first. He sees call nine nine nine and the nearest hospital, and gets no ticket.",
+  "asr": "A rule catches it first. He sees call 999 in the nearest hospital and gets no ticket."
+ },
+ {
+  "id": "v23",
+  "text": "Safety does not depend on the model behaving.",
+  "voice": "en-US-AndrewNeural"
+ },
+ {
+  "id": "v24",
+  "text": "Rules check every message for emergency wording, in Arabic and English, and a hit stops the chat. The model cannot overrule it.",
+  "voice": "en-US-AndrewNeural"
+ },
+ {
+  "id": "v25",
+  "text": "A model's reply reaches the patient only if it is one short, plain question. The AI never diagnoses and never prescribes.",
+  "voice": "en-US-AndrewNeural"
+ },
+ {
+  "id": "v26",
+  "text": "A nurse confirms everything before the doctor sees it, and the queue is code the AI cannot touch.",
+  "voice": "en-US-AndrewNeural",
+  "asr": "A nurse confirms everything before the doctor sees it, and the cue is code the AI cannot touch."
+ },
+ {
+  "id": "v27",
+  "text": "And we say plainly: no clinician has reviewed our red-flag list yet.",
+  "voice": "en-US-AndrewNeural"
+ },
+ {
+  "id": "v28",
+  "text": "Under the hood: a FastAPI service with SQLite and a React app, in one Docker container on a Hugging Face Space.",
+  "voice": "en-US-AndrewNeural",
+  "asr": "Under the hood, a fast API service with SQLite and a React app in one Docker container on a hugging face space."
+ },
+ {
+  "id": "v29",
+  "text": "Chat, intake and the nurse's handoff draft run on Gemma 4 26B, through Hugging Face Inference Providers. Whisper large-v3-turbo handles speech.",
+  "voice": "en-US-AndrewNeural",
+  "say": "Chat, intake and the nurse's handoff draft run on Gemma four, twenty-six B, through Hugging Face Inference Providers. Whisper large, v3 turbo, handles speech.",
+  "asr": "Chat, intake, and the nurse's handoff draft run on Gemma 4, 26B, through hugging face inference providers. Whisper large, V3 turbo, handle speech."
+ },
+ {
+  "id": "v30",
+  "voice": "en-US-AndrewNeural",
+  "text": "We wanted Qatar's Fanar, but its only provider had no capacity.",
+  "say": "We wanted Qatar's Fanaar, but its only provider had no capacity.",
+  "asr": "We wanted Katar's Finar, but its only provider had no capacity."
+ },
+ {
+  "id": "v31",
+  "voice": "en-US-AndrewNeural",
+  "text": "So we fine-tuned Fanar 9B ourselves. Valid intakes rose from 6 to 56 of 63, but it lost emergency recognition, so it stays out of live chat.",
+  "say": "So we fine-tuned Fanaar nine B ourselves. Valid intakes rose from six to fifty-six, of sixty-three, but it lost emergency recognition, so it stays out of live chat.",
+  "asr": "So we fine-tuned Funarn 9B ourselves. Valid intakes rose from 6 to 56 of 63, but it lost emergency recognition, so it stays out of live chat."
+ },
+ {
+  "id": "v32",
+  "text": "Our aim: take the reception step off the walk-in's path, and give nurses a structured intake, with people deciding everything clinical.",
+  "voice": "en-US-AndrewNeural",
+  "rate": "+2%",
+  "say": "Our aim: take the reception step off the walk-in's path, and give nurses a structured intake, with people deciding everything clinical."
+ },
+ {
+  "id": "v33",
+  "text": "This is a prototype. Going live would need partnership, a clinical review and data-protection approval.",
+  "voice": "en-US-AndrewNeural"
+ },
+ {
+  "id": "v34",
+  "text": "Dawri.",
+  "voice": "en-US-AndrewNeural",
+  "say": "Dow-ree.",
+  "asr": "Dowry"
+ },
+ {
+  "id": "v35",
+  "text": "Arrive, don't register.",
+  "voice": "en-US-AndrewNeural"
+ }
+]

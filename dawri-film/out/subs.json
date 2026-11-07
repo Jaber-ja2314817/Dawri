@@ -1,0 +1,212 @@
+[
+ {
+  "t0": 0.95,
+  "t1": 4.3260000000000005,
+  "text": "Most visits to Qatar's primary health centres are walk-ins."
+ },
+ {
+  "t0": 4.346,
+  "t1": 7.8790000000000004,
+  "text": "Each one starts at the front desk, where staff record why you came."
+ },
+ {
+  "t0": 7.899,
+  "t1": 11.094999999999999,
+  "text": "Then come triage, the doctor and the pharmacy."
+ },
+ {
+  "t0": 11.114999999999998,
+  "t1": 15.73,
+  "text": "Qatar's apps, Nar'aakom and Lbaih, handle appointments and records."
+ },
+ {
+  "t0": 15.75,
+  "t1": 19.418000000000003,
+  "text": "But in our research, we found no digital path for walk-ins."
+ },
+ {
+  "t0": 20.567999999999998,
+  "t1": 22.368,
+  "text": "That is the gap."
+ },
+ {
+  "t0": 22.891,
+  "t1": 25.402,
+  "text": "This is Dawri, دوري, which means “my turn”."
+ },
+ {
+  "t0": 27.252,
+  "t1": 29.392,
+  "text": "Dawri is an AI front desk."
+ },
+ {
+  "t0": 29.412,
+  "t1": 35.893,
+  "text": "Fatima, 34, checks in on her phone before she arrives. This is a demo, with synthetic patients."
+ },
+ {
+  "t0": 35.913000000000004,
+  "t1": 42.383,
+  "text": "She tells the AI receptionist, in Arabic, by text or voice: fever and cough for three days."
+ },
+ {
+  "t0": 42.403000000000006,
+  "t1": 44.203,
+  "text": "It asks a few short questions,"
+ },
+ {
+  "t0": 44.18,
+  "t1": 45.98,
+  "text": "one at a time."
+ },
+ {
+  "t0": 45.437000000000005,
+  "t1": 48.367,
+  "text": "She picks a centre on a map with estimated waits."
+ },
+ {
+  "t0": 48.387,
+  "t1": 51.346,
+  "text": "That is a reservation, not yet a place in line."
+ },
+ {
+  "t0": 51.366,
+  "t1": 57.425999999999995,
+  "text": "When she arrives, she taps “I'm here”. Her ticket activates and gets a number, T-014."
+ },
+ {
+  "t0": 57.446,
+  "t1": 63.455999999999996,
+  "text": "Order comes from arrival and the centre's own priority rule. Plain code, no AI."
+ },
+ {
+  "t0": 64.256,
+  "t1": 69.94200000000001,
+  "text": "At triage, the nurse sees her exact words, the AI's intake, and her penicillin allergy."
+ },
+ {
+  "t0": 69.962,
+  "t1": 73.73400000000001,
+  "text": "The nurse enters vitals and confirms the handoff to the doctor."
+ },
+ {
+  "t0": 73.754,
+  "t1": 79.244,
+  "text": "The doctor prescribes, and the system warns about amoxicillin, because of her penicillin allergy."
+ },
+ {
+  "t0": 79.264,
+  "t1": 81.65799999999999,
+  "text": "Then the pharmacy, and the visit is done."
+ },
+ {
+  "t0": 82.808,
+  "t1": 88.518,
+  "text": "Ahmed asks for his usual blood-pressure pills. He is offered the refill route, with no ticket."
+ },
+ {
+  "t0": 88.538,
+  "t1": 91.47500000000001,
+  "text": "Ravi types that he has chest pain spreading to his arm."
+ },
+ {
+  "t0": 91.495,
+  "t1": 97.123,
+  "text": "A rule catches it first. He sees “call 999” and the nearest hospital, and gets no ticket."
+ },
+ {
+  "t0": 98.673,
+  "t1": 100.923,
+  "text": "Safety does not depend on the model behaving."
+ },
+ {
+  "t0": 100.943,
+  "t1": 105.30300000000001,
+  "text": "Rules check every message for emergency wording, in Arabic and English,"
+ },
+ {
+  "t0": 105.32300000000001,
+  "t1": 108.14500000000001,
+  "text": "and a hit stops the chat. The model cannot overrule it."
+ },
+ {
+  "t0": 108.165,
+  "t1": 113.12500000000001,
+  "text": "A model's reply reaches the patient only if it is one short, plain question."
+ },
+ {
+  "t0": 113.14500000000001,
+  "t1": 115.76400000000001,
+  "text": "The AI never diagnoses and never prescribes."
+ },
+ {
+  "t0": 115.784,
+  "t1": 121.435,
+  "text": "A nurse confirms everything before the doctor sees it, and the queue is code the AI cannot touch."
+ },
+ {
+  "t0": 121.455,
+  "t1": 125.618,
+  "text": "And we say plainly: no clinician has reviewed our red-flag list yet."
+ },
+ {
+  "t0": 127.068,
+  "t1": 131.768,
+  "text": "Under the hood: a FastAPI service with SQLite and a React app,"
+ },
+ {
+  "t0": 131.788,
+  "t1": 134.349,
+  "text": "in one Docker container on a Hugging Face Space."
+ },
+ {
+  "t0": 134.369,
+  "t1": 142.049,
+  "text": "Chat, intake and the nurse's handoff draft run on Gemma 4 26B, through Hugging Face Inference Providers."
+ },
+ {
+  "t0": 142.06900000000002,
+  "t1": 144.93499999999997,
+  "text": "Whisper large-v3-turbo handles speech."
+ },
+ {
+  "t0": 144.95499999999998,
+  "t1": 148.84099999999998,
+  "text": "We wanted Qatar's Fanar, but its only provider had no capacity."
+ },
+ {
+  "t0": 148.861,
+  "t1": 151.041,
+  "text": "So we fine-tuned Fanar 9B ourselves."
+ },
+ {
+  "t0": 151.061,
+  "t1": 159.098,
+  "text": "Valid intakes rose from 6 to 56 of 63, but it lost emergency recognition, so it stays out of live chat."
+ },
+ {
+  "t0": 160.648,
+  "t1": 164.608,
+  "text": "Our aim: take the reception step off the walk-in's path,"
+ },
+ {
+  "t0": 164.62800000000001,
+  "t1": 168.82099999999997,
+  "text": "and give nurses a structured intake, with people deciding everything clinical."
+ },
+ {
+  "t0": 168.84099999999998,
+  "t1": 174.59,
+  "text": "This is a prototype. Going live would need partnership, a clinical review and data-protection approval."
+ },
+ {
+  "t0": 175.64,
+  "t1": 176.75,
+  "text": "Dawri."
+ },
+ {
+  "t0": 176.7,
+  "t1": 178.745,
+  "text": "Arrive, don't register."
+ }
+]
