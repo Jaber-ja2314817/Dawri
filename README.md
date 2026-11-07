@@ -113,12 +113,12 @@ Two exceptions are justified. The S10 ticket number and the T08 numbers may exce
 
 ## Switching on Hugging Face later
 
-A token exists in the local `.env`. No Space has been created yet, so these steps have not been run end to end.
+These steps were run on 7 Nov for a private Space, `xTamim/dawri`. Docker Spaces need PRO on the free CPU tier, so it runs on `cpu-upgrade`. Chat, Whisper, the emergency route, the passcode and SSE were checked through the Hugging Face proxy. A real microphone on a real phone was not.
 
 1. Check on the Hub that `google/gemma-4-26B-A4B-it` is still served by `novita`, and `openai/whisper-large-v3-turbo` by `hf-inference`.
 2. Create a fine-grained token with permission to call Inference Providers. Keep it out of the repo.
 3. Create a Space with the Docker SDK on the free CPU tier.
-4. In the Space settings, add `HF_TOKEN` as a Secret. Add `LLM_MODEL_ID`, `LLM_PROVIDER`, `ASR_MODEL_ID` and `ASR_PROVIDER` as Variables only if they differ from the defaults.
+4. In the Space settings, add `HF_TOKEN` and `DEMO_PASSCODE` as Secrets. Add `LLM_MODEL_ID`, `LLM_PROVIDER`, `ASR_MODEL_ID` and `ASR_PROVIDER` as Variables only if they differ from the defaults.
 5. Sign in on this machine with `.venv/bin/hf auth login`, using a token that can write to the Space. Then upload the repo from its root:
 
    ```bash

@@ -462,4 +462,6 @@ The README's numbered steps stand. Before following them, three things have chan
 - The reply gate now accepts an opening 0 to 10 scale and a comma list of plain symptoms. Both are rewritten into the plain form, so every other check still applies.
 - Backend suite: 10767 passed. Browser and Docker suites were not rerun after these changes.
 - Fine-tune of Fanar 9B, private repos on `xTamim`: gate 1 of 100 to 100 of 100, valid intake 6 of 63 to 56 of 63, emergency escalation 9 of 13 to 0 of 13. **It must not be used for live chat.** It mostly imitates the scripted receptionist.
+- Reset demo now asks for `DEMO_PASSCODE` when it is set. The Arabic handoff uses the patient's Arabic words and translated record terms.
+- Private Space `xTamim/dawri` is live on `cpu-upgrade`, about $0.03 an hour, because free CPU Docker Spaces need PRO. Uploaded from a `git archive` of the commit without the vault. Checked through the proxy: `ai_mode` real, Whisper in English and Arabic, chat in both languages, overdose wording caught by the rules, passcode refused then accepted, SSE connected with a heartbeat at 15 s. Not checked: a real phone, a real microphone. It stays private until the owner says otherwise, and F12 stays unticked until the phone test.
 

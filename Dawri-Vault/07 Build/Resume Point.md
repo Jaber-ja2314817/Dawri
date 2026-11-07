@@ -60,3 +60,7 @@ Build resumed in a new session as run `wf_b653a907-cb4`, script `07 Build/orches
 - Next is the Hugging Face work, which the owner runs: the README's numbered steps, after the three changes listed under "What is left for Hugging Face" in the log.
 - `main` is untouched. The owner merges at the very end.
 - This machine now holds a real token in the gitignored `.env`, so a plain local uvicorn runs in real mode. Start it with `HF_TOKEN=` set blank for simulated.
+
+## Update, Sat 7 Nov, about 06:50 Doha
+All six phases are approved and pushed on `build/dawri-app`. Submission is **14:00 Doha**. Private Space `xTamim/dawri` is live. Left: team tests on a real phone, Arabic and red-flag review, rehearsal, then on the owner's word make the Space public and merge to `main`. The tuned Fanar model must stay out of live chat.
+
