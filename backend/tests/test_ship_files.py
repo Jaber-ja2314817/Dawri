@@ -131,8 +131,8 @@ def test_readme_has_no_banned_phrase(phrase):
 @pytest.mark.parametrize(
     "needle",
     [
-        "QCRI/Fanar-1-9B-Instruct",
-        "featherless-ai",
+        "google/gemma-4-26B-A4B-it",
+        "novita",
         "openai/whisper-large-v3-turbo",
         "hf-inference",
     ],

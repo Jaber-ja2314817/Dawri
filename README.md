@@ -62,8 +62,8 @@ Copy `.env.example` to `.env` for local use. `.env` is ignored by git and stays 
 | Key | Default | Purpose |
 |---|---|---|
 | `HF_TOKEN` | blank | Hugging Face token. Set means real mode, blank means simulated mode. |
-| `LLM_MODEL_ID` | `QCRI/Fanar-1-9B-Instruct` | Chat model in real mode. |
-| `LLM_PROVIDER` | `featherless-ai` | Inference Provider for the chat model. |
+| `LLM_MODEL_ID` | `google/gemma-4-26B-A4B-it` | Chat model in real mode. |
+| `LLM_PROVIDER` | `novita` | Inference Provider for the chat model. |
 | `ASR_MODEL_ID` | `openai/whisper-large-v3-turbo` | Speech-to-text model in real mode. |
 | `ASR_PROVIDER` | `hf-inference` | Inference Provider for speech-to-text. |
 | `LLM_TIMEOUT_SEC` | `10` | Seconds allowed for one model or speech call. |
@@ -76,7 +76,7 @@ Copy `.env.example` to `.env` for local use. `.env` is ignored by git and stays 
 `GET /api/health` reports `ai_mode`, and the mode is chosen once at startup. Staff screens always show it, and the patient footer shows "AI: simulated" in simulated mode.
 
 - **Simulated, without `HF_TOKEN`.** A deterministic scripted receptionist runs in Arabic and English. `POST /api/asr` returns 503 and the patient types. No transcript is ever invented.
-- **Real, with `HF_TOKEN`.** The chat model is `QCRI/Fanar-1-9B-Instruct` on `featherless-ai`, and speech-to-text is `openai/whisper-large-v3-turbo` on `hf-inference`. A failed turn falls back to the scripted receptionist for that turn, and an `ai.fallback` row is recorded in the event table.
+- **Real, with `HF_TOKEN`.** The chat model is `google/gemma-4-26B-A4B-it` on `novita`, with `meta-llama/Llama-3.3-70B-Instruct` on `ovhcloud` as the tested backup through the same two settings, and speech-to-text is `openai/whisper-large-v3-turbo` on `hf-inference`. A failed turn falls back to the scripted receptionist for that turn, and an `ai.fallback` row is recorded in the event table.
 
 MedGemma and text-to-speech were dropped. The same chat model writes the nurse's handoff draft.
 
@@ -113,9 +113,9 @@ Two exceptions are justified. The S10 ticket number and the T08 numbers may exce
 
 ## Switching on Hugging Face later
 
-None of these steps has been run. No token exists yet, and no Space has been created.
+A token exists in the local `.env`. No Space has been created yet, so these steps have not been run end to end.
 
-1. Check on the Hub that `QCRI/Fanar-1-9B-Instruct` is still served by `featherless-ai`, and `openai/whisper-large-v3-turbo` by `hf-inference`.
+1. Check on the Hub that `google/gemma-4-26B-A4B-it` is still served by `novita`, and `openai/whisper-large-v3-turbo` by `hf-inference`.
 2. Create a fine-grained token with permission to call Inference Providers. Keep it out of the repo.
 3. Create a Space with the Docker SDK on the free CPU tier.
 4. In the Space settings, add `HF_TOKEN` as a Secret. Add `LLM_MODEL_ID`, `LLM_PROVIDER`, `ASR_MODEL_ID` and `ASR_PROVIDER` as Variables only if they differ from the defaults.

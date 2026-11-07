@@ -130,11 +130,11 @@ def test_the_factory_builds_the_client_from_config(monkeypatch, recorder):
     ]
 
 
-def test_the_factory_defaults_to_fanar_9b(monkeypatch, recorder):
+def test_the_factory_defaults_to_gemma_4(monkeypatch, recorder):
     monkeypatch.setenv("HF_TOKEN", DUMMY_TOKEN)
     llm.build()
-    assert recorder[0]["model"] == "QCRI/Fanar-1-9B-Instruct"
-    assert recorder[0]["provider"] == "featherless-ai"
+    assert recorder[0]["model"] == "google/gemma-4-26B-A4B-it"
+    assert recorder[0]["provider"] == "novita"
     assert recorder[0]["timeout"] == 10.0
 
 

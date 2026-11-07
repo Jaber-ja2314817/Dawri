@@ -8,8 +8,8 @@ from pathlib import Path
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 
-_DEFAULT_LLM_MODEL_ID = "QCRI/Fanar-1-9B-Instruct"
-_DEFAULT_LLM_PROVIDER = "featherless-ai"
+_DEFAULT_LLM_MODEL_ID = "google/gemma-4-26B-A4B-it"
+_DEFAULT_LLM_PROVIDER = "novita"
 _DEFAULT_ASR_MODEL_ID = "openai/whisper-large-v3-turbo"
 _DEFAULT_ASR_PROVIDER = "hf-inference"
 _DEFAULT_LLM_TIMEOUT_SEC = 10.0

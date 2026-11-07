@@ -205,8 +205,8 @@ def test_config_is_read_at_call_time(monkeypatch):
 def test_config_model_defaults(monkeypatch):
     for name in ("LLM_MODEL_ID", "LLM_PROVIDER", "ASR_MODEL_ID"):
         monkeypatch.delenv(name, raising=False)
-    assert config.llm_model_id() == "QCRI/Fanar-1-9B-Instruct"
-    assert config.llm_provider() == "featherless-ai"
+    assert config.llm_model_id() == "google/gemma-4-26B-A4B-it"
+    assert config.llm_provider() == "novita"
     assert config.asr_model_id() == "openai/whisper-large-v3-turbo"
 
 

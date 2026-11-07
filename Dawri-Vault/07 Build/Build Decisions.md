@@ -28,6 +28,9 @@ Progress and approvals are recorded in [[Orchestrator Log]].
 - The browser converts recorded audio to 16 kHz mono WAV before upload, so ASR does not depend on webm support. Audio is never stored.
 - The real LLM and ASR paths cannot be tested tonight. Cover them with a fake client in tests, and say plainly in the README that they are untested against the live API.
 
+### Live model (7 Nov, replaces the Fanar default above)
+Live tests through the app on 7 Nov: Fanar 9B on featherless-ai failed 0 of 8 with capacity errors. The owner chose `google/gemma-4-26B-A4B-it` on `novita` as the default, with `meta-llama/Llama-3.3-70B-Instruct` on `ovhcloud` as the backup. `LLM_MODEL_ID` and `LLM_PROVIDER` still switch it. Fanar remains the base for fine-tuning, with results in [[Orchestrator Log]]. A token now exists in the gitignored `.env`.
+
 ### Demo and queue fixes (replaces parts of [[Mock Health System]], [[Queue Engine]], [[Screens]], [[Demo Script]])
 1. **Simulated load must not block real patients.** Tickets from `SIMULATE_LOAD=1` carry `simulated=1`, have no intake, and count toward people ahead and wait estimates. When staff press "Call next", any simulated tickets ahead of the first real ticket are completed automatically ("handled by a colleague on shift"), never shown as a called patient, and the real ticket is called. If only simulated tickets remain, one is completed and the API returns no called patient. They appear greyed and labelled "Simulated" on consoles.
 2. **Wording.** Never say "place held". Use "Check-in valid for 45 minutes" / "تسجيل الوصول صالح لمدة 45 دقيقة". A reserved ticket has **no number and no place**. The number and `seq` are assigned at activation.
