@@ -64,3 +64,6 @@ Build resumed in a new session as run `wf_b653a907-cb4`, script `07 Build/orches
 ## Update, Sat 7 Nov, about 06:50 Doha
 All six phases are approved and pushed on `build/dawri-app`. Submission is **14:00 Doha**. Private Space `xTamim/dawri` is live. Left: team tests on a real phone, Arabic and red-flag review, rehearsal, then on the owner's word make the Space public and merge to `main`. The tuned Fanar model must stay out of live chat.
 
+## Update, Sat 7 Nov, about 07:05 Doha
+On the owner's word, the Space `xTamim/dawri` is **public** and `build/dawri-app` is merged to `main`. The full handoff for the team is the "Dawri Team Handoff" doc.
+
