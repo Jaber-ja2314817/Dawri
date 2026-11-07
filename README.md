@@ -6,6 +6,12 @@ sdk: docker
 app_port: 7860
 pinned: false
 short_description: Queue check-in demo with an AI receptionist, synthetic data
+tags:
+- qai-hf-hackathon-2026
+models:
+- qai-hf-hackathon-2026/team-232-dawri
+- google/gemma-4-26B-A4B-it
+- openai/whisper-large-v3-turbo
 ---
 
 # Dawri

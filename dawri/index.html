@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Dawri — Arrive, don't register.</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 1920px; height: 1080px; overflow: hidden; background: #0a0c0f; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+<canvas id="c" width="1920" height="1080"></canvas>
+<script type="module">
+  import { createRender, EV } from './film.js';
+
+  const canvas = document.getElementById('c');
+  const ctx    = canvas.getContext('2d');
+
+  window.DUR  = 180.0;
+  window.READY = false;
+
+  // IBM Plex Sans (Latin) — 4 weights
+  // IBM Plex Sans Arabic — 3 weights
+  // JetBrains Mono — variable (kept for code/monospace sections)
+  // Noto Sans Arabic — variable (fallback Arabic)
+  const fonts = [
+    new FontFace('IBM Plex Sans', 'url(fonts/IBMPlexSans-400.woff2)', { weight: '400' }),
+    new FontFace('IBM Plex Sans', 'url(fonts/IBMPlexSans-500.woff2)', { weight: '500' }),
+    new FontFace('IBM Plex Sans', 'url(fonts/IBMPlexSans-600.woff2)', { weight: '600' }),
+    new FontFace('IBM Plex Sans', 'url(fonts/IBMPlexSans-700.woff2)', { weight: '700' }),
+    new FontFace('IBM Plex Sans Arabic', 'url(fonts/IBMPlexSansArabic-400.woff2)', { weight: '400' }),
+    new FontFace('IBM Plex Sans Arabic', 'url(fonts/IBMPlexSansArabic-500.woff2)', { weight: '500' }),
+    new FontFace('IBM Plex Sans Arabic', 'url(fonts/IBMPlexSansArabic-600.woff2)', { weight: '600' }),
+    new FontFace('JetBrains Mono',  'url(fonts/JetBrainsMono.ttf)',    { weight: '100 900' }),
+    new FontFace('Noto Sans Arabic','url(fonts/NotoSansArabic.ttf)',   { weight: '100 900' }),
+  ];
+
+  Promise.all(fonts.map(f => f.load().then(loaded => document.fonts.add(loaded))))
+    .then(() => {
+      const render = createRender(ctx);
+
+      window.render = function(t) {
+        ctx.clearRect(0, 0, 1920, 1080);
+        render(t);
+      };
+
+      window.EV = EV;
+      window.READY = true;
+
+      if (!navigator.webdriver) {
+        let start = null;
+        function loop(ts) {
+          if (!start) start = ts;
+          const t = Math.min((ts - start) / 1000, window.DUR);
+          window.render(t);
+          if (t < window.DUR) requestAnimationFrame(loop);
+        }
+        requestAnimationFrame(loop);
+      }
+    })
+    .catch(err => {
+      console.error('Font load failed:', err);
+      const render = createRender(ctx);
+      window.render = function(t) {
+        ctx.clearRect(0, 0, 1920, 1080);
+        render(t);
+      };
+      window.EV   = EV;
+      window.READY = true;
+    });
+</script>
+</body>
+</html>

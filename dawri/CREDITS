@@ -1,0 +1,54 @@
+Dawri دوري — Explainer Video
+Credits and Third-Party Notices
+================================
+
+FONTS
+-----
+Inter (variable, opsz,wght)
+  Source: github.com/rsms/inter / google/fonts
+  Licence: SIL Open Font Licence 1.1
+
+Inter Tight (variable, wght)
+  Source: github.com/googlefonts/inter-tight / google/fonts
+  Licence: SIL Open Font Licence 1.1
+
+JetBrains Mono (variable, wght)
+  Source: github.com/JetBrains/JetBrainsMono
+  Licence: SIL Open Font Licence 1.1
+
+Noto Sans Arabic (variable, wdth,wght)
+  Source: github.com/googlefonts/noto-fonts / google/fonts
+  Licence: SIL Open Font Licence 1.1
+
+VOICE
+-----
+Microsoft Azure Neural TTS — en-GB-RyanNeural
+  Accessed via edge-tts (Python package)
+  edge-tts: github.com/rany2/edge-tts — GPL-3.0
+  Voice service: Microsoft Azure Cognitive Services
+
+PRODUCTION TOOLS
+----------------
+lemo-opuscar film library
+  Source: github.com/lemomo-ai/lemo-opuscar
+  Licence: MIT
+
+Canvas 2D rendering via Playwright (headless Chromium)
+  Playwright: github.com/microsoft/playwright — Apache-2.0
+
+ffmpeg (video encoding and mux)
+  Build: www.gyan.dev/ffmpeg/builds (Gyan Doshi)
+  Licence: GPL v2+
+
+NumPy / SoundFile (audio synthesis)
+  NumPy: numpy.org — BSD 3-Clause
+  SoundFile: github.com/bastibe/python-soundfile — BSD 3-Clause
+
+CONTENT
+-------
+This is a prototype research project. All patient data shown
+(Fatima, Ahmed, Ravi) is synthetic and not connected to any
+real patient, PHCC system, or HMC system.
+
+The Dawri application code is by the Dawri project team.
+Video production: lemo-opuscar dark-keynote style.

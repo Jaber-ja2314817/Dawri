@@ -1,0 +1,164 @@
+1
+00:00:03,000 --> 00:00:06,377
+Most visits to Qatar's primary health centres are walk-ins.
+
+2
+00:00:08,000 --> 00:00:11,698
+Each one starts at the front desk, where staff record why
+you came.
+
+3
+00:00:12,000 --> 00:00:14,762
+Then come triage, the doctor and the pharmacy.
+
+4
+00:00:14,912 --> 00:00:19,394
+Qatar's apps, Nar-aakom and Lbaih, handle appointments and
+records.
+
+5
+00:00:19,544 --> 00:00:23,100
+But in our research, we found no digital path for walk-ins.
+
+6
+00:00:23,250 --> 00:00:24,123
+That is the gap.
+
+7
+00:00:24,273 --> 00:00:26,519
+This is Dawri, دوري, which means 'my turn'.
+
+8
+00:00:26,669 --> 00:00:28,551
+Dawri is an AI front desk.
+
+9
+00:00:28,701 --> 00:00:35,967
+Fatima, 34, checks in on her phone before she arrives. This
+is a demo, with synthetic patients.
+
+10
+00:00:36,117 --> 00:00:42,172
+She tells the AI receptionist, in Arabic, by text or voice:
+fever and cough for three days.
+
+11
+00:00:42,322 --> 00:00:44,196
+It asks a few short questions,
+
+12
+00:00:44,346 --> 00:00:45,283
+one at a time.
+
+13
+00:00:45,433 --> 00:00:48,004
+She picks a centre on a map with estimated waits.
+
+14
+00:00:50,000 --> 00:00:52,561
+That is a reservation, not yet a place in line.
+
+15
+00:00:53,000 --> 00:01:06,088
+When she arrives, she taps 'I'm here'. Her ticket activates
+and gets a number, T-014. Order comes from arrival and the
+centre's own priority rule. Plain code, no AI.
+
+16
+00:01:06,238 --> 00:01:11,498
+At triage, the nurse sees her exact words, the AI's intake,
+and her penicillin allergy.
+
+17
+00:01:12,000 --> 00:01:15,179
+The nurse enters vitals and confirms the handoff to the
+doctor.
+
+18
+00:01:15,329 --> 00:01:20,428
+The doctor prescribes, and the system warns about
+amoxicillin, because of her penicillin allergy.
+
+19
+00:01:20,578 --> 00:01:22,817
+Then the pharmacy, and the visit is done.
+
+20
+00:01:24,000 --> 00:01:29,889
+Ahmed asks for his usual blood-pressure pills. He is offered
+the refill route, with no ticket.
+
+21
+00:01:30,039 --> 00:01:32,976
+Ravi types that he has chest pain spreading to his arm.
+
+22
+00:01:33,126 --> 00:01:39,590
+A rule catches it first. He sees 'call 999' and the nearest
+hospital, and gets no ticket.
+
+23
+00:01:42,000 --> 00:01:44,315
+Safety does not depend on the model behaving.
+
+24
+00:01:44,465 --> 00:01:52,431
+Rules check every message for emergency wording, in Arabic
+and English, and a hit stops the chat. The model cannot
+overrule it.
+
+25
+00:01:53,000 --> 00:02:00,824
+A model's reply reaches the patient only if it is one short,
+plain question. The AI never diagnoses and never prescribes.
+
+26
+00:02:00,974 --> 00:02:06,239
+A nurse confirms everything before the doctor sees it, and
+the queue is code the AI cannot touch.
+
+27
+00:02:08,000 --> 00:02:12,014
+And we say plainly: no clinician has reviewed our red-flag
+list yet.
+
+28
+00:02:14,000 --> 00:02:20,657
+Under the hood: a FastAPI service with SQLite and a React
+app, in one Docker container on a Hugging Face Space.
+
+29
+00:02:20,807 --> 00:02:30,880
+Chat, intake and the nurse's handoff draft run on Gemma 4
+26B, through Hugging Face Inference Providers. Whisper
+large-v3-turbo handles speech.
+
+30
+00:02:31,030 --> 00:02:38,817
+We chose Gemma after testing sixteen model and provider
+pairs. We wanted Qatar's Fanar, but it had no provider
+capacity.
+
+31
+00:02:38,967 --> 00:02:43,525
+Our fine-tuned Fanar 9B lost emergency recognition, so we
+kept it out.
+
+32
+00:02:43,675 --> 00:02:50,678
+Our aim: take the reception step off the walk-in's path, and
+give nurses a structured intake, with people deciding
+everything clinical.
+
+33
+00:02:50,828 --> 00:02:57,391
+This is a prototype. Going live would need partnership, a
+clinical review and data-protection approval.
+
+34
+00:02:57,541 --> 00:02:58,055
+Dawri.
+
+35
+00:02:58,205 --> 00:02:59,760
+Arrive, don't register.
