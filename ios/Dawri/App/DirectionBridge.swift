@@ -19,6 +19,12 @@ final class DirectionBridge {
         applyProxies(initial)
     }
 
+    /// UIKit keeps the stack in the window under a full screen cover, where VoiceOver could still
+    /// reach it. While S06 is up the stack is out of the accessibility tree.
+    var stackIsCovered = false {
+        didSet { applyCover() }
+    }
+
     /// True from the moment a finger starts a swipe back until it lands.
     var isSwipingBack: Bool {
         navigationController?.transitionCoordinator?.isInteractive ?? false
@@ -32,6 +38,7 @@ final class DirectionBridge {
     func attach(navigationController: UINavigationController) {
         self.navigationController = navigationController
         applyToNavigation()
+        applyCover()
     }
 
     func apply(_ next: Lang) {
@@ -91,6 +98,10 @@ final class DirectionBridge {
         if controller.navigationItem.backBarButtonItem !== item {
             controller.navigationItem.backBarButtonItem = item
         }
+    }
+
+    private func applyCover() {
+        navigationController?.view.accessibilityElementsHidden = stackIsCovered
     }
 
     private func applyDown(_ view: UIView) {

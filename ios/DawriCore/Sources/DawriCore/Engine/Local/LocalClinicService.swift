@@ -20,6 +20,9 @@ public actor LocalClinicService: ClinicService {
     private let sleep: @Sendable (TimeInterval) async throws -> Void
     private let store: any ClinicStore
     let demoClinicEnabled: Bool
+    /// Whether the store held a signed-in patient when this service was made. It needs no hop to
+    /// the actor, so a saved session can open on Home with no Welcome frame.
+    public nonisolated let restoredSession: Bool
 
     var engine: QueueEngine
     var state: LocalState
@@ -61,6 +64,7 @@ public actor LocalClinicService: ClinicService {
         self.sleep = sleep
         self.store = store
         self.demoClinicEnabled = demoClinic
+        self.restoredSession = loaded?.subject != nil
         self.engine = engine
         self.state = state
         self.saved = state

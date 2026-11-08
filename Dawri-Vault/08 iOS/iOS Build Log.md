@@ -121,3 +121,135 @@ Port the clinic to Swift as `LocalClinicService`, so the app works on a phone wi
   - Staged DEBUG launches run the demo clinic on the real clock, so a screen left open moves on.
   - `DawriCore_DawriCore.bundle` is embedded in both the app and the extension.
 - **Nothing from this phase is committed yet.**
+
+## Phase 3: Patient screens, PAUSED after review round 1 (not approved)
+
+Paused by the owner on 8 Nov 2026 at about 10:30 Doha, right after review round 1. The run (`wf_004c4ea5-656`) was stopped before round 2 changed any file. The work is committed as WIP so nothing is lost. Phases 1 and 2 were approved in round 1 and are in `47c8458` and `a58b63b`.
+
+### Open failures (review round 1, word for word)
+
+- Shot-table coverage: Design section 8 lists VisitGate loading (skeleton) and VisitGate error (ErrorBlock with retry) for every visit screen, and neither has a row in ios/Tools/shots/*.tsv. The only getVisit rows are the S06 rows and s03-demo-reset (gone). The acceptance check needs every state in Screens.md and Design section 8 to have a row. The states work when shot by hand with -demoScreen s10 -demoFreeze 1 -demoHold getVisit and with -demoFail getVisit=network, so only the rows are missing.
+
+### Fix brief for round 2
+
+**gate-shot-rows: Add VisitGate loading and error rows to the shot table**
+Owned paths: ios/Tools/shots/visit.tsv
+
+Design section 8 says every visit screen has VisitGate states: loading (SkeletonBars under the screen's title), an ErrorBlock with retry, and gone. Gone already has the row s03-demo-reset. Loading and error have no row in any ios/Tools/shots/*.tsv, so the shot-coverage check fails.
+
+Add two rows to ios/Tools/shots/visit.tsv:
+- gate-loading, settle about 3 s, flags ax3, arguments -demoScreen s10 -demoFreeze 1 -demoHold getVisit
+- gate-error, settle about 3 s, arguments -demoScreen s10 -demoFreeze 1 -demoFail getVisit=network
+You may also add one more of each on another visit screen, such as s08. The reviewer shot these by hand and they render correctly, so no app code should change. If a row does not show the state, report it and do not change app code outside your path.
+
+Then run, with your own --derived folder and an output folder in the scratchpad, never under ios/:
+  ios/Tools/shoot.sh --only 'gate-*' <scratchpad>/shots
+Confirm:
+- every PNG is 1260x2736, in ar and en, light and dark, plus ax3
+- the colour scan finds no #1d5fbf or #689ce8 hue and no image above 1% #c4242a
+View the images: Arabic right-aligned, Back on the right, footer and AI line present, nothing clipped at AX3.
+
+Use only the Dawri Build simulator (B55FEAC2-08EB-460D-9261-E28A60F4B5CC) and leave it shut down. Keep the Mac awake: if the lid is closed on battery it sleeps, and runs stall. Remove ios/DawriCore/.swiftpm if xcodebuild creates it.
+
+The no-credit rules apply in full: no hf, no .env, no server, no request to any Hugging Face or provider host. Do not commit.
+
+### Known gaps and phone test items (review round 1, word for word)
+
+- Environment: in the clean full UI run, 4 tests failed only because the Mac went into clamshell or maintenance sleep on battery (pmset log, 08:07 to 09:12 and 09:27 to 09:29), and because CoreSimulatorService restarted at 09:33:17. All 4 passed on a rerun with the Mac awake. Future full runs need the lid open or AC power.
+- The 09:33 CoreSimulatorService restart shut down the owner's iPhone Air simulator F7E60EDF, which was booted at the start. No command in this review named it. Other agent sessions on this Mac (a Maghselty iOS project) were active at the time.
+- Accessibility audit exclusions that have a written reason but deserve a look on a phone:
+- textClipped on the Settings server field (cause not found)
+- textClipped by label on the Arabic footer and two other Arabic strings
+- contrast for anything in the top 200 pt under the system bar
+The screenshots show all of these whole.
+- Phone-only items, implemented and tested with fakes: VoiceOver order and isolation of S06 from the stack under it, haptics, the 999 dialer, Maps for the map link, Reduce Motion at runtime, the iOS 18 look, and the high-priority called announcement.
+- Location, camera, microphone (on-device Speech), MapKit and Live Activity are seams with honest defaults (NoLocationSource, NoServerProbe, UnavailableVoiceEngine, CentreMapSlot) for later phases. In Release, S05's mic says voice is unavailable and the patient types.
+- Fatima's first chat question is in Arabic even when the app is in English. The engine uses the record's preferred language, as the web does.
+- In the staged Arabic chat screenshots, the patient's own answer shows the Eastern Arabic digit ٦. Messages are never altered, and the app's own figures are Latin.
+- The system segmented controls (Settings, S08) stay small at AX3, which Design section 5 accepts.
+- Nothing from Phase 3 is committed yet. The iOS Build Log has no Phase 3 section until approval.
+
+### Reviewer evidence (round 1)
+
+Everything below is from my own runs on build/dawri-ios. Main is at 542bc32. I started no server, never read .env, ran no hf command, and sent nothing to any Hugging Face or model provider host.
+
+CORE TESTS
+- swift test from a clean scratch path (scratchpad/rev3/spm): 479 tests in 75 suites passed, 0 warnings.
+- A grep for XCTSkip, .disabled( and withKnownIssue in DawriCore/Tests and DawriUITests finds nothing.
+- xcodebuild test -scheme DawriCore on Dawri Build: 479 tests passed, goldens included (TEST SUCCEEDED).
+
+UI TESTS (scratchpad/rev3/ui.log, ui-rerun.log)
+- The full Dawri run from a clean derived data folder (rev3/dd-ui): 120 of 124 passed.
+- The 4 failures were environmental, not app faults:
+  - EverywhereTests, both walks: "Timed out while synthesizing event". pmset shows the Mac in clamshell or maintenance sleep from 08:07 to 09:12, with 466 to 1000 s stalls in XCTest.
+  - StageTable testEveryRowLandsOnItsCanonicalScreen: its 98 s gap is exactly the 09:27:12 to 09:29:06 clamshell sleep.
+  - VisitScreen testFatimaWalks: "crashed with signal term". CoreSimulatorService restarted at 09:33:17, which also shut down the owner's iPhone Air F7E60EDF. No command of mine named it.
+- Rerun of those 4 tests with the Mac awake and no sleep logged: all passed (exit 0). EverywhereTests passed in Arabic and English (348 s each), and so did StageTable and testFatimaWalks.
+- Total: 124 of 124. That includes:
+  - JourneyTests 7: Fatima to T-014, then D-GP-023 and P-031, medicines with no penicillin family, rating, History; Ahmed to S07 with no ticket, then S08; Ravi to S06, then Start check-in returns to S06 with no chat. In AR and EN.
+  - EmergencyScreenTests 15, ChatScreenTests 10, AccountScreenTests 23, VisitScreenTests 13, SessionTests 9, AccessibilityAuditTests 2, SwipeHoldTests 2.
+  - The 25 earlier behaviours.
+
+CODE READING
+- JourneyTests: each launch passes only -demoLang and -demoFreeze 0, with no -demoControls and no staging hook.
+- RootView: S06 is a root fullScreenCover on its own Color.clear with disablesAnimations, and its binding setter is a no-op.
+- EmergencyCallButton: the action is only openURL(tel://999), with no await, haptic or dialog.
+- EmergencyPending shows the title and Call 999 while getVisit is held.
+- ChatModel:
+  - applyTurn handles a red flag first, and toEmergency checks the session token.
+  - A retry calls landed() before it sends.
+  - sendText leaves the draft alone.
+- ChatModelTests names every ChatScreen.test.tsx and Screens.test.tsx case word for word. The unported cases are listed with where they are covered: scroll, the scripted note, ASR codes, and S06, which is in EmergencyScreenTests.
+- ServerAddressTests cover case, trailing dot, userinfo, port, subdomain, disguised spellings and http to non-local hosts. NoServerProbe throws, so Release can never show Connected.
+- AppModel.changeLanguage is the only language path. switchLanguage, applyPreferred and reset all call it, and it moves DirectionBridge.
+- There is no .id( on the NavigationStack.
+- Every transition is chosen by reduceMotion and every animation uses a DS.Motion constant.
+- VoiceOver labels are present on the countdown, the track and the ticket number. The called announcement is high priority.
+
+SCREENSHOTS
+- shoot.sh over all 112 rows: 552 PNGs, all 1260x2736. Every row exists in ar and en, light and dark, plus 26 ax3 rows. None are under ios/.
+- I viewed contact sheets of S02, S03, S04, Consent, S05, S06, S07, S08, S09, S10, S11, S12, Settings and live-s06, in AR and EN, light, dark and AX3, and found no fail against the 21 points:
+  - Arabic is right-aligned and joined. Back is on the right in Arabic. The stage track starts on the right. Digits are Latin.
+  - D-GP-023 fills the card. Nothing clips at AX3.
+  - S06 has a white status bar, no back, and a pinned Call 999.
+  - Footer and AI line are on every screen.
+- The S05 AX3 scroll-under-bar softness is the system edge effect.
+- My own colour scanner (rev3/scan.py, top 170 px excluded) passed all 552:
+  - no #1d5fbf or #689ce8 outside S10 and the gallery
+  - no image other than S06 and the gallery above 1% #c4242a
+  - all 44 S09 images have zero hue
+  - every S10 state with a number has hue
+
+RELEASE AND DEVICE
+- Release simulator build succeeded. strings shows no launch hooks (only engine field names).
+- A fresh Release install launched with -demoScreen s10 -demoLang en -demoControls 1 -demoTheme dark showed the Arabic light welcome.
+- generic/platform=iOS with CODE_SIGNING_ALLOWED=NO: BUILD SUCCEEDED.
+- sync-strings --check exits 0. export-engine-data --check and export-goldens --check both exit 0 with HF_TOKEN= blank, HF_HUB_OFFLINE=1, SIMULATE_LOAD=1 and a temp DAWRI_DB, and report ai_mode simulated.
+
+GREPS
+- The network grep hits only ServerAddress.swift and the two known comments.
+- No Speech, CoreLocation or AVFoundation import in ios/Dawri.
+- No "place held" or "no-show" in ios/Dawri or the strings.
+- PlaceholderScreen and placeholder.title are gone.
+
+REPO
+- git diff main -- backend frontend is empty.
+- Under Engine/ only LocalClinicService.swift (restoredSession) and LocalClinicService+Debug.swift changed. Goldens and rule resources are unchanged.
+- I removed ios/DawriCore/.swiftpm (created by xcodebuild). Nothing ignored or built is under ios/.
+
+TRANSCRIPTS
+- A line-level scan of 1,256 builder Bash commands found:
+  - no hf or huggingface-cli
+  - no curl or wget
+  - no read of .env
+  - no uvicorn start
+
+SIMULATOR
+- Dawri Build was left shut down, as I found it.
+
+THE ONE FAILING CHECK: state coverage of the shot tables
+- iOS Design section 8 says every visit screen has VisitGate states: loading with SkeletonBars, an ErrorBlock with retry, and gone.
+- "Gone" has a row (s03-demo-reset). Loading and error have no row in any ios/Tools/shots/*.tsv. The only getVisit rows are the S06 ones and the 404 reset.
+- I captured both states by hand on S10 and S08 (rev3/gate/*.png). They render correctly: a title with skeleton bars, and the network ErrorBlock with Retry. So only the rows are missing.
+- Every other state in Screens.md and Design section 8 has a row. The exclusions are Map selection, camera denied (the door-sheet row stands in) and Live Activity, which are later phases.
+

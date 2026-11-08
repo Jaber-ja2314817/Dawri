@@ -1,0 +1,38 @@
+# S08, S09, S10 and S11. See shoot.sh for the columns. The hooks are in
+# ios/Dawri/Debug/DemoVisit.swift and DemoLaunch.swift. -demoFreeze 1 keeps the demo clinic still
+# under the shot. The map is CentreMapSlot's honest placeholder until the map phase.
+s08-map-placeholder	3.5	-	-demoScreen s08 -demoFreeze 1 -demoView map
+s08-list	3.5	ax3	-demoScreen s08 -demoFreeze 1 -demoView list
+s08-loading	3	-	-demoScreen s08 -demoFreeze 1 -demoHold listCentres
+s08-no-services	3.5	-	-demoScreen s08 -demoFreeze 1 -demoPatch noCentres
+s08-gp-first	3.5	-	-demoScreen s08 -demoFreeze 1 -demoPatch gpFirst
+s08-suggestion	3.5	-	-demoScreen s08 -demoFreeze 1 -demoView list -demoPatch suggestion
+s08-none-chosen	3.5	-	-demoScreen s08 -demoFreeze 1 -demoView list -demoPatch noDefaultCentre
+s08-location-failed	4	-	-demoScreen s08 -demoFreeze 1 -demoLocation fail -demoLocate 1
+s08-map-failed	3.5	-	-demoScreen s08 -demoFreeze 1 -demoMapFailed 1
+s08-reserve-error	4	-	-demoScreen s08 -demoFreeze 1 -demoFail reserve=network -demoReserve 1
+s09-reserved	3.5	ax3	-demoScreen s09 -demoFreeze 1
+s09-zero	6	-	-demoScreen s09 -demoFreeze 1 -demoExpiresIn 2
+s09-expired	3.5	ax3	-demoScreen s09 -demoFreeze 1 -demoStage expired
+s09-too-far	5	-	-demoScreen s09 -demoFreeze 1 -demoLocation far -demoArrive location
+s09-location-failed	4	-	-demoScreen s09 -demoFreeze 1 -demoLocation fail -demoArrive location
+s09-door-sheet	4	-	-demoScreen s09 -demoFreeze 1 -demoSheet door
+s09-wrong-door	5	-	-demoScreen s09 -demoFreeze 1 -demoSheet door -demoDoorCode DOOR-C-RAYYAN -demoArrive code
+s09-arrive-error	4	-	-demoScreen s09 -demoFreeze 1 -demoFail arrive=network -demoArrive button
+s09-loading	4	-	-demoScreen s09 -demoFreeze 1 -demoHold arrive -demoArrive button
+s10-triage-active	3.5	ax3	-demoScreen s10 -demoFreeze 1
+s10-doctor	3.5	-	-demoScreen s10 -demoFreeze 1 -demoStage doctor
+s10-pharmacy	3.5	-	-demoScreen s10 -demoFreeze 1 -demoStage pharmacy
+s10-called	3.5	ax3	-demoScreen s10 -demoFreeze 1 -demoTicket called
+s10-serving	3.5	-	-demoScreen s10 -demoFreeze 1 -demoTicket serving
+s10-between-stages	3.5	-	-demoScreen s10 -demoFreeze 1 -demoStage doctor -demoPatch noTicket
+s10-slow	5	-	-demoScreen s10 -demoFreeze 1 -demoFail visitUpdates=network
+s10-unknown-figures	3.5	-	-demoScreen s10 -demoFreeze 1 -demoPatch unknownFigures
+s10-zero-ahead	3.5	-	-demoScreen s10 -demoFreeze 1 -demoPatch zeroAhead
+s10-dependent	3.5	-	-demoScreen s10 -demoFreeze 1 -demoFor P004
+s10-demo-waiting	4	-	-demoScreen s10 -demoFreeze 1 -demoPatch demoWaiting -demoStep 1
+s11-medicines	3.5	ax3	-demoScreen s11 -demoFreeze 1
+s11-no-medicines	3.5	-	-demoScreen s11 -demoFreeze 1 -demoPatch noMedicines
+s11-rated	4	-	-demoScreen s11 -demoFreeze 1 -demoRate 5
+s11-rating-failed	4	-	-demoScreen s11 -demoFreeze 1 -demoFail rateVisit=network -demoRate 4
+s11-final-ticket	4	-	-demoScreen s11 -demoFreeze 1 -demoScrollEnd 1

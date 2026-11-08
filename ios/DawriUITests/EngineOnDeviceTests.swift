@@ -2,8 +2,9 @@ import XCTest
 
 /// The rules and their resources work on iOS itself, not only under `swift test`. Each case
 /// launches the real clinic and sends one real sentence, so the outcome comes from the bundled
-/// rule tables. The screens are placeholders, so these assert on the route, the path and what
-/// the service answered. Reading the status means a send that never ran cannot pass.
+/// rule tables. The test control sends the sentence, so these assert on the route, the path and
+/// what the service answered, below the screens. JourneyTests walks the same patients with real
+/// taps. Reading the status means a send that never ran cannot pass.
 final class EngineOnDeviceTests: XCTestCase {
     private let ravi = "DEMO-10003"
     private let ahmed = "DEMO-10002"

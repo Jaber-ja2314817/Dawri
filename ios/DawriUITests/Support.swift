@@ -15,6 +15,10 @@ enum Copy {
     static let loginTitleAR = "تسجيل الدخول"
     static let backEN = "Back"
     static let backAR = "رجوع"
+    static let emergencyTitleEN = "Go to Emergency now"
+    static let emergencyTitleAR = "توجه إلى الطوارئ الآن"
+    static let supportEN = "You are not alone."
+    static let supportAR = "لست وحدك."
 }
 
 extension XCTestCase {

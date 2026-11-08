@@ -18,6 +18,8 @@ struct DSTextField: View {
     var placeholder: String?
     /// The composer shows only its placeholder. The label still reaches VoiceOver.
     var showsLabel = true
+    /// The web's field id. The field takes it, and its error takes it with `-error` after.
+    var identifier: String?
 
     @Environment(\.lang) private var lang
     @Environment(\.isEnabled) private var isEnabled
@@ -33,14 +35,18 @@ struct DSTextField: View {
             VStack(alignment: .leading, spacing: DS.Space.xs) {
                 field
                 if let error {
+                    // Their whole height, so a crowded column cannot cut them to one line.
                     Text(verbatim: error)
                         .dsText(.secondary)
                         .foregroundStyle(DS.Color.negative)
-                }
-                if let hint {
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier(identifier.map { "\($0)-error" } ?? "")
+                } else if let hint {
+                    // As on the web, an error takes the hint's place.
                     Text(verbatim: hint)
                         .dsText(.caption)
                         .foregroundStyle(DS.Color.muted)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
         }
@@ -67,6 +73,7 @@ struct DSTextField: View {
                 }
             }
             .accessibilityHint(error.map { Text(verbatim: $0) } ?? Text(verbatim: ""))
+            .accessibilityIdentifier(identifier ?? "")
     }
 
     @ViewBuilder
@@ -83,6 +90,10 @@ struct DSTextField: View {
                 .textInputAutocapitalization(.characters)
                 .autocorrectionDisabled()
                 .environment(\.layoutDirection, .leftToRight)
+                .onChange(of: text) { _, next in
+                    let latin = latinDigits(next)
+                    if latin != next { text = latin }
+                }
         case .code:
             base
                 .multilineTextAlignment(lang == .ar ? .trailing : .leading)

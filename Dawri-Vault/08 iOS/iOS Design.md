@@ -214,6 +214,8 @@ SF Pro and SF Arabic come through `.font(.body)` and friends, never by name. No 
 
 **Dynamic Type range.** Apply `.dynamicTypeSize(.xSmall ... .accessibility3)` at the root. AX3 is what this app promises and reviews. Three controls cap lower and show the large content viewer with `.accessibilityShowsLargeContentViewer()`: `LanguageToggle` at `.xxxLarge`, `WaitBadge` at `.xLarge`, and the gear at `.xxxLarge`.
 
+As built, two additions. The product name in the bar also carries `.accessibilityShowsLargeContentViewer()`, because the system bar holds it to its own height. And the Dynamic Type audit asks for AX5, so against the AX3 cap it calls every text partly unsupported. A DEBUG-only `-demoTypeCap off` lifts the cap for the audit, so its findings name text that does not scale at all. Release keeps the cap.
+
 **Arabic adjustments.** All live in `dsText(_:)`, which reads the language.
 
 | Rule | Value |
@@ -507,6 +509,7 @@ These follow Apple's move value, response 0.4 and damping 1.0, tightened for sma
 - Never block input during a transition. No `.disabled` or `allowsHitTesting(false)` tied to animation state, and no waiting on an animation's completion.
 - Springs in SwiftUI retarget from the live value and carry velocity, which is why every touched element uses one. No `.linear` or `.easeInOut` on a touched element.
 - A live update arriving mid-swipe never moves the navigation stack. Stage changes within S10 update in place. A step to a new screen waits until the swipe ends.
+- As built, the gate under a held swipe already knows the visit has moved, so for that moment the screen under the finger is the gate's empty scaffold, not the old screen. When the swipe cancels, the new screen replaces it. When the swipe finishes, the entry is gone, and nothing is pushed over Home. `SwipeHoldTests` proves both by holding a swipe across a demo step.
 - Press cancels if the finger drags away, and recovers if it returns. `ButtonStyle` gives this.
 
 ### 6.4 Haptics
@@ -518,7 +521,7 @@ Use `.sensoryFeedback` on the same state change that drives the visual, so they 
 | Stage change | `.stageChange` | `.success` | `UINotificationFeedbackGenerator.success` |
 | Called to a counter | `.called` | `.warning` | `UINotificationFeedbackGenerator.warning` |
 | Visit complete | `.visitComplete` | `.success` | `UINotificationFeedbackGenerator.success` |
-| Ticket activated at arrival | `.activated` | `.success` | `UINotificationFeedbackGenerator.success` |
+| Ticket activated at arrival | `.activated` | `.success` | `UINotificationFeedbackGenerator.success`. As built, it plays on S10 as it appears after a stage move, on the frame the number does, not on S09 when the request returns. Opening S10 from Home plays nothing |
 | Login or code failed, too far | `.failed` | `.error` | `UINotificationFeedbackGenerator.error` |
 | Message sent | `.sent` | `.impact(weight: .light)` | `UIImpactFeedbackGenerator(.light)` |
 | Mic start | `.micStart` | `.impact(weight: .medium)` | `UIImpactFeedbackGenerator(.medium)`, fired before the audio session starts, because iOS mutes haptics while recording |
@@ -756,13 +759,19 @@ VStack(spacing: 0) {
 
 The screen has no navigation bar, so nothing outranks it. `callFocused` is set in `.onAppear`. The order after it is title, reply, card, map link, override, language toggle, footer. The product name is hidden from VoiceOver. The S06 builder proves the order with a UI test or Accessibility Inspector.
 
+As built, three things differ from the sketch above, because the sketch did not work on iOS 26.5:
+
+- `accessibilitySortPriority` orders elements inside the scroll, but it does not move a button ahead of the `ScrollView`, which is a platform element. So the pinned part comes first in view order, and `PinnedFirstLayout` in `PatientScaffold.swift` places it at the bottom.
+- UIKit keeps the stack in the window under the cover. So the cover carries `.accessibilityAddTraits(.isModal)`, and `DirectionBridge.stackIsCovered` hides the navigation controller's view from accessibility while it is up. XCTest still lists that stack, so any test on S06 reads the cover's own elements through `screen-emergency`.
+- `MKMapItem(placemark:).openInMaps()` compiles on the iOS 18 floor with no deprecation warning, so `emergency.map` uses it.
+
 | Field | Spec |
 | --- | --- |
 | Primary | Call 999. Works with no server, no visit data, no network |
 | Native | `openURL` with `tel://999`, `.fullScreenCover`, `MKMapItem.openInMaps` for `emergency.map`, in place of the web's OSM link |
 | Default | As above |
 | Self-harm | Reply in `.urgent`, as `text-xl font-medium` on the web. Same screen |
-| Before the visit loads | Title and Call 999 at once. Nothing waits. Load error: `ErrorBlock` on the field, using the card tokens |
+| Before the visit loads | Title and Call 999 at once. Nothing waits. Load error: `ErrorBlock` on the field, using the card tokens. Opened from a Home row and not from a red flag, the same field shows `screen.emergency` and tone-on-tone bars, Call 999 stays pinned, and a load error adds `emergency.home`, which is what the web's Back gave that state |
 | Nearest card | `emergencyCard`, `emergencyCardMuted` label, name in `.section`, `emergency.distance`, map link underlined in `emergencyCardText` with `mappin` |
 | Override | `emergency.override`, quiet, `emergencyText`. Logs, issues no ticket. Then shows `route.message` in `.bodyStrong` and `emergency.home`, which dismisses to S03. Error: `ErrorBlock` with retry |
 | No ticket | Never a number, never a queue figure |
@@ -794,7 +803,7 @@ Layout: fixed control row, fixed map, then a scroll of details.
 | Selected card | Name as `.section` with `centre.yourCentre` pill, three figures in a row, `centre.wait`, `centre.peopleAhead`, `centre.distance` as label over `.statValue`, then `centre.checkIn` |
 | Primary | `centre.checkIn`. It sits first in the scroll, so it is always visible |
 | Native | MapKit `Map` with `Annotation` and `WaitBadge`, `.mapStyle(.standard(elevation: .flat, pointsOfInterest: .excludingAll))`, Core Location, `.segmented`, no API key |
-| List view | Flush `Card` of `ListRow`s, registered centre first: name, `centre.peopleAhead`, distance, wait as `.statValue`, a `checkmark` on the chosen row. Selection fill `raised` |
+| List view | Flush `Card` of `ListRow`s, registered centre first: name, `centre.peopleAhead`, distance, wait as `.statValue`, a `checkmark` on the chosen row. Selection fill `ground`, as the web's `bg-ground`: on `raised` the neutral `centre.yourCentre` pill, whose fill is the same `#eeeeee`, disappears |
 | Map selection | Tap selects, `.select` haptic. Selected badge is ink. The camera does not move |
 | Loading | Bars at the size of the control row, map and card. The list never waits for the map |
 | No services | `centre.empty` and `centre.home` secondary. Map and list hidden |
@@ -803,6 +812,8 @@ Layout: fixed control row, fixed map, then a scroll of details.
 | Other | `centre.gpFirst` in `.secondary`. Suggestion: neutral pill, reason wrapped with `Bidi.auto`, `centre.chooseSuggested` secondary when it is not selected. Reserve failure: `ErrorBlock` in the card. `active_visit` or `emergency_today` go to that visit |
 | None chosen | `centre.choosePrompt` in the card |
 | Accessibility sizes | Starts on the list. Map view available at 220 |
+| Until the map phase | `Screens/Visit/CentreMapSlot.swift` holds the map's place at the map's geometry: a flat `raised` ground with `centre.mapPlaceholder`, hairline top and bottom, and no pins. It is the one view MapKit replaces, and it reports a failed map through `onFail` |
+| As built | The title heads the fixed part, above the control row, so the order reads title, controls, map, details. At accessibility sizes nothing is fixed and it all scrolls, so the controls cannot crowd out the details. `centre.checkIn` sits in the selected card, first in the scroll in both views |
 
 ### S09 Ticket reserved
 
@@ -820,7 +831,7 @@ Question: how long do I have to arrive?
 | Wrong door | `error.wrong_door` in the sheet, below the field |
 | Failure | `ErrorBlock` |
 | Loading | Spinner in the acting button, the others disabled |
-| Time ran out | Countdown holds at `0:00` and refetches every 5 s |
+| Time ran out | Countdown holds at `00:00` and refetches every 5 s. The web pads minutes too, so it starts at `45:00` |
 | Expired | `reserved.expiredTitle`, `reserved.expiredBody`, `reserved.chooseAgain` primary. Same route, no back into the countdown. No no-show wording |
 | Camera denied | Sheet shows the typed field only |
 
@@ -1086,6 +1097,11 @@ New keys the design needs, for `ios/Tools/strings/ios.en.json` and `ios.ar.json`
 | `live.go` | Go now | توجه الآن |
 | `notify.next` | You are next | أنت التالي |
 | `notify.stage` | Your next step is ready | خطوتك التالية جاهزة |
+| `demo.waiting` | Demo: nothing moved, someone is ahead of you. | تجريبي: لم يتغير شيء، يوجد شخص قبلك. |
+| `centre.mapPlaceholder` | The map is not ready yet. Use the list. | الخريطة غير جاهزة بعد. استخدم القائمة. |
+| `common.loading` | Loading | جارٍ التحميل |
+| `common.cancel` | Cancel | إلغاء |
+| `settings.resetConfirm` | This clears the visits on this phone. | سيؤدي هذا إلى مسح الزيارات على هذا الهاتف. |
 
 ## 13. Coverage
 

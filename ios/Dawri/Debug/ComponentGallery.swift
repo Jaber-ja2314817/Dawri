@@ -3,7 +3,8 @@ import DawriCore
 import SwiftUI
 
 /// Every component of iOS Design section 12, a page at a time so each fits one screenshot.
-/// `-demoScreen gallery -demoPage <1...8>`. With no page it shows them all, to scroll through.
+/// `-demoScreen gallery -demoPage <1...12>`. With no page it shows them all, to scroll through.
+/// Page 10 is `ScaffoldSlots`. Pages 11 and 12 are the rest of the chat's states.
 struct ComponentGallery: View {
     @Environment(\.lang) private var lang
     @State private var qid = "DEMO-10001"
@@ -12,8 +13,18 @@ struct ComponentGallery: View {
     @State private var plain = ""
     @State private var draft = ""
     @State private var draftFilled = "حرارة وكحة من 3 أيام"
+    @FocusState private var focus: Bool
+    @FocusState private var otherFocus: Bool
 
     var body: some View {
+        if DemoLaunch.current?.galleryPage == 10 {
+            ScaffoldSlots()
+        } else {
+            pages
+        }
+    }
+
+    private var pages: some View {
         PatientScaffold {
             let page = DemoLaunch.current?.galleryPage
             if page == nil || page == 1 { filledButtons }
@@ -25,6 +36,8 @@ struct ComponentGallery: View {
             if page == nil || page == 7 { smallThings }
             if page == nil || page == 8 { chat }
             if page == nil || page == 9 { voice }
+            if page == nil || page == 11 { voiceMore }
+            if page == nil || page == 12 { chatMore }
         }
     }
 
@@ -77,8 +90,9 @@ struct ComponentGallery: View {
                 Button("Ahmed Al-Demo") {}.buttonStyle(ChipButtonStyle())
                 Button("Ravi Demo") {}.buttonStyle(ChipButtonStyle())
             }
-            name("DemoNextStepButton")
+            name("DemoNextStepButton: rest, busy")
             DemoNextStepButton {}
+            DemoNextStepButton(isBusy: true) {}
             name("ScreenTitle")
             ScreenTitle(lang.t("who.title"))
             name("ProductLockup")
@@ -174,15 +188,17 @@ struct ComponentGallery: View {
     private var smallThings: some View {
         VStack(alignment: .leading, spacing: DS.Space.s) {
             name("CountdownText")
-            Card { CountdownText(expiresAt: .now.addingTimeInterval(44 * 60 + 59)) }
+            Card { CountdownText(expiresAt: Timestamp.string(from: .now.addingTimeInterval(44 * 60 + 59))) }
+            Card { CountdownText(expiresAt: nil) }
             name("WaitBadge: rest, selected, missing")
             HStack(spacing: DS.Space.s) {
                 WaitBadge(minutes: 12)
                 WaitBadge(minutes: 35, selected: true)
                 WaitBadge(minutes: nil)
             }
-            name("StarRating: open, sent")
-            StarRating(rating: 3) { _ in }
+            name("StarRating: open, busy, sent")
+            StarRating(rating: nil) { _ in }
+            StarRating(rating: nil, isBusy: true) { _ in }
             StarRating(rating: 5)
             name("ChatBubble, ThinkingBubble")
             ChatBubble(role: .assistant, text: lang.t("chat.summary.check"))
@@ -203,16 +219,73 @@ struct ComponentGallery: View {
         }
     }
 
+    private var chatMore: some View {
+        VStack(alignment: .leading, spacing: DS.Space.s) {
+            name("SummaryCard: confirming, then a failed Yes")
+            SummaryCard(
+                service: .dental, summary: "toothache, 2 days", isConfirming: true, onYes: {},
+                onChange: {})
+            SummaryCard(
+                service: .gp, summary: "fever, 3 days", confirmError: lang.t("error.network"),
+                onYes: {}, onChange: {})
+        }
+    }
+
     private var voice: some View {
         VStack(alignment: .leading, spacing: DS.Space.s) {
             name("Composer: idle, empty")
-            Composer(text: $draft, onSend: {}, onMic: {}).padding(.horizontal, -DS.Space.l)
-            name("Composer: idle, with text")
-            Composer(text: $draftFilled, onSend: {}, onMic: {}).padding(.horizontal, -DS.Space.l)
-            name("ListeningPanel")
-            ListeningPanel(elapsedSeconds: 12, transcript: "حرارة وكحة", onStop: {})
+            Composer(text: $draft, focus: $focus, onSend: {}, onMic: {})
+                .padding(.horizontal, -DS.Space.l)
+            name("Composer: with text, and a voice error")
+            Composer(
+                text: $draftFilled, focus: $otherFocus,
+                voiceError: lang.t("voice.unavailableOnDevice"),
+                voice: .mic(secondary: true, disabled: false), onSend: {}, onMic: {})
+                .padding(.horizontal, -DS.Space.l)
+            name("Composer: listening, ListeningPanel")
+            Composer(
+                text: $draft, focus: $focus, isBusy: true,
+                voice: .listening(seconds: 12, partial: "حرارة وكحة"), onSend: {}, onMic: {})
+                .padding(.horizontal, -DS.Space.l)
+        }
+    }
+
+    private var voiceMore: some View {
+        VStack(alignment: .leading, spacing: DS.Space.s) {
+            name("Composer: transcribing, read-only while thinking")
+            Composer(
+                text: $draftFilled, focus: $otherFocus, isReadOnly: true, isBusy: true,
+                voice: .working(key: "voice.transcribing"), onSend: {}, onMic: {})
+                .padding(.horizontal, -DS.Space.l)
             name("TranscriptConfirmPanel")
-            TranscriptConfirmPanel(text: $draftFilled, onSend: {}, onRetry: {}, onClear: {})
+            TranscriptConfirmPanel(
+                text: $draftFilled, focus: $otherFocus, onSend: {}, onRetry: {}, onClear: {})
+                .padding(.horizontal, -DS.Space.l)
+        }
+    }
+}
+
+/// `PatientScaffold`'s slots with something in each, because no screen fills all of them yet.
+private struct ScaffoldSlots: View {
+    @Environment(\.lang) private var lang
+    @State private var position = ScrollPosition(edge: .top)
+    @State private var text = ""
+
+    var body: some View {
+        PatientScaffold(footer: .pinned, scrollPosition: $position) {
+            ForEach(0..<30) { row in
+                Text(verbatim: String(row))
+                    .dsText(.body)
+                    .foregroundStyle(DS.Color.ink)
+                    .accessibilityIdentifier("slots-row-\(row)")
+            }
+        } pinnedTop: {
+            Button("end") { position.scrollTo(edge: .bottom) }
+                .accessibilityIdentifier("slots-top")
+        } pinnedBottom: {
+            DSTextField(label: lang.t("settings.server"), text: $text)
+                .padding(DS.Space.m)
+                .accessibilityIdentifier("slots-bottom")
         }
     }
 }

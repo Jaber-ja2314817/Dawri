@@ -37,6 +37,9 @@ struct TicketNumberBlock: View {
                         .dsText(.section)
                         .foregroundStyle(DS.Color.ink)
                         .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity)
+                        .transition(.opacity)
+                        .accessibilityIdentifier("ticket-next")
                 }
             }
             .animation(
@@ -48,28 +51,59 @@ struct TicketNumberBlock: View {
         .frame(maxWidth: .infinity)
         .background(DS.Color.surface, in: shape)
         .overlay(shape.strokeBorder(DS.Color.hairline, lineWidth: DS.Stroke.edge))
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("ticket-card")
+        .onChange(of: number) { old, new in
+            // A new number is news. The first one on arrival is not.
+            guard old != nil, let new else { return }
+            AccessibilityNotification.Announcement(
+                "\(lang.t("ticket.numberLabel")), \(new.map(String.init).joined(separator: " "))"
+            ).post()
+        }
     }
 }
 
 /// A clock jumps, so there is no animation. It reads left to right in both languages, holds at
-/// `0:00`, and VoiceOver reads it as a value rather than every second.
+/// 00:00, and VoiceOver reads it as a value in minutes and seconds rather than every second.
+/// `onRanOut` hears whether it reads 00:00, on appear and whenever that changes, so S09 can ask
+/// the clinic again. With no usable time it shows a dash.
 struct CountdownText: View {
-    let expiresAt: Date
+    let expiresAt: String?
+    var onRanOut: (Bool) -> Void = { _ in }
 
     @Environment(\.lang) private var lang
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1)) { context in
-            let left = max(0, Int(expiresAt.timeIntervalSince(context.date).rounded(.up)))
-            let clock = "\(left / 60):\(String(format: "%02d", left % 60))"
-            Text(verbatim: clock)
-                .dsText(.countdown)
-                .foregroundStyle(DS.Color.ink)
-                .contentTransition(.identity)
-                .environment(\.layoutDirection, .leftToRight)
-                .accessibilityLabel(Text(verbatim: lang.t("reserved.timeLeft")))
-                .accessibilityValue(Text(verbatim: clock))
+            let left = TicketRules.secondsLeft(expiresAt, now: context.date)
+            face(left)
+                .onChange(of: left == 0, initial: true) { _, ranOut in onRanOut(ranOut) }
         }
+    }
+
+    @ViewBuilder
+    private func face(_ left: Int?) -> some View {
+        Group {
+            if let left {
+                Text(verbatim: TicketRules.formatCountdown(left))
+                    .foregroundStyle(DS.Color.ink)
+                    .contentTransition(.identity)
+                    .environment(\.layoutDirection, .leftToRight)
+                    .accessibilityValue(Text(verbatim: spoken(left)))
+            } else {
+                Dash()
+            }
+        }
+        .dsText(.countdown)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(Text(verbatim: lang.t("reserved.timeLeft")))
+        .accessibilityIdentifier("countdown")
+    }
+
+    /// "44 minutes, 59 seconds", in the screen's language.
+    private func spoken(_ seconds: Int) -> String {
+        Duration.seconds(seconds).formatted(
+            .units(allowed: [.minutes, .seconds], width: .wide).locale(lang.locale))
     }
 }
 
@@ -108,43 +142,52 @@ struct WaitBadge: View {
     }
 }
 
-/// Five 44 pt targets. Without `onRate` it is the read-only row shown once a rating is sent.
+/// Five 44 pt targets, the first on the leading side, so on the right in Arabic. Without
+/// `onRate` it is the read-only row shown once a rating is sent, read as one value.
 struct StarRating: View {
     let rating: Int?
+    var isBusy = false
     var onRate: ((Int) -> Void)?
 
     @Environment(\.lang) private var lang
     @State private var picked = 0
 
     var body: some View {
-        HStack(spacing: 0) {
-            ForEach(1...5, id: \.self) { star in
-                let filled = star <= (rating ?? 0)
-                let label = lang.t("complete.stars", ["stars": star])
-                if let onRate {
+        if let onRate {
+            HStack(spacing: 0) {
+                ForEach(1...5, id: \.self) { star in
                     Button {
                         picked = star
                         onRate(star)
                     } label: {
-                        symbol(filled)
+                        symbol(filled: star <= picked && isBusy)
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel(Text(verbatim: label))
-                    .accessibilityAddTraits(filled ? .isSelected : [])
-                } else {
-                    symbol(filled)
-                        .accessibilityLabel(Text(verbatim: label))
-                        .accessibilityHidden(star != rating)
+                    .disabled(isBusy)
+                    .accessibilityLabel(Text(verbatim: lang.t("complete.stars", ["stars": star])))
+                    .accessibilityIdentifier("rate-star")
                 }
             }
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel(Text(verbatim: lang.t("complete.rate")))
+            .sensoryFeedback(DS.Haptic.select, trigger: picked)
+        } else {
+            let shown = rating ?? 0
+            HStack(spacing: 0) {
+                ForEach(1...5, id: \.self) { star in
+                    symbol(filled: star <= shown)
+                }
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(Text(verbatim: lang.t("complete.stars", ["stars": shown])))
+            .accessibilityIdentifier("rating-stars")
         }
-        .sensoryFeedback(DS.Haptic.select, trigger: picked)
     }
 
-    private func symbol(_ filled: Bool) -> some View {
+    private func symbol(filled: Bool) -> some View {
         Image(systemName: filled ? "star.fill" : "star")
-            .font(.title3)
-            .foregroundStyle(DS.Color.ink)
+            .dsText(.lead)
+            .foregroundStyle(isBusy ? DS.Color.muted : DS.Color.ink)
             .frame(width: DS.Size.minTarget, height: DS.Size.minTarget)
             .contentShape(Rectangle())
     }
@@ -152,6 +195,7 @@ struct StarRating: View {
 
 /// S10 only, in On this phone mode. Always says Demo, and never looks like staff.
 struct DemoNextStepButton: View {
+    var isBusy = false
     let action: () -> Void
 
     @Environment(\.lang) private var lang
@@ -159,6 +203,7 @@ struct DemoNextStepButton: View {
     var body: some View {
         Button(lang.t("demo.nextStep"), action: action)
             .buttonStyle(SecondaryButtonStyle())
+            .dsLoading(isBusy)
             .accessibilityIdentifier("demo-next-step")
     }
 }

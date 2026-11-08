@@ -192,6 +192,126 @@ extension Local {
         }
     }
 
+    @Suite("Local: restored session")
+    struct RestoredSessionTests {
+        @Test func `a fresh clinic has no session to restore`() throws {
+            let rig = try LocalRig()
+            #expect(!rig.service.restoredSession)
+        }
+
+        @Test func `a saved session is known before anything awaits`() async throws {
+            let rig = try LocalRig()
+            try await rig.signIn(Said.fatimaQid)
+            #expect(!rig.service.restoredSession)
+            #expect(rig.rebuilt().restoredSession)
+            #expect(await rig.rebuilt().isSignedIn)
+        }
+
+        @Test func `signing out leaves nothing to restore`() async throws {
+            let rig = try LocalRig()
+            try await rig.signIn(Said.fatimaQid)
+            await rig.service.signOut()
+            #expect(!rig.rebuilt().restoredSession)
+        }
+    }
+
+    @Suite("Local: staged walks")
+    struct StagedWalkTests {
+        private static let start = Date(timeIntervalSince1970: 1_794_000_000)
+
+        @Test(arguments: [TicketState.called, .serving])
+        func `a ticket state is reached through the demo clinic`(state: TicketState) async throws {
+            let (service, visitId) = try await LocalClinicService.staged(
+                stage: .triage, confirmed: true, clock: { Self.start }, ticketState: state)
+            let visit = try await service.getVisit(visitId: visitId)
+            #expect(visit.stage == .triage)
+            #expect(visit.ticket?.state == state)
+            #expect(visit.ticket?.number == "T-014")
+        }
+
+        @Test func `a later stage can be staged at its counter`() async throws {
+            let (service, visitId) = try await LocalClinicService.staged(
+                stage: .doctor, confirmed: true, clock: { Self.start }, ticketState: .called)
+            let visit = try await service.getVisit(visitId: visitId)
+            #expect(visit.stage == .doctor)
+            #expect(visit.ticket?.state == .called)
+        }
+
+        @Test func `the opening chat is one line`() async throws {
+            let (service, visitId) = try await LocalClinicService.staged(
+                stage: .intake, clock: { Self.start }, chat: .opening)
+            #expect(try await service.getVisit(visitId: visitId).chat.messages.count == 1)
+        }
+
+        @Test func `a midway chat is still asking`() async throws {
+            let (service, visitId) = try await LocalClinicService.staged(
+                stage: .intake, clock: { Self.start }, chat: .midway)
+            let visit = try await service.getVisit(visitId: visitId)
+            #expect(visit.chat.messages.count(where: { $0.role == .user }) == 2)
+            #expect(visit.intake == nil)
+            #expect(!visit.confirmedByPatient)
+        }
+
+        @Test func `a summary chat waits for a yes`() async throws {
+            let (service, visitId) = try await LocalClinicService.staged(
+                stage: .intake, clock: { Self.start }, chat: .summary)
+            let visit = try await service.getVisit(visitId: visitId)
+            #expect(visit.intake != nil)
+            #expect(!visit.confirmedByPatient)
+            #expect(visit.stage == .intake)
+        }
+
+        @Test func `the clock ends where it began, with that much of the 45 minutes left`() async throws {
+            let (service, visitId) = try await LocalClinicService.staged(
+                stage: .reserved, confirmed: true, clock: { Self.start }, expiresIn: 90)
+            let visit = try await service.getVisit(visitId: visitId)
+            #expect(await service.clock() == Self.start)
+            #expect(visit.stage == .reserved)
+            let expires = try #require(visit.ticket?.expiresAt.flatMap(ClinicTime.parse))
+            #expect(expires == Self.start.addingTimeInterval(90))
+        }
+
+        @Test func `a reservation staged with no time left has lapsed`() async throws {
+            let (service, visitId) = try await LocalClinicService.staged(
+                stage: .reserved, confirmed: true, clock: { Self.start }, expiresIn: -1)
+            #expect(try await service.getVisit(visitId: visitId).stage == .expired)
+        }
+
+        @Test func `a dependent's visit is booked by the guardian`() async throws {
+            let (service, visitId) = try await LocalClinicService.staged(
+                stage: .triage, confirmed: true, clock: { Self.start }, dependent: "P004")
+            let visit = try await service.getVisit(visitId: visitId)
+            #expect(visit.patientId == "P004")
+            #expect(visit.bookedBy == "P001")
+            #expect(visit.stage == .triage)
+            #expect(try await service.getMe().patient.id == "P001")
+        }
+
+        @Test func `someone who is not a dependent cannot be staged`() async throws {
+            let refused = await #expect(throws: ClinicError.self) {
+                try await LocalClinicService.staged(
+                    stage: .intake, clock: { Self.start }, dependent: "P003")
+            }
+            #expect(refused?.status == 403)
+        }
+
+        @Test func `a mixed history has every kind of row, with the emergency last`() async throws {
+            let (service, visitId) = try await LocalClinicService.stagedHistory(
+                patientId: "P002", clock: { Self.start })
+            let rows = try await service.listVisits()
+            #expect(Set(rows.map(\.stage)) == [.completed, .refill, .expired, .emergency])
+            #expect(rows.count == 4)
+            #expect(try await service.getVisit(visitId: visitId).stage == .emergency)
+        }
+
+        @Test func `a patient with no medicines has no refill row`() async throws {
+            let (service, _) = try await LocalClinicService.stagedHistory(
+                patientId: "P001", clock: { Self.start })
+            let rows = try await service.listVisits()
+            #expect(Set(rows.map(\.stage)) == [.completed, .expired, .emergency])
+        }
+    }
+
     @Suite("Local: golden coverage")
     struct GoldenCoverageTests {
         private static let tests = "ios/DawriCore/Tests/DawriCoreTests"

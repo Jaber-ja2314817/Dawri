@@ -4,13 +4,25 @@ import Foundation
 import SwiftUI
 
 /// The DEBUG-only launch arguments, so a screenshot or a UI test needs no tapping. This is the
-/// only place that reads them, and all of it compiles out of Release.
+/// only place that stages from them, and all of it compiles out of Release. A screen's own hook
+/// reads `DemoLaunch.current?.argument("demoSomething")` from its own file, under `#if DEBUG`.
 ///
 ///     -demoScreen s01...s12|chat|emergency|refill|centre|reserved|ticket|complete|consent|settings|gallery
 ///     -demoLang ar|en  -demoPatient <qid>  -demoStage <stage>  -demoConfirmed 0|1
 ///     -demoTheme light|dark  -demoPage <gallery page>  -demoSwitchTo ar|en  -demoControls 1
 ///     -demoPushAfter <seconds>, which opens S02, so a recording can catch the push
 ///     -demoSendText <sentence>, what the test control sends, in place of the patient's own line
+///
+///     -demoFreeze 1, staging on a fixed clock, so nothing moves under a screenshot
+///     -demoFail route=code[:detail],...  by protocol method, every call
+///     -demoFailOnce route=code[:detail],...  the same, first call only
+///     -demoHold route,...  never answers, for loading states
+///     -demoPatch noTicket,...  reshapes answers, see `DemoPatch`
+///     -demoNoDriver 1, a service that does not conform to `DemoDriving`, as a clinic server is
+///     -demoTicket called|serving  -demoChat opening|midway|summary  -demoExpiresIn <seconds>
+///     -demoFor <patient id>, the visit is a dependent's  -demoHistory mixed
+///     -demoRedFlag 1, opens S06 as chat would  -demoRecordLinks 1, links go to `debug-status`
+///     -demoSignIn <qid>, who the test control signs in  -demoOverride 1, S06 sends the override
 struct DemoLaunch: Sendable {
     let screen: String?
     let lang: Lang?
@@ -23,17 +35,27 @@ struct DemoLaunch: Sendable {
     let showsControls: Bool
     let pushAfter: Double?
     let sendText: String?
+    let frozen: Bool
+    let ticketState: TicketState?
+    let chat: DemoChatPoint?
+    let expiresIn: TimeInterval?
+    let dependent: String?
+    let history: Bool
+    let redFlag: Bool
+    let recordsLinks: Bool
+    let noDriver: Bool
+    let faults: DemoFaults
+    private let arguments: [String]
 
     /// Nil on a launch with none of these arguments, which is the normal path.
     static let current = DemoLaunch(arguments: ProcessInfo.processInfo.arguments)
 
     init?(arguments: [String]) {
         func value(_ name: String) -> String? {
-            arguments.firstIndex(of: "-\(name)").flatMap { index in
-                arguments.indices.contains(index + 1) ? arguments[index + 1] : nil
-            }
+            Self.value(of: name, in: arguments)
         }
         guard arguments.contains(where: { $0.hasPrefix("-demo") }) else { return nil }
+        self.arguments = arguments
         screen = value("demoScreen")?.lowercased()
         lang = value("demoLang").flatMap(Lang.init(rawValue:))
         patient = value("demoPatient")
@@ -45,36 +67,74 @@ struct DemoLaunch: Sendable {
         showsControls = value("demoControls") == "1"
         pushAfter = value("demoPushAfter").flatMap(Double.init)
         sendText = value("demoSendText")
+        frozen = value("demoFreeze") == "1"
+        ticketState = value("demoTicket").flatMap(TicketState.init(rawValue:))
+        chat = value("demoChat").flatMap(DemoChatPoint.init(rawValue:))
+        expiresIn = value("demoExpiresIn").flatMap(TimeInterval.init)
+        dependent = value("demoFor")
+        history = value("demoHistory") == "mixed"
+        redFlag = value("demoRedFlag") == "1"
+        recordsLinks = value("demoRecordLinks") == "1"
+        noDriver = value("demoNoDriver") == "1"
+        faults = DemoFaults(
+            fail: value("demoFail"), failOnce: value("demoFailOnce"), hold: value("demoHold"),
+            patch: value("demoPatch"))
+    }
+
+    private static func value(of name: String, in arguments: [String]) -> String? {
+        arguments.firstIndex(of: "-\(name)").flatMap { index in
+            arguments.indices.contains(index + 1) ? arguments[index + 1] : nil
+        }
+    }
+
+    /// The value of `-name`, for a hook that a screen reads from its own file.
+    func argument(_ name: String) -> String? {
+        Self.value(of: name, in: arguments)
     }
 
     var showsGallery: Bool { screen == "gallery" }
 
     /// DEBUG launches never touch the saved language or the saved clinic, so they cannot change
-    /// a normal launch.
+    /// a normal launch. A language asked for here counts as the viewer's choice, or the record's
+    /// language would replace it on the first `getMe`.
     @MainActor
     func makeModel() -> AppModel {
         let store = MemoryStore()
-        if let lang { store.write(lang.rawValue, for: "dawri.lang") }
+        if let lang {
+            store.write(lang.rawValue, for: "dawri.lang")
+            store.write("1", for: "dawri.lang.chosen")
+        }
         let language = LanguageState(store: store)
+        let settings = MemoryStore()
 
         let destination = Self.destinations[screen ?? ""]
-        let wantsSession = patient != nil || (destination?.needsSession ?? false)
+        let wantsSession = patient != nil || history || (destination?.needsSession ?? false)
         guard wantsSession else {
             // Screens with no session have no visit, so their routes ignore the id.
             return AppModel(
-                service: LocalClinicService(store: MemoryClinicStore()), language: language,
-                isSignedIn: false, path: destination?.route("").map { [$0] } ?? [])
+                service: proxy(LocalClinicService(store: MemoryClinicStore())), language: language,
+                isSignedIn: false, path: destination?.route("").map { [$0] } ?? [],
+                settings: settings)
         }
         let stage = stage ?? destination?.stage ?? .triage
         let staged = waitForStaging(
             patientId: patientId(for: stage), stage: stage,
             confirmed: confirmed ?? destination?.confirmed ?? Self.confirmedByDefault(stage),
             language: lang?.rawValue)
+        faults.setVisit(staged.visitId)
         let model = AppModel(
-            service: staged.service, language: language, isSignedIn: true,
-            path: destination?.route(staged.visitId).map { [$0] } ?? [])
+            service: proxy(staged.service), language: language, isSignedIn: true,
+            path: destination?.route(staged.visitId).map { [$0] } ?? [], settings: settings)
         model.demoVisitId = staged.visitId
+        if redFlag { model.showEmergency(visitId: staged.visitId, redFlag: true) }
         return model
+    }
+
+    /// Hooks that change an answer sit in the proxy, between the screens and the real engine.
+    private func proxy(_ service: LocalClinicService) -> any ClinicService {
+        noDriver
+            ? DemoClinicProxy(base: service, faults: faults)
+            : DemoDrivenClinicProxy(base: service, driver: service, faults: faults)
     }
 
     private typealias Staged = (service: LocalClinicService, visitId: String)
@@ -90,7 +150,7 @@ struct DemoLaunch: Sendable {
         nonisolated(unsafe) var outcome: Result<Staged, any Error>?
         Task.detached(priority: .userInitiated) {
             do {
-                let staged = try await Self.stage(
+                let staged = try await walk(
                     patientId: patientId, stage: stage, confirmed: confirmed, language: language)
                 outcome = .success(staged)
             } catch {
@@ -116,13 +176,20 @@ struct DemoLaunch: Sendable {
     ///
     /// A visit cancelled at once has no chat row to hold the flag, so the confirmed one starts
     /// from a confirmed intake. `staged` cancels the same way, because no route cancels a visit.
-    private static func stage(
+    private func walk(
         patientId: String, stage: VisitStage, confirmed: Bool, language: String?
     ) async throws -> Staged {
         let store = MemoryClinicStore()
+        let clock = stagingClock()
+        if history {
+            return try await LocalClinicService.stagedHistory(
+                patientId: patient == nil ? "P002" : patientId, clock: clock, store: store,
+                language: language)
+        }
         let staged = try await LocalClinicService.staged(
             patientId: patientId, stage: stage == .cancelled && confirmed ? .intake : stage,
-            confirmed: confirmed, store: store, language: language)
+            confirmed: confirmed, clock: clock, store: store, language: language,
+            dependent: dependent, ticketState: ticketState, chat: chat, expiresIn: expiresIn)
         let visitId = staged.visitId
         let reached = try await staged.service.getVisit(visitId: visitId)
         guard reached.stage != stage || reached.confirmedByPatient != confirmed else { return staged }
@@ -134,12 +201,19 @@ struct DemoLaunch: Sendable {
         if stage == .cancelled, let row = state.clinic.visits.firstIndex(where: { $0.id == visitId }) {
             state.clinic.visits[row].status = .cancelled
         }
-        let service = LocalClinicService(store: try MemoryClinicStore(state: state))
+        let service = LocalClinicService(clock: clock, store: try MemoryClinicStore(state: state))
         let changed = try await service.getVisit(visitId: visitId)
         precondition(
             changed.stage == stage && changed.confirmedByPatient == confirmed,
             "The saved state did not reach the visit")
         return (service, visitId)
+    }
+
+    /// `-demoFreeze`: the launch's moment, for good.
+    private func stagingClock() -> @Sendable () -> Date {
+        guard frozen else { return { Date() } }
+        let launched = Date()
+        return { launched }
     }
 
     /// `DEMO-10003` is P003, the same numbering as the seeded patients. With no patient named,
@@ -207,7 +281,7 @@ struct DemoLaunch: Sendable {
 }
 
 /// Keeps DEBUG launches out of the phone's real settings.
-private final class MemoryStore: KeyValueStore {
+final class MemoryStore: KeyValueStore {
     private var values: [String: String] = [:]
     func read(_ key: String) -> String? { values[key] }
     func write(_ value: String, for key: String) { values[key] = value }
@@ -215,7 +289,8 @@ private final class MemoryStore: KeyValueStore {
 }
 
 /// The theme override, the timed language switch and the test controls. RootView applies this
-/// through a call that compiles out with it.
+/// through a call that compiles out with it. It sits outside the cover, so its environment
+/// reaches S06 too.
 struct DemoRootModifier: ViewModifier {
     @Environment(AppModel.self) private var model
 
@@ -223,11 +298,12 @@ struct DemoRootModifier: ViewModifier {
         let demo = DemoLaunch.current
         content
             .preferredColorScheme(demo?.theme)
-            .overlay(alignment: .bottom) {
-                if demo?.showsControls == true {
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                if demo?.showsTestControls == true {
                     DemoControls()
                 }
             }
+            .modifier(DemoLinkRecorder(isOn: demo?.recordsLinks == true))
             .task {
                 guard let next = demo?.switchTo else { return }
                 try? await Task.sleep(for: .seconds(1.2))
@@ -238,6 +314,44 @@ struct DemoRootModifier: ViewModifier {
                 try? await Task.sleep(for: .seconds(seconds))
                 model.open(.login)
             }
+    }
+}
+
+/// A cover hides everything beneath it, so S06 carries its own controls. In the inset, because
+/// an overlay would sit on Call 999.
+struct DemoCoverModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        content.safeAreaInset(edge: .bottom, spacing: 0) {
+            if DemoLaunch.current?.showsTestControls == true {
+                DemoControls()
+            }
+        }
+    }
+}
+
+private struct DemoLinkRecorder: ViewModifier {
+    let isOn: Bool
+
+    @Environment(AppModel.self) private var model
+
+    func body(content: Content) -> some View {
+        if isOn {
+            content.environment(
+                \.openURL,
+                OpenURLAction { url in
+                    model.demoStatus = "opened \(url.absoluteString)"
+                    return .handled
+                })
+        } else {
+            content
+        }
+    }
+}
+
+extension DemoLaunch {
+    /// `debug-status` has to exist for a recorded link, with or without the other controls.
+    fileprivate var showsTestControls: Bool {
+        showsControls || recordsLinks
     }
 }
 
@@ -266,24 +380,36 @@ private enum DemoScript {
 }
 
 /// Lets a UI test walk a staged visit through the real service, with `debug-path` reporting the
-/// path and `debug-status` the last result. Only with `-demoControls 1`, and never in a screenshot.
+/// path and `debug-status` the last result. Only with `-demoControls 1`, and never in a
+/// screenshot. Its state lives on the model, because S06's cover has a second copy of it.
 private struct DemoControls: View {
     @Environment(AppModel.self) private var model
-    @State private var status = "idle"
-    @State private var last: Task<Void, Never>?
 
     /// One action at a time, in the order they were tapped, so two quick taps are two steps.
     private func run(_ action: @escaping @MainActor (String) async throws -> String) {
         guard let visitId = model.demoVisitId else { return }
-        let previous = last
-        last = Task {
+        run { try await action(visitId) }
+    }
+
+    private func run(_ action: @escaping @MainActor () async throws -> String) {
+        let previous = model.demoLastAction
+        model.demoLastAction = Task {
             await previous?.value
             do {
-                status = try await action(visitId)
+                model.demoStatus = try await action()
             } catch {
-                status = "failed \((error as? ClinicError)?.code ?? String(describing: error))"
+                model.demoStatus = "failed \((error as? ClinicError)?.code ?? String(describing: error))"
             }
         }
+    }
+
+    /// The path, then the cover, which is where the emergency route lives.
+    private var pathText: String {
+        var entries = model.path.map { String(describing: $0) }
+        if let cover = model.emergency {
+            entries.append("emergency(\(cover.visitId), redFlag: \(cover.redFlag))")
+        }
+        return entries.joined(separator: " > ")
     }
 
     var body: some View {
@@ -300,16 +426,76 @@ private struct DemoControls: View {
                 model.visitGone()
             }
             .accessibilityIdentifier("debug-forget-visit")
-            Text(verbatim: status)
+            Button("in") {
+                run {
+                    let qid = DemoLaunch.current?.argument("demoSignIn") ?? "DEMO-10003"
+                    try await model.signIn(qid: qid, otp: "0000")
+                    return "signed in"
+                }
+            }
+            .accessibilityIdentifier("debug-sign-in")
+            Button("out") {
+                model.signOut()
+            }
+            .accessibilityIdentifier("debug-sign-out")
+            Button("push") {
+                model.open(.settings)
+            }
+            .accessibilityIdentifier("debug-push")
+            Button("read") {
+                run { visitId in try await read(visitId) }
+            }
+            .accessibilityIdentifier("debug-read")
+            Text(verbatim: model.demoStatus)
                 .font(.caption2)
                 .accessibilityIdentifier("debug-status")
-            Text(verbatim: model.path.map { String(describing: $0) }.joined(separator: " > "))
+            Text(verbatim: pathText)
                 .font(.caption2)
                 .accessibilityIdentifier("debug-path")
+            Text(verbatim: "\(model.language.lang.rawValue) \(model.me?.patient.id ?? "-")")
+                .font(.caption2)
+                .accessibilityIdentifier("debug-session")
+            Text(verbatim: String(model.demoSkeletons))
+                .font(.caption2)
+                .accessibilityIdentifier("debug-skeletons")
+            Text(verbatim: String(model.demoSwipeWaits))
+                .font(.caption2)
+                .accessibilityIdentifier("debug-swipe-waits")
+            TimelineView(.periodic(from: .now, by: 0.25)) { _ in
+                Text(verbatim: DemoLaunch.current?.faults.callCounts ?? "")
+                    .font(.caption2)
+                    .accessibilityIdentifier("debug-calls")
+            }
         }
         .padding(DS.Space.s)
         .frame(minHeight: DS.Size.minTarget)
         .background(DS.Color.surface)
+    }
+
+    /// What the screens would be told, through the proxy, on one line.
+    private func read(_ visitId: String) async throws -> String {
+        let service = model.service
+        let visit = try await service.getVisit(visitId: visitId)
+        let centres = try await service.listCentres(
+            service: (visit.service ?? .gp).rawValue, visitId: visitId, lat: nil, lng: nil)
+        let rows = try await service.listVisits()
+        let left = visit.ticket?.expiresAt.flatMap(Timestamp.date(from:))
+            .map { Int($0.timeIntervalSinceNow) }
+        let parts: [(String, String?)] = [
+            ("stage", visit.stage.rawValue), ("patient", visit.patientId),
+            ("number", visit.ticket?.number), ("state", visit.ticket?.state.rawValue),
+            ("ahead", visit.ticket?.peopleAhead.map(String.init)),
+            ("wait", visit.ticket?.estWaitMin.map(String.init)),
+            ("left", left.map(String.init)), ("meds", String(visit.medicines.en.count)),
+            ("refill", visit.refill?.medicine), ("user", String(visit.chat.messages.count { $0.role == .user })),
+            ("intake", String(visit.intake != nil)), ("harm", visit.emergency.map { String($0.selfHarm) }),
+            ("rows", rows.map(\.stage.rawValue).sorted().joined(separator: "+")),
+            ("centres", String(centres.centres.count)), ("default", centres.defaultCentreId),
+            ("fallback", String(centres.serviceFallback)), ("suggestion", centres.suggestion?.centreId),
+            ("centreWait", centres.centres.first?.waitMin.map(String.init)),
+            ("driver", String(model.demoDriver != nil)),
+        ]
+        return parts.map { "\($0.0)=\($0.1 ?? "nil")" }.joined(separator: " ")
     }
 
     private func send(_ visitId: String) async throws -> String {
@@ -354,7 +540,7 @@ private struct DemoControls: View {
     }
 
     private func walkDemoClinic(_ visitId: String, from start: VisitStage) async throws {
-        guard let demo = model.service as? any DemoDriving else { return }
+        guard let demo = model.demoDriver else { return }
         while try await model.service.getVisit(visitId: visitId).stage == start {
             guard case .moved = try await demo.demoNextStep(visitId: visitId) else { return }
         }

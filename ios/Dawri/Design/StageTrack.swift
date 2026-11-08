@@ -52,6 +52,7 @@ struct StageTrack: View {
             DS.Motion.resolved(DS.Motion.stage, reduceMotion: reduceMotion), value: stage)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text(verbatim: spoken))
+        .accessibilityIdentifier("stage-track")
     }
 
     private var spoken: String {

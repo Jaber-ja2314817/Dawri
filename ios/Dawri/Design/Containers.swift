@@ -210,6 +210,8 @@ struct Notice: View {
             .dsText(.secondary)
             .foregroundStyle(DS.Color.noticeText)
             .multilineTextAlignment(.leading)
+            // Its whole height, so a crowded column can never cut it to one line.
+            .fixedSize(horizontal: false, vertical: true)
             .padding(DS.Space.m)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(DS.Color.noticeFill, in: shape)
@@ -232,5 +234,38 @@ struct ScreenTitle: View {
             .multilineTextAlignment(.leading)
             .frame(maxWidth: .infinity, alignment: .leading)
             .accessibilityAddTraits(.isHeader)
+    }
+}
+
+/// The heading above a group on a screen: S02's demo patients, S03's open visits, each section
+/// of Settings. Start-aligned, with the header trait.
+struct SectionHeading: View {
+    let text: String
+    var role: DS.TextRole = .section
+
+    init(_ text: String, role: DS.TextRole = .section) {
+        self.text = text
+        self.role = role
+    }
+
+    var body: some View {
+        Text(verbatim: text)
+            .dsText(role)
+            .foregroundStyle(DS.Color.ink)
+            .multilineTextAlignment(.leading)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityAddTraits(.isHeader)
+    }
+}
+
+extension PillTone {
+    /// A status tone from DawriCore's list rules, in this design's pill pairs.
+    init(_ tone: StatusTone) {
+        switch tone {
+        case .positive: self = .positive
+        case .negative: self = .negative
+        case .warning: self = .warning
+        case .neutral: self = .neutral
+        }
     }
 }

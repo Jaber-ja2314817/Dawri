@@ -1,0 +1,24 @@
+# S01, the gallery, the live switches and every S06 state. See shoot.sh for the columns.
+s01	2.5	ax3	-demoScreen s01
+gallery1	2.5	-	-demoScreen gallery -demoPage 1
+gallery2	2.5	-	-demoScreen gallery -demoPage 2
+gallery3	2.5	ax3	-demoScreen gallery -demoPage 3
+gallery4	2.5	-	-demoScreen gallery -demoPage 4
+gallery5	2.5	-	-demoScreen gallery -demoPage 5
+gallery6	2.5	ax3	-demoScreen gallery -demoPage 6
+gallery7	2.5	-	-demoScreen gallery -demoPage 7
+gallery8	2.5	ax3	-demoScreen gallery -demoPage 8
+gallery9	2.5	-	-demoScreen gallery -demoPage 9
+live-s01	3.5	switch	-demoScreen s01
+live-pushed	3.5	switch	-demoScreen s02
+live-s06	3.5	switch	-demoScreen s06 -demoPatient DEMO-10003 -demoFreeze 1
+s06-default	2.5	ax3	-demoScreen s06 -demoPatient DEMO-10003 -demoFreeze 1
+s06-self-harm	2.5	ax3	-demoScreen s06 -demoPatient DEMO-10003 -demoFreeze 1 -demoPatch selfHarm
+s06-red-flag-waiting	2.5	ax3	-demoScreen s06 -demoPatient DEMO-10003 -demoFreeze 1 -demoRedFlag 1 -demoHold getVisit
+s06-red-flag-failed	2.5	ax3	-demoScreen s06 -demoPatient DEMO-10003 -demoFreeze 1 -demoRedFlag 1 -demoFail getVisit=network
+s06-row-waiting	2.5	-	-demoScreen s06 -demoPatient DEMO-10003 -demoFreeze 1 -demoHold getVisit
+s06-row-failed	2.5	ax3	-demoScreen s06 -demoPatient DEMO-10003 -demoFreeze 1 -demoFail getVisit=network
+s06-override-loading	2.5	-	-demoScreen s06 -demoPatient DEMO-10003 -demoFreeze 1 -demoOverride 1 -demoHold emergencyOverride
+s06-override-routed	2.5	ax3	-demoScreen s06 -demoPatient DEMO-10003 -demoFreeze 1 -demoOverride 1
+s06-override-failed	2.5	ax3	-demoScreen s06 -demoPatient DEMO-10003 -demoFreeze 1 -demoOverride 1 -demoFail emergencyOverride=internal_error
+s06-not-emergency	2.5	-	-demoScreen s06 -demoPatient DEMO-10003 -demoFreeze 1 -demoOverride 1 -demoFail emergencyOverride=not_emergency

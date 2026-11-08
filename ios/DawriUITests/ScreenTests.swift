@@ -1,22 +1,23 @@
 import XCTest
 
-/// Every route is reachable by id, and each sits inside the scaffold: title, footer, AI line
-/// and toggle, because those must exist on every patient screen.
+/// Every route is reachable by id, and each sits inside the scaffold: footer, AI line and toggle,
+/// because those must exist on every patient screen. No titles here: real screens change them.
 final class ScreenTests: XCTestCase {
-    private let screens: [(argument: String, identifier: String, title: String)] = [
-        ("s02", "login", "Log in"),
-        ("s03", "home", "Home"),
-        ("s04", "who", "Who is this for?"),
-        ("consent", "consent", "Before we start"),
-        ("s05", "chat", "Reception"),
-        ("s06", "emergency", "Emergency"),
-        ("s07", "refill", "Medicine refill"),
-        ("s08", "centre", "Choose a centre"),
-        ("s09", "reserved", "Check-in"),
-        ("s10", "ticket", "Your ticket"),
-        ("s11", "complete", "Visit complete"),
-        ("s12", "history", "History"),
-        ("settings", "settings", "Settings"),
+    private let screens: [(argument: String, identifier: String)] = [
+        ("s01", "welcome"),
+        ("s02", "login"),
+        ("s03", "home"),
+        ("s04", "who"),
+        ("consent", "consent"),
+        ("s05", "chat"),
+        ("s06", "emergency"),
+        ("s07", "refill"),
+        ("s08", "centre"),
+        ("s09", "reserved"),
+        ("s10", "ticket"),
+        ("s11", "complete"),
+        ("s12", "history"),
+        ("settings", "settings"),
     ]
 
     override func setUp() {
@@ -24,15 +25,23 @@ final class ScreenTests: XCTestCase {
     }
 
     @MainActor
-    func testEveryScreenIsInTheScaffoldWithItsTitle() {
-        for screen in screens {
-            let app = launch("-demoLang", "en", "-demoScreen", screen.argument)
-            assertShown(app.element("screen-\(screen.identifier)"), screen.argument)
-            assertShown(app.staticTexts[screen.title], screen.argument)
-            assertShown(app.element("language-toggle"), screen.argument)
-            XCTAssertEqual(app.element("footer").label, Copy.footerEN, screen.argument)
-            XCTAssertEqual(app.element("footer-ai").label, Copy.aiEN, screen.argument)
-            app.terminate()
+    func testEveryRouteIsInTheScaffold() {
+        for (lang, footer, ai, toggle) in [
+            ("en", Copy.footerEN, Copy.aiEN, "العربية"), ("ar", Copy.footerAR, Copy.aiAR, "English"),
+        ] {
+            for screen in screens {
+                let context = "\(screen.argument) \(lang)"
+                let app = launch("-demoLang", lang, "-demoScreen", screen.argument)
+                assertShown(app.element("screen-\(screen.identifier)"), context)
+                // On S06 the stack stays in the tree under the cover, so read the cover's own.
+                let scope = screen.identifier == "emergency" ? app.element("screen-emergency") : app
+                let any = scope.descendants(matching: .any)
+                assertShown(any["language-toggle"].firstMatch, context)
+                XCTAssertEqual(any["language-toggle"].firstMatch.label, toggle, context)
+                XCTAssertEqual(any["footer"].firstMatch.label, footer, context)
+                XCTAssertEqual(any["footer-ai"].firstMatch.label, ai, context)
+                app.terminate()
+            }
         }
     }
 

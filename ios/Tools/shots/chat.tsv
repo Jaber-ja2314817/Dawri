@@ -1,0 +1,21 @@
+# S05 and S07, every state, and the gallery pages of the chat's parts. See shoot.sh for the columns.
+chat-opening	3	ax3	-demoScreen chat -demoPatient DEMO-10001 -demoChat opening -demoFreeze 1
+chat-midway	3	-	-demoScreen chat -demoPatient DEMO-10001 -demoChat midway -demoFreeze 1
+chat-thinking	3	-	-demoScreen chat -demoPatient DEMO-10001 -demoChat opening -demoFreeze 1 -demoDraft @answer -demoChatAction send -demoHold sendChat
+chat-error-retry	3	-	-demoScreen chat -demoPatient DEMO-10001 -demoChat opening -demoFreeze 1 -demoDraft @answer -demoChatAction send -demoFail sendChat=network
+chat-timeout	3	-	-demoScreen chat -demoPatient DEMO-10001 -demoChat opening -demoFreeze 1 -demoDraft @answer -demoChatAction send -demoFail sendChat=timeout
+chat-summary	3	ax3	-demoScreen chat -demoPatient DEMO-10001 -demoChat summary -demoFreeze 1
+chat-summary-unsent	3	-	-demoScreen chat -demoPatient DEMO-10001 -demoChat summary -demoFreeze 1 -demoDraft @answer
+chat-confirm-error	3	-	-demoScreen chat -demoPatient DEMO-10001 -demoChat summary -demoFreeze 1 -demoChatAction confirm -demoFail confirmIntake=network
+chat-listening	3	-	-demoScreen chat -demoPatient DEMO-10001 -demoChat midway -demoFreeze 1 -demoVoice listening
+chat-transcribing	3	-	-demoScreen chat -demoPatient DEMO-10001 -demoChat midway -demoFreeze 1 -demoVoice transcribing
+chat-transcript-confirm	3	-	-demoScreen chat -demoPatient DEMO-10001 -demoChat midway -demoFreeze 1 -demoVoice confirm
+chat-voice-denied	3	-	-demoScreen chat -demoPatient DEMO-10001 -demoChat midway -demoFreeze 1 -demoVoice denied
+chat-voice-unavailable	3	-	-demoScreen chat -demoPatient DEMO-10001 -demoChat midway -demoFreeze 1 -demoVoice unavailable
+s07-default	3	ax3	-demoScreen s07 -demoPatient DEMO-10002 -demoFreeze 1
+s07-notice	3	-	-demoScreen s07 -demoPatient DEMO-10002 -demoFreeze 1 -demoRefillAction message
+s07-no-medicine	3	-	-demoScreen s07 -demoPatient DEMO-10002 -demoFreeze 1 -demoPatch noRefillMedicine
+s07-loading	3	-	-demoScreen s07 -demoPatient DEMO-10002 -demoFreeze 1 -demoRefillAction visit -demoHold continueRefill
+s07-error	3	-	-demoScreen s07 -demoPatient DEMO-10002 -demoFreeze 1 -demoRefillAction visit -demoFail continueRefill=network
+gallery11	2.5	-	-demoScreen gallery -demoPage 11
+gallery12	2.5	-	-demoScreen gallery -demoPage 12

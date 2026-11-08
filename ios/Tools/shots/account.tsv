@@ -1,0 +1,36 @@
+# S02, S03, S04, Consent, S12 and Settings. See shoot.sh for the columns. The hooks are in
+# ios/Dawri/Debug/DemoAccount.swift. -demoFreeze 1 keeps a staged visit still under the shot.
+s02-empty	2.5	ax3	-demoScreen s02
+s02-filled	2.5	-	-demoScreen s02 -demoQid DEMO-10001 -demoOtp 0000
+s02-chip-loading	2.5	-	-demoScreen s02 -demoHold authStart -demoLogin P001
+s02-unknown-qid	3	-	-demoScreen s02 -demoQid DEMO-99999 -demoOtp 0000 -demoLogin form
+s02-invalid-otp	3	-	-demoScreen s02 -demoQid DEMO-10001 -demoOtp 1234 -demoLogin form
+s02-network-error	3	-	-demoScreen s02 -demoFail authStart=network -demoLogin P001
+s03-no-visit	3	-	-demoScreen s03 -demoPatient DEMO-10001 -demoFresh 1
+s03-active-visit	3	ax3	-demoScreen s03 -demoPatient DEMO-10001 -demoFreeze 1
+s03-expired-row	3	-	-demoScreen s03 -demoPatient DEMO-10001 -demoStage expired -demoFreeze 1
+s03-emergency-row	3	-	-demoScreen s03 -demoPatient DEMO-10003 -demoStage emergency -demoFreeze 1
+s03-demo-reset	3.5	-	-demoScreen s11 -demoPatient DEMO-10001 -demoFreeze 1 -demoFail getVisit=visit_not_found
+s03-loading	2.5	-	-demoScreen s03 -demoPatient DEMO-10001 -demoFreeze 1 -demoHold getMe,listVisits
+s03-me-error	3	-	-demoScreen s03 -demoPatient DEMO-10001 -demoFreeze 1 -demoFail getMe=network
+s03-list-error	3	-	-demoScreen s03 -demoPatient DEMO-10001 -demoFreeze 1 -demoFail listVisits=network
+s03-ahmed-no-allergies	3	-	-demoScreen s03 -demoPatient DEMO-10002 -demoFresh 1
+s04-default	3	ax3	-demoScreen s04 -demoPatient DEMO-10001 -demoFreeze 1
+s04-loading	2.5	-	-demoScreen s04 -demoPatient DEMO-10001 -demoFreeze 1 -demoHold getMe
+s04-error	3	-	-demoScreen s04 -demoPatient DEMO-10001 -demoFreeze 1 -demoFail getMe=network
+consent-self	3	ax3	-demoScreen consent -demoPatient DEMO-10001 -demoFreeze 1
+consent-dependent	3.5	-	-demoScreen s04 -demoPatient DEMO-10001 -demoFreeze 1 -demoPick P004
+consent-loading	3	-	-demoScreen consent -demoPatient DEMO-10001 -demoFreeze 1 -demoHold createVisit -demoAgree 1
+consent-error	3	-	-demoScreen consent -demoPatient DEMO-10001 -demoFreeze 1 -demoFail createVisit=network -demoAgree 1
+s12-rows	3	ax3	-demoScreen s12 -demoPatient DEMO-10002 -demoHistory mixed -demoFreeze 1
+s12-empty	3	-	-demoScreen s12 -demoPatient DEMO-10001 -demoFresh 1
+s12-loading	2.5	-	-demoScreen s12 -demoPatient DEMO-10001 -demoFreeze 1 -demoHold listVisits
+s12-error	3	-	-demoScreen s12 -demoPatient DEMO-10001 -demoFreeze 1 -demoFail listVisits=network
+settings-local	2.5	-	-demoScreen settings
+settings-reset-confirm	3	-	-demoScreen settings -demoResetPrompt 1
+settings-server	2.5	ax3	-demoScreen settings -demoMode server
+settings-connecting	3	-	-demoScreen settings -demoMode server -demoAddress http://192.168.1.20:8100 -demoServer ok -demoHold probe -demoConnect 1
+settings-connected	3	-	-demoScreen settings -demoMode server -demoAddress http://192.168.1.20:8100 -demoServer ok -demoConnect 1
+settings-refused-host	3	-	-demoScreen settings -demoMode server -demoAddress https://dawri.hf.space -demoServer ok -demoConnect 1
+settings-refused-mode	3	-	-demoScreen settings -demoMode server -demoAddress http://192.168.1.20:8100 -demoServer refusedAi -demoConnect 1
+settings-unreachable	3	-	-demoScreen settings -demoMode server -demoAddress http://192.168.1.20:8100 -demoServer unreachable -demoConnect 1

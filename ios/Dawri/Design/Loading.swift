@@ -39,6 +39,7 @@ struct ErrorBlock: View {
                 .dsText(.secondary)
                 .foregroundStyle(DS.Color.ink)
                 .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
             if let retry {
                 Button(lang.t("common.retry"), action: retry)
