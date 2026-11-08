@@ -32,6 +32,8 @@ final class AppModel {
     @ObservationIgnored let features: PhoneFeatures
     /// Settings that outlive a language reset, such as the mode and server address.
     @ObservationIgnored let settings: any KeyValueStore
+    /// The Live Activity and the local notifications, kept in step with every visit read.
+    @ObservationIgnored let liveTicket: LiveTicketCoordinator
 
     private(set) var isSignedIn: Bool
     private(set) var me: Me?
@@ -87,6 +89,9 @@ final class AppModel {
         self.features = features
         self.settings = settings
         self.direction = DirectionBridge(initial: language.lang)
+        self.liveTicket = LiveTicketCoordinator(
+            live: features.live, notifier: features.notifier, service: service,
+            driver: service as? any DemoDriving, lang: { language.lang })
         // S06 is never pushed, including when a launch asks for it.
         self.path = path.filter { $0.emergencyVisitId == nil }
         self.emergency = path.compactMap(\.emergencyVisitId).last.map {
@@ -107,7 +112,7 @@ final class AppModel {
         let service = LocalClinicService(store: FileClinicStore())
         return AppModel(
             service: service, language: LanguageState(store: UserDefaults.standard),
-            isSignedIn: service.restoredSession)
+            isSignedIn: service.restoredSession, features: .device)
     }
 
     /// `.welcome` is the stack's root before login and `.home` after.
@@ -223,6 +228,8 @@ final class AppModel {
         meError = nil
         lastVisit = nil
         showsDemoReset = false
+        // Nothing of the last patient stays on the Lock Screen or in the notification queue.
+        liveTicket.endAll()
         withoutAnimation {
             emergency = nil
             path = [.login]
@@ -290,6 +297,8 @@ final class AppModel {
     /// Opens S06 at once. The chat's entry leaves in the same transaction, so nothing can return
     /// to it, and there is no slide: it must interrupt.
     func showEmergency(visitId: String, redFlag: Bool) {
+        // An emergency ends the ticket's activity and every notice at once.
+        liveTicket.end(visitId: visitId)
         withoutAnimation {
             path.removeAll { $0.visitId == visitId }
             let held = emergency?.visitId == visitId && emergency?.redFlag == true
@@ -309,6 +318,8 @@ final class AppModel {
     /// What a 404 from `getVisit` does: a demo reset took the visit, so go home and say so.
     func visitGone() {
         lastVisit = nil
+        // A demo reset took it: end whatever no longer matches a live visit.
+        Task { await liveTicket.reconcile() }
         withoutAnimation {
             emergency = nil
             path.removeAll()
@@ -385,8 +396,10 @@ final class AppModel {
 
     // The last visit read
 
+    /// Every visit read. The Live Activity and the notices follow it.
     func remember(_ visit: Visit) {
         lastVisit = visit
+        liveTicket.observe(visit)
     }
 
     func seed(for id: String) -> Visit? {
@@ -408,8 +421,11 @@ final class AppModel {
 
     /// Every language change, so the bars and the swipe edge always follow it.
     private func changeLanguage(_ change: () -> Void) {
+        let before = language.lang
         change()
         if language.lang != direction.lang { direction.apply(language.lang) }
+        // A Live Activity's language is fixed, so a live one restarts in the new language.
+        if language.lang != before { liveTicket.languageChanged() }
     }
 }
 

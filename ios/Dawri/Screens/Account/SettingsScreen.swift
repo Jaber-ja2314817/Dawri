@@ -51,6 +51,8 @@ private struct SettingsContent: View {
     @State private var attempt = 0
     @State private var showsResetConfirm = false
     @State private var isResetting = false
+    /// Each language picked here, for the picker's `.select` haptic. A switch from the toggle has none.
+    @State private var languagePicks = 0
     @State private var resetError: (any Error)?
 
     init(model: AppModel) {
@@ -107,6 +109,7 @@ private struct SettingsContent: View {
             connection = .idle
         }
         .sensoryFeedback(DS.Haptic.select, trigger: mode)
+        .sensoryFeedback(DS.Haptic.select, trigger: languagePicks)
         #if DEBUG
         .task {
             if DemoAccount.connects, DemoAccount.once("connect") { await connect() }
@@ -120,7 +123,10 @@ private struct SettingsContent: View {
     private var languageSection: some View {
         section(lang.t("settings.language")) {
             Picker(
-                selection: Binding(get: { lang }, set: { model.switchLanguage(to: $0) })
+                selection: Binding(get: { lang }, set: {
+                    languagePicks += 1
+                    model.switchLanguage(to: $0)
+                })
             ) {
                 // Each language in its own script, as the toggle shows it.
                 Text(verbatim: "العربية").tag(Lang.ar)
@@ -234,6 +240,16 @@ private struct SettingsContent: View {
                         }
                     }
                 }
+                // On this phone the demo clinic's steps are known ahead, so the reminders are set
+                // ahead and need no network. Clinic server mode says its own limit above.
+                if mode == .local {
+                    Text(verbatim: lang.t("settings.notifyLocal"))
+                        .dsText(.secondary)
+                        .foregroundStyle(DS.Color.muted)
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .accessibilityIdentifier("settings-notify-local")
+                }
                 Text(verbatim: lang.t("settings.notReviewed"))
                     .dsText(.secondary)
                     .foregroundStyle(DS.Color.muted)
@@ -252,6 +268,8 @@ private struct SettingsContent: View {
         resetError = nil
         do {
             try await driver.resetDemo()
+            // The visits are gone, so their Live Activity and reminders go too.
+            model.liveTicket.endAll()
             if model.isSignedIn { await model.reloadMe() }
         } catch {
             if !model.sessionEnded(by: error) { resetError = error }

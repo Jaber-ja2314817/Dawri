@@ -4,7 +4,7 @@ import SwiftUI
 
 /// S08. Where should I go, and how long will it take? The port of
 /// frontend/src/pages/patient/Centre.tsx and features/map/CentreList.tsx. The rules are
-/// DawriCore's `TicketRules`. The map is `CentreMapSlot`, which the map phase replaces.
+/// DawriCore's `TicketRules`. The map is `CentreMap`, on MapKit.
 struct CentreScreen: View {
     let visit: Visit
     let watcher: VisitWatcher
@@ -117,15 +117,19 @@ private struct CentreContent: View {
     @State private var chosenView: CentreView?
     @State private var mapFailed = false
     @State private var selections = 0
+    private let path: any NetworkPathProbe
 
     init(visit: Visit, watcher: VisitWatcher, model: AppModel) {
         self.visit = visit
         self.watcher = watcher
         self.model = model
         var location = model.features.location
+        var path: any NetworkPathProbe = SystemPathProbe()
         #if DEBUG
         location = DemoVisit.location(location, service: model.service, visitId: visit.visitId)
+        path = DemoVisit.pathProbe(path)
         #endif
+        self.path = path
         _centres = State(
             initialValue: CentreModel(service: model.service, location: location, visit: visit))
     }
@@ -155,7 +159,13 @@ private struct CentreContent: View {
             if pins { header }
         }
         .sensoryFeedback(DS.Haptic.select, trigger: selections)
+        // The map and list picker is a picker, iOS Design section 6.4. Only a patient's choice sets it.
+        .sensoryFeedback(DS.Haptic.select, trigger: chosenView)
         .task { await centres.load() }
+        // Once, at entry: with no network the map would be an empty grid, so S08 is the list.
+        .task {
+            if await !path.hasPath() { mapFailed = true }
+        }
         #if DEBUG
         .task { await demoHooks() }
         #endif
@@ -182,7 +192,7 @@ private struct CentreContent: View {
                 }
                 .padding(.horizontal, pins ? DS.Space.l : 0)
                 if view == .map {
-                    CentreMapSlot(
+                    CentreMap(
                         centres: list.centres, selectedId: selectedId(list),
                         onSelect: select, onFail: { mapFailed = true })
                         .padding(.horizontal, pins ? 0 : -DS.Space.l)
@@ -242,7 +252,7 @@ private struct CentreContent: View {
                 Rectangle()
                     .fill(DS.Color.skeleton)
                     .frame(maxWidth: .infinity)
-                    .modifier(MapSlotFrame())
+                    .modifier(CentreMapFrame())
             }
         }
         .padding(.bottom, pins ? DS.Space.m : 0)
@@ -467,10 +477,12 @@ private struct CentreContent: View {
         case "map": chosenView = .map
         default: break
         }
-        guard DemoVisit.locates || DemoVisit.reserves else { return }
+        guard DemoVisit.locates || DemoVisit.reserves || DemoVisit.selection != nil else { return }
         while centres.list == nil, !Task.isCancelled {
             try? await Task.sleep(for: .milliseconds(100))
         }
+        // The same pick a pin or a row makes, without the haptic of a tap nobody made.
+        if let wanted = DemoVisit.selection, DemoVisit.once("select") { centres.pick(wanted) }
         if DemoVisit.locates, DemoVisit.once("locate") { await centres.locate() }
         if DemoVisit.reserves, DemoVisit.once("reserve"), let list = centres.list,
            let centre = TicketRules.selected(picked: centres.picked, list: list) {

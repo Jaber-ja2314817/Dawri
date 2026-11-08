@@ -814,6 +814,7 @@ Layout: fixed control row, fixed map, then a scroll of details.
 | Accessibility sizes | Starts on the list. Map view available at 220 |
 | Until the map phase | `Screens/Visit/CentreMapSlot.swift` holds the map's place at the map's geometry: a flat `raised` ground with `centre.mapPlaceholder`, hairline top and bottom, and no pins. It is the one view MapKit replaces, and it reports a failed map through `onFail` |
 | As built | The title heads the fixed part, above the control row, so the order reads title, controls, map, details. At accessibility sizes nothing is fixed and it all scrolls, so the controls cannot crowd out the details. `centre.checkIn` sits in the selected card, first in the scroll in both views |
+| As built, Phase 4 | `Screens/Visit/CentreMap.swift` replaced `CentreMapSlot`, at the same geometry, and the unused `centre.mapPlaceholder` key is gone. The map never reads the patient's location: there is no patient dot, and distances come only from the Use my location tap. MapKit's Legal link stays visible at Apple's size, about 29 by 11 pt, below the 44 pt rule, and `AccessibilityAuditTests` accepts it with its reason. The map and list picker plays `.select` |
 
 ### S09 Ticket reserved
 
@@ -834,6 +835,8 @@ Question: how long do I have to arrive?
 | Time ran out | Countdown holds at `00:00` and refetches every 5 s. The web pads minutes too, so it starts at `45:00` |
 | Expired | `reserved.expiredTitle`, `reserved.expiredBody`, `reserved.chooseAgain` primary. Same route, no back into the countdown. No no-show wording |
 | Camera denied | Sheet shows the typed field only |
+| As built, camera unavailable | With the camera refused, or with no camera, as on the simulator, the sheet shows the typed field under one `.secondary` `muted` line, `reserved.cameraUnavailable`. When the camera may be used, the preview sits above the typed field with `reserved.scanHint` under it. A read that is not a door code, a link included, is ignored and nothing is opened |
+| As built, imprecise location | When the patient has chosen approximate location, the app asks once for full accuracy with the purpose key `ArrivalCheck`. If that is refused, a `Notice` says `reserved.locationImprecise` and offers I'm here and the door code. Every other location failure stays `reserved.locationFailed` |
 
 ### S10 Live ticket
 
@@ -962,6 +965,13 @@ The number and current stage are the only hue. `keylineTint` is `ink` dark. Ever
 Limits: `.dynamicTypeSize(...DynamicTypeSize.xLarge)`, `lineLimit(1)` throughout. All four Island regions and the Lock Screen must exist even as Phase 1 placeholders. Number transitions use `.contentTransition(.numericText())`, and the system handles Reduce Motion here. `footer.ai` is left out, because nothing here is AI output.
 
 Local notifications use `notify.next` and `notify.stage`, with the system default sound. In On this phone mode they are scheduled ahead. Clinic server mode states the limit in Settings.
+
+| As built | Detail |
+| --- | --- |
+| Shared views | The presentations are plain SwiftUI in DawriCore, `Live/TicketLiveViews.swift`, with their text and colours in `TicketLiveText` and `TicketLiveColors` from `DSPalette`. The widget extension and the DEBUG gallery (`-demoScreen live`) draw the same views, so `swift test` checks their text and the gallery shots show every state |
+| Starting | The rule also starts an activity on a numbered called or serving ticket, as after a relaunch while called. It never starts while reserved or without a number. The stale date is the next planned demo step, or 120 s when no plan is known |
+| Probe | A DEBUG-only `-demoLiveProbe 1` adds `live-probe`, which reads the system's own running activities and pending notices, so `LiveActivityTests` and `NotificationTests` check what ActivityKit and `UNUserNotificationCenter` hold. It compiles out of Release |
+| Notices | A notice that arrives with the app open goes to Notification Centre only, with no banner. At launch and on return, notices and activities of visits that are no longer live are cleared, so none fires for a visit that ended or is gone while the app was not running |
 
 ## 10. App icon
 

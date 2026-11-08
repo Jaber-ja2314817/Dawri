@@ -7,7 +7,9 @@ import SwiftUI
 /// only place that stages from them, and all of it compiles out of Release. A screen's own hook
 /// reads `DemoLaunch.current?.argument("demoSomething")` from its own file, under `#if DEBUG`.
 ///
-///     -demoScreen s01...s12|chat|emergency|refill|centre|reserved|ticket|complete|consent|settings|gallery
+///     -demoScreen s01...s12|chat|emergency|refill|centre|reserved|ticket|complete|consent|settings|gallery|live
+///     -demoPage active|called|serving|between|stale|ended, with `live`: that state of the Live
+///       Activity gallery, or every state with no page
 ///     -demoLang ar|en  -demoPatient <qid>  -demoStage <stage>  -demoConfirmed 0|1
 ///     -demoTheme light|dark  -demoPage <gallery page>  -demoSwitchTo ar|en  -demoControls 1
 ///     -demoPushAfter <seconds>, which opens S02, so a recording can catch the push
@@ -94,6 +96,9 @@ struct DemoLaunch: Sendable {
 
     var showsGallery: Bool { screen == "gallery" }
 
+    /// `-demoScreen live`: every Live Activity presentation, `LiveGallery`.
+    var showsLiveGallery: Bool { screen == "live" }
+
     /// DEBUG launches never touch the saved language or the saved clinic, so they cannot change
     /// a normal launch. A language asked for here counts as the viewer's choice, or the record's
     /// language would replace it on the first `getMe`.
@@ -114,7 +119,7 @@ struct DemoLaunch: Sendable {
             return AppModel(
                 service: proxy(LocalClinicService(store: MemoryClinicStore())), language: language,
                 isSignedIn: false, path: destination?.route("").map { [$0] } ?? [],
-                settings: settings)
+                features: features, settings: settings)
         }
         let stage = stage ?? destination?.stage ?? .triage
         let staged = waitForStaging(
@@ -124,7 +129,8 @@ struct DemoLaunch: Sendable {
         faults.setVisit(staged.visitId)
         let model = AppModel(
             service: proxy(staged.service), language: language, isSignedIn: true,
-            path: destination?.route(staged.visitId).map { [$0] } ?? [], settings: settings)
+            path: destination?.route(staged.visitId).map { [$0] } ?? [], features: features,
+            settings: settings)
         model.demoVisitId = staged.visitId
         if redFlag { model.showEmergency(visitId: staged.visitId, redFlag: true) }
         return model
@@ -298,6 +304,7 @@ struct DemoRootModifier: ViewModifier {
         let demo = DemoLaunch.current
         content
             .preferredColorScheme(demo?.theme)
+            .modifier(LiveProbeModifier())
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 if demo?.showsTestControls == true {
                     DemoControls()
@@ -321,11 +328,13 @@ struct DemoRootModifier: ViewModifier {
 /// an overlay would sit on Call 999.
 struct DemoCoverModifier: ViewModifier {
     func body(content: Content) -> some View {
-        content.safeAreaInset(edge: .bottom, spacing: 0) {
-            if DemoLaunch.current?.showsTestControls == true {
-                DemoControls()
+        content
+            .modifier(LiveProbeModifier())
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                if DemoLaunch.current?.showsTestControls == true {
+                    DemoControls()
+                }
             }
-        }
     }
 }
 

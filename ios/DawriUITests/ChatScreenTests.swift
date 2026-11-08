@@ -240,11 +240,12 @@ final class ChatScreenTests: XCTestCase {
         }
     }
 
-    /// The build's own recogniser reports itself unavailable: the line shows, the field takes
-    /// focus, and typing still works. Nothing is sent to a server.
+    /// A recogniser that reports itself unavailable: the line shows, the field takes focus, and
+    /// typing still works. Nothing is sent to a server. The scripted one stands in, so this test
+    /// never opens the Mac's microphone. VoiceNativeTests drives the phone's own recogniser.
     @MainActor
     func testVoiceUnavailableSaysSoAndTypingStillWorks() {
-        let app = chat(fatima, lang: "en", "-demoChat", "opening")
+        let app = chat(fatima, lang: "en", "-demoChat", "opening", "-demoVoice", "unavailable")
         app.element("chat-mic").tap()
         assertShown(app.element("voice-error"))
         XCTAssertEqual(

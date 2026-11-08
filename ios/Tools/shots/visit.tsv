@@ -1,7 +1,12 @@
 # S08, S09, S10 and S11. See shoot.sh for the columns. The hooks are in
 # ios/Dawri/Debug/DemoVisit.swift and DemoLaunch.swift. -demoFreeze 1 keeps the demo clinic still
-# under the shot. The map is CentreMapSlot's honest placeholder until the map phase.
-s08-map-placeholder	3.5	-	-demoScreen s08 -demoFreeze 1 -demoView map
+# under the shot. The map rows settle for 8 s, so MapKit's tiles have landed under the badges.
+# s08-map selects the registered centre by default. s08-map-selected picks another one, so its
+# badge must be ink, never the hue. s08-map-offline is the path probe finding no network.
+s08-map	8	-	-demoScreen s08 -demoFreeze 1 -demoView map
+s08-map-selected	8	-	-demoScreen s08 -demoFreeze 1 -demoView map -demoSelect C-AIRPORT
+s08-map-ax3	8	ax3	-demoScreen s08 -demoFreeze 1 -demoView map
+s08-map-offline	3.5	-	-demoScreen s08 -demoFreeze 1 -demoOffline 1
 s08-list	3.5	ax3	-demoScreen s08 -demoFreeze 1 -demoView list
 s08-loading	3	-	-demoScreen s08 -demoFreeze 1 -demoHold listCentres
 s08-no-services	3.5	-	-demoScreen s08 -demoFreeze 1 -demoPatch noCentres

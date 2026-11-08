@@ -1,20 +1,38 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "NSCameraUsageDescription" : {
-      "comment" : "Why the app asks for the camera: scanning the door QR code.",
+    "ArrivalCheck" : {
+      "comment" : "Why the app asks once for precise location, the purpose key passed to requestTemporaryFullAccuracyAuthorization. Apple localises a purpose key under the bare key.",
       "extractionState" : "manual",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "يستخدم دوري الكاميرا لمسح رمز الباب في مركزك الصحي. لا يُحفظ ما تراه الكاميرا ولا يُرسل. يمكنك كتابة الرمز بدلاً من ذلك."
+            "value" : "يحتاج دوري إلى موقعك الدقيق مرة واحدة، للتحقق من أنك على بُعد 150 م أو أقل من مركزك الصحي."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dawri uses the camera to scan the door code at your health centre. Nothing the camera sees is saved or sent. You can type the code instead."
+            "value" : "Dawri needs your precise location once, to check that you are within 150 m of your health centre."
+          }
+        }
+      }
+    },
+    "NSCameraUsageDescription" : {
+      "comment" : "Why the app asks for the camera: reading the door QR code.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "يستخدم دوري الكاميرا فقط لقراءة رمز الباب في مركزك الصحي. لا تُحفظ الصورة ولا تُرسل أبداً. يمكنك كتابة الرمز بدلاً من ذلك."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dawri uses the camera only to read the door code at your health centre. The picture is never saved or sent. You can type the code instead."
           }
         }
       }
@@ -38,37 +56,37 @@
       }
     },
     "NSLocationWhenInUseUsageDescription" : {
-      "comment" : "Why the app asks for location: the arrival check at the health centre.",
+      "comment" : "Why the app asks for location: one reading on a tap, for centre distances on S08 and the arrival check on S09.",
       "extractionState" : "manual",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "يتأكد دوري من وصولك إلى مركزك الصحي عندما تضغط على «أنا هنا». يُستخدم موقعك لهذا التحقق فقط."
+            "value" : "يقرأ دوري موقعك مرة واحدة، فقط عندما تضغط على «استخدم موقعي» أو «تأكيد وصولي بالموقع»، ليعرض بُعد كل مركز صحي ويتحقق من وصولك. لا يتتبع دوري موقعك في الخلفية أبداً."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dawri checks that you have reached your health centre when you tap I'm here. Your location is used only for that check."
+            "value" : "Dawri reads your location once, only when you tap Use my location or Check with my location, to show how far each health centre is and to check that you have arrived. Dawri never follows your location in the background."
           }
         }
       }
     },
     "NSMicrophoneUsageDescription" : {
-      "comment" : "Why the app asks for the microphone: speaking to the receptionist.",
+      "comment" : "Why the app asks for the microphone: speaking to the receptionist, recognised on the device only.",
       "extractionState" : "manual",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "يستخدم دوري الميكروفون لتتحدث إلى موظف الاستقبال بدلاً من الكتابة. يبقى كلامك على هذا الهاتف، ولا يُرسل الصوت ولا يُحفظ أبداً."
+            "value" : "يستخدم دوري الميكروفون لتتحدث إلى موظف الاستقبال بدلاً من الكتابة. يتحوّل صوتك إلى نص على هذا الهاتف، ولا يُرسل التسجيل الصوتي ولا يُحفظ أبداً."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dawri uses the microphone so you can speak to the receptionist instead of typing. Speech stays on this phone. Audio is never sent or stored."
+            "value" : "Dawri uses the microphone so you can speak to the receptionist instead of typing. Your voice is turned into text on this phone, and the audio is never sent or saved."
           }
         }
       }
@@ -80,13 +98,13 @@
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "يحوّل دوري كلامك إلى نص على هذا الهاتف، وتراجع النص قبل إرساله. يبقى كلامك على هذا الهاتف، ولا يُرسل الصوت ولا يُحفظ أبداً."
+            "value" : "يحوّل دوري كلامك إلى نص على هذا الهاتف فقط، وليس على أي خادم. تراجع النص قبل إرساله، ولا يُرسل التسجيل الصوتي ولا يُحفظ أبداً."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dawri turns your speech into text on this phone, and you check the text before it is sent. Speech stays on this phone. Audio is never sent or stored."
+            "value" : "Dawri turns your speech into text on this phone only, never on a server. You check the text before it is sent, and the audio is never sent or saved."
           }
         }
       }

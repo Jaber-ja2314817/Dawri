@@ -39,6 +39,8 @@ final class ArrivalModel {
     enum Note: Equatable {
         case tooFar(metres: Int)
         case locationFailed
+        /// Only approximate location is allowed, so 150 m cannot be checked.
+        case locationImprecise
     }
 
     private(set) var busy: Busy?
@@ -66,14 +68,15 @@ final class ArrivalModel {
         return await send(.button)
     }
 
-    /// `hereByLocation`: one reading, then the clinic checks the distance.
+    /// `hereByLocation`: one reading, then the clinic checks the distance against
+    /// `TicketRules.geofenceMetres`.
     func hereByLocation() async -> Outcome {
         start(.location)
         let point: LocationPoint
         do {
             point = try await location.currentPoint()
         } catch {
-            note = .locationFailed
+            note = (error as? LocationFailure) == .imprecise ? .locationImprecise : .locationFailed
             busy = nil
             return .shown
         }
@@ -135,6 +138,7 @@ private struct ReservedContent: View {
     @Environment(\.lang) private var lang
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var arrival: ArrivalModel
+    private let scanner: any DoorScanner
     @State private var ranOut = false
     @State private var showsDoorSheet = false
     @State private var doorCode = ""
@@ -150,6 +154,11 @@ private struct ReservedContent: View {
         _arrival = State(
             initialValue: ArrivalModel(
                 service: model.service, location: location, visitId: visit.visitId))
+        #if DEBUG
+        scanner = DemoVisit.scanner(model.features.scanner)
+        #else
+        scanner = model.features.scanner
+        #endif
     }
 
     private var expired: Bool { visit.stage == .expired }
@@ -180,6 +189,7 @@ private struct ReservedContent: View {
         .sheet(isPresented: $showsDoorSheet) {
             DoorCodeSheet(
                 code: $doorCode, isBusy: arrival.busy == .code, wrongDoor: arrival.wrongDoor,
+                scanner: scanner,
                 onEdit: { arrival.clearDoorError() },
                 onSubmit: { Task { await submitCode() } },
                 onCancel: { showsDoorSheet = false })
@@ -238,6 +248,9 @@ private struct ReservedContent: View {
             case .locationFailed:
                 Notice(lang.t("reserved.locationFailed"))
                     .accessibilityIdentifier("location-failed")
+            case .locationImprecise:
+                Notice(lang.t("reserved.locationImprecise"))
+                    .accessibilityIdentifier("location-imprecise")
             case nil:
                 EmptyView()
             }

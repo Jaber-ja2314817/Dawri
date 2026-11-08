@@ -1,0 +1,7 @@
+# S09's phone-only states, from the arrival work. See shoot.sh for the columns. The hooks are in
+# ios/Dawri/Debug/DemoVisit.swift. s09-door-camera-denied is the door sheet with the camera
+# refused, the typed field only (Phase 3's 'camera denied' exclusion). s09-location-imprecise is
+# approximate location with the precise prompt declined.
+
+s09-door-camera-denied	4	ax3	-demoScreen s09 -demoFreeze 1 -demoSheet door -demoCamera denied
+s09-location-imprecise	4	-	-demoScreen s09 -demoFreeze 1 -demoLocation imprecise -demoArrive location

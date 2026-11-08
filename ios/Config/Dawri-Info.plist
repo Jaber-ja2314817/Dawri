@@ -15,15 +15,20 @@
 		<true/>
 	</dict>
 	<key>NSCameraUsageDescription</key>
-	<string>Dawri uses the camera to scan the door code at your health centre. Nothing the camera sees is saved or sent. You can type the code instead.</string>
+	<string>Dawri uses the camera only to read the door code at your health centre. The picture is never saved or sent. You can type the code instead.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Dawri connects to a clinic server on your local network only if you choose Clinic server in Settings.</string>
+	<key>NSLocationTemporaryUsageDescriptionDictionary</key>
+	<dict>
+		<key>ArrivalCheck</key>
+		<string>Dawri needs your precise location once, to check that you are within 150 m of your health centre.</string>
+	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Dawri checks that you have reached your health centre when you tap I'm here. Your location is used only for that check.</string>
+	<string>Dawri reads your location once, only when you tap Use my location or Check with my location, to show how far each health centre is and to check that you have arrived. Dawri never follows your location in the background.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Dawri uses the microphone so you can speak to the receptionist instead of typing. Speech stays on this phone. Audio is never sent or stored.</string>
+	<string>Dawri uses the microphone so you can speak to the receptionist instead of typing. Your voice is turned into text on this phone, and the audio is never sent or saved.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>Dawri turns your speech into text on this phone, and you check the text before it is sent. Speech stays on this phone. Audio is never sent or stored.</string>
+	<string>Dawri turns your speech into text on this phone only, never on a server. You check the text before it is sent, and the audio is never sent or saved.</string>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
 	<key>UILaunchScreen</key>

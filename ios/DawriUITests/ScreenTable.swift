@@ -81,6 +81,9 @@ enum ScreenTable {
         ScreenCase(
             name: "s08-map", arguments: ["-demoScreen", "s08", "-demoView", "map"] + frozen, screen: "screen-centre", back: .home),
         ScreenCase(
+            name: "s08-map-selected", arguments: ["-demoScreen", "s08", "-demoView", "map", "-demoSelect", "C-AIRPORT"] + frozen,
+            screen: "screen-centre", back: .home),
+        ScreenCase(
             name: "s08-list", arguments: ["-demoScreen", "s08", "-demoView", "list"] + frozen, screen: "screen-centre",
             back: .home),
         ScreenCase(
@@ -117,5 +120,23 @@ enum ScreenTable {
         ScreenCase(
             name: "settings-server", arguments: ["-demoScreen", "settings", "-demoMode", "server"], screen: "screen-settings",
             back: .pushed),
+    ]
+
+    /// States that are not a screen of their own, so EverywhereTests, which looks for a screen's
+    /// footer, toggle and Back, does not walk them. AccessibilityAuditTests audits them with the
+    /// table in both languages.
+    static let auditOnly: [ScreenCase] = [
+        // The door sheet over S09 with the camera refused: the typed field only, under
+        // reserved.cameraUnavailable. A sheet has no Back and no toggle of its own.
+        ScreenCase(
+            name: "s09-door-camera-denied",
+            arguments: ["-demoScreen", "s09", "-demoSheet", "door", "-demoCamera", "denied"] + frozen,
+            screen: "door-sheet", back: .none),
+        // The DEBUG gallery of the Live Activity's presentations in the active state, drawn by the
+        // same TicketLive views as the widget extension. It stands in for the Lock Screen and the
+        // Island, which XCTest cannot audit. It is a review page, with no footer or toggle.
+        ScreenCase(
+            name: "live-gallery-active", arguments: ["-demoScreen", "live", "-demoPage", "active"],
+            screen: "live-gallery", back: .none),
     ]
 }

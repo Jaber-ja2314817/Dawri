@@ -6,6 +6,13 @@ import SwiftUI
 /// the same environment, so a switch re-renders it in place and cannot dismiss it.
 struct RootView: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.scenePhase) private var scenePhase
+
+    /// What the Live Activity follower runs for: the app in front, and who is signed in.
+    private struct FollowKey: Hashable {
+        let active: Bool
+        let signedIn: Bool
+    }
 
     var body: some View {
         @Bindable var model = model
@@ -34,6 +41,19 @@ struct RootView: View {
         .dynamicTypeSize(typeSizes)
         .accessibilityIdentifier("app-root")
         .task { await model.load() }
+        .task(id: FollowKey(active: scenePhase == .active, signedIn: model.isSignedIn)) {
+            // Coming back to the front catches the Live Activity up, and while in front the newest
+            // live visit is followed, so the activity keeps moving on Home too. At launch, and
+            // signed out, activities that match no live visit end.
+            let active = scenePhase == .active
+            model.liveTicket.sceneChanged(active: active)
+            guard active else { return }
+            if model.isSignedIn {
+                await model.liveTicket.follow()
+            } else {
+                await model.liveTicket.reconcile()
+            }
+        }
         #if DEBUG
         .modifier(DemoRootModifier())
         #endif
@@ -59,6 +79,8 @@ struct RootView: View {
         #if DEBUG
         if DemoLaunch.current?.showsGallery == true {
             ComponentGallery()
+        } else if DemoLaunch.current?.showsLiveGallery == true {
+            LiveGallery()
         } else {
             RouteScreen(route: model.root)
         }

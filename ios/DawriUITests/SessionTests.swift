@@ -113,6 +113,43 @@ final class SessionTests: XCTestCase {
         wait(for: [expectation(for: pulled, evaluatedWith: app)], timeout: 5)
     }
 
+    /// Pulls a screen down from a quarter to three quarters of its height, then waits for one more
+    /// call of `route` than before the pull.
+    @MainActor
+    private func assertPullRefetches(_ route: String, _ app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
+        let loaded = NSPredicate { _, _ in self.calls(route, in: app) >= 1 }
+        wait(for: [expectation(for: loaded, evaluatedWith: app)], timeout: 5)
+        sleep(1)
+        let before = calls(route, in: app)
+        let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25))
+        let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.75))
+        start.press(forDuration: 0.1, thenDragTo: end)
+        let pulled = NSPredicate { _, _ in self.calls(route, in: app) > before }
+        let result = XCTWaiter().wait(for: [expectation(for: pulled, evaluatedWith: app)], timeout: 5)
+        XCTAssertEqual(result, .completed, "a pull did not call \(route) again", file: file, line: line)
+    }
+
+    /// S10 pulls to read the visit again, as iOS Design section 8 says, on a frozen clock so
+    /// nothing else reads it in the meantime.
+    @MainActor
+    func testPullToRefreshReadsTheTicketAgain() {
+        let app = launch(
+            "-demoLang", "en", "-demoScreen", "s10", "-demoPatient", "DEMO-10001", "-demoFreeze", "1",
+            "-demoControls", "1")
+        assertShown(app.element("screen-ticket"))
+        assertPullRefetches("getVisit", app)
+    }
+
+    /// S12 pulls to read the history again.
+    @MainActor
+    func testPullToRefreshReadsTheHistoryAgain() {
+        let app = launch(
+            "-demoLang", "en", "-demoScreen", "s12", "-demoPatient", "DEMO-10002", "-demoHistory", "mixed",
+            "-demoFreeze", "1", "-demoControls", "1")
+        assertShown(app.element("screen-history"))
+        assertPullRefetches("listVisits", app)
+    }
+
     /// Each move starts the new gate from the last read, so its first frame is the screen.
     @MainActor
     func testAStageMoveShowsNoSkeleton() {

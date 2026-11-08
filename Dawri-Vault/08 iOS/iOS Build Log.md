@@ -255,3 +255,157 @@ Everything below is from my own runs on `build/dawri-ios`, in `scratchpad/r2`. I
   - `sync-strings` imports no backend code.
 - **Simulator artefact:** a few AX3 and S06 shots show the simulator's Dynamic Island box. It is the simulator, not app content.
 - **Not committed:** the round 2 change (`visit.tsv`) is not committed yet. `64e1525` is still labelled WIP, not approved.
+
+## Phase 4: Native features (approved on review round 2 of 4, 8 Nov)
+
+### Plan
+Build the native table in [[iOS Brief]] on Apple's own frameworks, free and with no account, each behind a protocol with a fake so its logic is tested and the hardware part is listed honestly for the phone:
+- on-device speech with a transcript confirm and a typing fallback, never server recognition
+- MapKit centres with wait badges and the list fallback
+- one Core Location reading on the patient's tap for "I'm here", with the door code kept
+- QR scanning with the typed fallback
+- a Live Activity and Dynamic Island driven locally with no push, and local notifications scheduled ahead in On this phone mode
+- haptics, native sheets, swipe back, pull to refresh, keyboard handling, tel 999
+- Info.plist usage strings in both languages, privacy manifests, VoiceOver in AR and EN, Dynamic Type to AX3, Reduce Motion and dark mode
+- everything signs on a free Personal Team
+
+Shot rows were added for the Phase 3 exclusions: Map selection, camera denied and the Live Activity.
+
+### What was built
+- **`ios/Dawri/Native/`:**
+  - `SpeechVoiceEngine`: `Speech` with `requiresOnDeviceRecognition = true`, fed by an `AVAudioEngine` tap, with no file or recorder.
+  - `CoreLocationSource`: one when-in-use reading, a 10 s timeout, and one temporary precise prompt with the `ArrivalCheck` purpose key.
+  - `CameraDoorScanner` and `DoorScannerView`: `AVCaptureSession` reading QR codes only, and nothing read is opened.
+  - `ActivityTicketLive`: `Activity.request` with `pushType: nil`.
+  - `LocalVisitNotifier`: notices go to Notification Centre only while the app is open.
+  - `LiveTicketCoordinator`: keeps the activity and the notices in step with every visit the app reads.
+- **Screens:**
+  - `Screens/Visit/CentreMap.swift` replaced `CentreMapSlot`: a MapKit `Map` with one `Annotation` `WaitBadge` per centre, LTR in Arabic, the camera fitted once, and `NWPathMonitor` deciding the list-only state.
+  - The door sheet's camera block and the S09 imprecise-location notice.
+  - Settings `settings.notifyLocal`.
+- **DawriCore:**
+  - `Patient/`: `VoiceAvailability`, `LocationRules` and `DoorScan`.
+  - `Live/`: `LiveTicketRules`, `NotificationPlan`, `TicketLiveViews`, and `TicketLiveState.ticketState` and `centreName`.
+  - Suites for each, plus `LocationGuardTests`, which keeps `CLLocationManager` inside `CoreLocationSource` and forbids `UserAnnotation`, `showsUserLocation`, `startUpdatingLocation`, `MapUserLocationButton`, `startMonitoring`, `CLMonitor` and `requestAlwaysAuthorization`.
+- **The widget extension** draws the shared DawriCore views with `DSPalette` colours.
+- **Plist and privacy:** `PrivacyInfo.xcprivacy` in the app and the extension. `InfoPlist.xcstrings` holds the AR and EN usage strings.
+- **Phone-only keys:** six in each language: `reserved.scanHint`, `reserved.cameraLabel`, `reserved.cameraUnavailable`, `reserved.locationImprecise`, `centre.pinSelected` and `settings.notifyLocal`.
+- **Debug only:** `DemoFeatures`, the `-demoCamera`, `-demoVoice device`, `-demoNotify`, `-demoLiveProbe`, `-demoOffline` and `-demoSelect` hooks, and `LiveGallery`.
+- **UI tests:** `MapTests`, `ArrivalNativeTests`, `VoiceNativeTests`, `LiveActivityTests` and `NotificationTests`.
+- **Shot tables:** `ios/Tools/shots/arrival.tsv` and `live.tsv`, and the S08 map rows in `visit.tsv`.
+- **`ios/README.md`:** "What only a real iPhone can prove".
+- **Round 1 failure and its fix:** S08's map showed the patient's dot and the location arrow whenever when-in-use was allowed, through `UserAnnotation()`. That broke the usage string's "once, only when you tap" promise. The fix removed the dot and every location read from `CentreMap.swift`, and added `LocationGuardTests`.
+
+### Evidence (the reviewer's own runs, round 2)
+Everything below is from my own runs on `build/dawri-ios`, with my own scratch and derived folders in the session scratchpad. The Mac was on AC power at 100%, every long run was wrapped in `caffeinate -i`, and `pmset -g log` shows no sleep during the runs. I started no server, never read `.env`, ran no `hf`, and sent nothing to any Hugging Face or model-provider host. The exporters ran with every socket connect blocked by `common.py`.
+
+**Round 1 failure, re-verified**
+- `CentreMap.swift` has no `UserAnnotation`, `CLLocationManager` or location read. A grep of `ios/Dawri`, `ios/DawriLive` and `DawriCore/Sources` finds `CLLocationManager` only in `Native/CoreLocationSource.swift`, and none of the seven forbidden names.
+- With location granted through `simctl privacy`, a plain launch onto the S08 map shows no Location Services arrow and no patient dot. After the Use my location tap, the card shows "Distance 5 km" and there is still no dot.
+
+**Core tests**
+- `swift test --scratch-path <tmp>`: 570 tests in 86 suites passed, 0 skipped, exit 0. It includes:
+  - the new suites: VoiceAvailability, LocationRules, location source guards, DoorScan, LiveTicketRules, NotificationPlan and TicketLiveState fields
+  - every safety golden: red flags, conversation, refill, text, regex, parsers, read-back, clinic rules, session replay and the manifests
+- The build gives 8 warnings in `TicketLiveTextTests.swift`: a main-actor initialiser called from a nonisolated context.
+- A grep for `XCTSkip`, `.disabled(` and `withKnownIssue` in `DawriCore/Tests` and `DawriUITests` finds nothing.
+
+**Strings and exporters**
+- `sync-strings --check`: exit 0.
+- The six new keys are in both languages, with equal key sets: 267 and 267 in DawriCore, and 35 and 35 in `Tools/strings`.
+- `export-engine-data --check` and `export-goldens --check`: exit 0. They ran with `HF_TOKEN=` blank, `HF_HUB_OFFLINE=1`, `SIMULATE_LOAD=1` and a temp `DAWRI_DB`, and the engine export printed "ai_mode simulated" for rules and clinic.
+
+**UI tests on Dawri Build**
+- **Run 1**, the full Dawri scheme from a clean derived folder: 157 tests, 155 passed, in 4,129 s.
+  - All of these passed: MapTests 8, ArrivalNativeTests 8, VoiceNativeTests 3, LiveActivityTests 7, NotificationTests 5, JourneyTests 7, Emergency 15, Chat 10, Visit 13, Account 23, Session 11, Back 3, SwipeHold 2, Everywhere 4, and the rest.
+  - `AccessibilityAuditTests` failed in AR and EN on one row, `chat-summary`:
+    - AR: contrast on "Change something", and four "potentially inaccessible text" findings with no element
+    - EN: contrast on two question bubbles and "Change something"
+  - The xcresult's screen recording, at the moment of the EN audit, shows those elements at rest, black text on white.
+  - Earlier phases did not change this screen, and the round 1 review run passed it.
+- **Rerun** of `AccessibilityAuditTests` alone: AR and EN both passed, with every row including `s08-map-selected`, `s09-door-camera-denied` and `live-gallery-active`.
+- **Repeats:** the chat rows repeated four times per language with `-test-iterations 4` passed 8 of 8. No sleep or power event was logged.
+- So I record this as a flake of the audit in the first minutes of a fresh run, not as a product defect. It is listed under Known gaps.
+- **NotificationTests from a fresh install:**
+  - With `simctl uninstall` and no reboot, three tests failed. The simulator's own log shows "Added notification request: hasError: 0" for each notice, then "Got 0 pending". The system dropped requests it had accepted, and it kept the permission as authorized across the uninstall.
+  - After a simulator reboot, all 5 passed.
+  - After uninstall and reboot, all 5 passed:
+    - no prompt on a launch onto S10, and none on S09 before arrival
+    - the system prompt at I'm here, answered Allow
+    - the plan's notices pending
+    - rescheduled after Demo: next step
+    - none after completion
+  - This was environmental, from simulator state, with log evidence. Both runs are reported.
+- **LiveActivityTests from a fresh install:** 7 of 7 passed.
+
+**Location by shell**, with `xcrun simctl location set` and permission granted:
+- about 20 m from Al Wakra, `-demoArrive location` gives S10 with T-014
+- about 5 km away gives "You are 5004 m from the centre, and check-in works within 150 m."
+- Afterwards the location was cleared and privacy reset.
+
+**Screenshots**
+- `ios/Tools/shoot.sh` over all rows: "128 rows, 630 images", exit 0. That equals the count from the tables.
+- I viewed every Phase 4 image against iOS Design section 11:
+  - **s08-map:** AR light and EN dark.
+  - **s08-map-selected:** all four. The selected badge is ink, not the hue: black in light, the light ink in dark.
+  - **s08-map-ax3:** all four AX3.
+  - **s08-map-offline:** the notice and the list only, with no picker.
+  - **s09-door-camera-denied:** all four, plus AX3: the typed field only, under `reserved.cameraUnavailable`.
+  - **s09-location-imprecise.**
+  - **The live gallery:** active, called, serving, between, stale and ended, in AR and EN, light and dark.
+  - **live-island:** the system's real compact Dynamic Island, with T-014 in the hue.
+- In all of them:
+  - The map stays LTR in Arabic, with Al Wakra east of Al Rayyan.
+  - Arabic is right-aligned, with Latin digits.
+  - The footer and AI line are present.
+  - Nothing is clipped at AX3.
+- **Colour scan** (top 170 px excluded, tolerance 30). The MapKit rectangle is excluded on S08 map views; it is found as the band of tile rows, for example y 646 to 1637 px.
+  - No hue or saturated blue outside S10, the galleries, the Live views and the Island.
+  - The map tiles' water was the only hit before the exclusion.
+  - No image outside S06 is above 1% `#c4242a`.
+  - Every S10 and Live state has hue, except `ended`, which by design has none.
+
+**Info.plist, privacy and signing**
+- **Info.plist:** the built `Dawri.app` has `NSCameraUsageDescription`, `NSMicrophoneUsageDescription`, `NSSpeechRecognitionUsageDescription`, `NSLocationWhenInUseUsageDescription`, `NSLocationTemporaryUsageDescriptionDictionary/ArrivalCheck`, `NSLocalNetworkUsageDescription` and `NSSupportsLiveActivities`. It has no Always-location key and no `UIBackgroundModes`.
+- **Usage strings:** `ar.lproj` and `en.lproj` `InfoPlist.strings` each hold all six, non-empty. The AR and EN location text promises one reading per tap, which now holds.
+- **Privacy manifests:** `PrivacyInfo.xcprivacy` is in the `.app` and the `.appex` and passes `plutil -lint`. It declares tracking false, no tracking domains, no collected data and UserDefaults `CA92.1`. A grep for other required-reason APIs finds none.
+- **Entitlements:** there is no `CODE_SIGN_ENTITLEMENTS`. `codesign -d --entitlements -` shows none on the Debug and Release `.app` and `.appex`.
+- **Device build:** `generic/platform=iOS` with `CODE_SIGNING_ALLOWED=NO`: BUILD SUCCEEDED.
+- **Signing attempt** without `-allowProvisioningUpdates`: BUILD FAILED with "No profiles for 'com.jaber.dawri' / 'com.jaber.dawri.live' were found… pass -allowProvisioningUpdates". That is expected with no Xcode account session. No capability error appeared.
+- **Release build:** the Release simulator build succeeded. `strings` on its binary and extension finds 0 of `demoScreen`, `demoCamera`, `demoVoice`, `demoLiveProbe`, `demoNotify`, `demoSelect`, `demoOffline`, `demoLocation`, `demoFreeze` and `live-probe`. The Debug dylib has them, so the search works.
+
+**Code reading and greps**
+- **Speech:** one recognition request, with `requiresOnDeviceRecognition = true`. There is no `= false`, `SFSpeechURLRecognitionRequest`, `AVAudioRecorder`, `AVAudioFile` or `URLSession` anywhere in `ios/`.
+- **No restricted APIs:** no `startMonitoring`, `CLMonitor` or `requestAlwaysAuthorization`.
+- **Scanner path:** no `openURL` or `UIApplication.open`.
+- **Notifications:** no time-sensitive interruption level. Nothing is scheduled ahead without `DemoDriving`.
+- **Hugging Face:** `hf.space` and `huggingface` appear only in the `ServerAddress` guards, their tests, a test's banned list, a shot row and the harvest plugin's banned regex.
+- **Haptics:** every `DS.Haptic` event in Design 6.4 is wired.
+- **Sheets:** the door sheet is `.large`, and reset uses a `confirmationDialog`.
+- **Pull to refresh:** `.refreshable` on S03, S10 and S12.
+- **Reduce Motion:** the new pin press goes through `DS.Motion.resolved`.
+- **VoiceOver labels:** in both languages, for the pins, the scanner preview, the mic and the Live views.
+
+**Repo and simulators**
+- `git diff bb37797 -- backend frontend` is empty. Since `42e6e73`, every change is under `ios/`, apart from the S08, S09 and section 9 "As built" rows in `iOS Design.md`. `main` is still `542bc32`.
+- My `xcodebuild` runs recreated an empty `ios/DawriCore/.swiftpm`, which I removed. Nothing ignored or built is under `ios/`.
+- Dawri Build was left shut down, with its location cleared and its privacy reset. The owner's simulator was never named or touched.
+
+### Known gaps and phone test items
+- **Phone-only:** each is implemented and tested with fakes, and listed in `ios/README.md`. None is claimed as verified:
+  - the microphone and on-device Arabic and English recognition
+  - a live QR camera read
+  - a real GPS geofence and the precise-location prompt (the simulator always reports full accuracy, so the imprecise notice was shown through `-demoLocation imprecise`)
+  - the Lock Screen and the real Dynamic Island expanding on called
+  - notification delivery while locked or suspended
+  - the 999 dialer
+  - haptics, VoiceOver speech order, Reduce Motion at runtime, and the iOS 18 look
+- **Audit flake:** `AccessibilityAuditTests` `chat-summary` failed once in AR and EN at the start of a full run, and the Phase 4 builder saw it in EN too. The screen recording shows high-contrast text at rest, and it passed on the rerun and 8 of 8 repeats. Making that row wait until the chat's scroll has settled would remove it.
+- **Notification permission on the simulator:** the permission survives `simctl uninstall` until a reboot, and requests are silently dropped in that state. Uninstall and reboot before a run that must see the prompt.
+- **Test warnings:** the 8 Swift 6 isolation warnings in `TicketLiveTextTests.swift`.
+- **Accepted audit exclusions,** each with its written reason:
+  - MapKit's Legal link, about 29 by 11 pt
+  - the Live gallery's capped Dynamic Type, two element-detection findings with no element, and the expanded Island centre name, which is scaled to fit
+- **Precise-location prompt on S08:** S08's Use my location also asks once for precise location, and its purpose text names the 150 m arrival check.
+- **Clinic server mode** posts notices only for changes seen while the app runs, as Settings says. The server probe is still `NoServerProbe` until Phase 5.
+- **Not committed:** Phase 4 is in the working tree, uncommitted, at the time of this review.

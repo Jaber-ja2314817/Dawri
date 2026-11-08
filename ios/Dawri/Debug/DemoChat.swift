@@ -8,6 +8,10 @@ import SwiftUI
 ///
 ///     -demoVoice listening|transcribing|confirm|denied|failed|unavailable
 ///         a scripted recogniser in place of the phone's, and the mic tapped on arrival
+///     -demoVoice device
+///         the phone's own `SpeechVoiceEngine`, whatever else the launch asks for, with the real
+///         clock and nothing tapped. A UI test uses it only with the microphone refused, so no
+///         test ever records from the Mac's microphone
 ///     -demoDraft <text>|@answer  the box starts with these words, or the demo's first answer
 ///     -demoChatAction send|confirm
 ///         on arrival, sends the box, or taps Yes on the summary
@@ -20,6 +24,8 @@ enum DemoChat {
     }
 
     static let voiceMode = DemoLaunch.current?.argument("demoVoice").flatMap(VoiceMode.init(rawValue:))
+    /// `-demoVoice device`.
+    static let usesDevice = DemoLaunch.current?.argument("demoVoice") == "device"
     private static let rawDraft = DemoLaunch.current?.argument("demoDraft")
     static let action = DemoLaunch.current?.argument("demoChatAction")
 
@@ -28,14 +34,17 @@ enum DemoChat {
         rawDraft == "@answer" ? heard(lang) : rawDraft
     }
 
-    /// The recogniser for `-demoVoice`, or nil to use the phone's own.
+    /// The recogniser for `-demoVoice`, or nil to use the build's own.
     static var engine: (any VoiceEngine)? {
-        voiceMode.map(ScriptedVoiceEngine.init(mode:))
+        if usesDevice { return SpeechVoiceEngine() }
+        return voiceMode.map(ScriptedVoiceEngine.init(mode:))
     }
 
     /// The listening clock for a screenshot: the first read is the start, every later one is
     /// 12 seconds on, so the timer reads `0:12` however long the shot takes to settle.
     static let now: @Sendable () -> Date = {
+        // The phone's own recogniser keeps the real clock.
+        if usesDevice { return { Date() } }
         let reads = Mutex(0)
         let start = Date()
         return {

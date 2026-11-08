@@ -7,8 +7,9 @@ struct LocationPoint: Sendable, Equatable {
     let lng: Double
 }
 
-/// The phone's position. The real source is a later phase, and the default says so by throwing,
-/// which S08 and S09 show as their location-failed states.
+/// The phone's position, read once when the patient asks. The phone's source is
+/// `CoreLocationSource`. A source that cannot read a position throws, which S08 and S09 show as
+/// their location-failed states.
 protocol LocationSource: Sendable {
     func currentPoint() async throws -> LocationPoint
 }
@@ -22,30 +23,50 @@ enum PhoneFeatureError: Error, Equatable {
     case unavailable
 }
 
-/// What this build can reach. Nothing here touches the location or network frameworks, so a
-/// Release build of this phase cannot read a position or connect to a server.
+/// A build with no position. It always throws.
 struct NoLocationSource: LocationSource {
     func currentPoint() async throws -> LocationPoint {
         throw PhoneFeatureError.unavailable
     }
 }
 
+/// A build that cannot reach a server. It always throws, so nothing can say Connected. The
+/// network probe for Clinic server mode is Phase 5, so every build has this one for now.
 struct NoServerProbe: ServerProbe {
     func probe(url: URL) async throws -> Health {
         throw PhoneFeatureError.unavailable
     }
 }
 
-/// The seams for what only a phone has. Held on `AppModel`.
+/// The seams for what only a phone has. Held on `AppModel`, which the screens read them from.
+/// Each seam has a `No…` default that does nothing or says unavailable, and the phone's own
+/// implementation in `Native/`.
 ///
-/// `voice` is recognition on the phone. The default reports itself unavailable, so S05 says
-/// `voice.unavailableOnDevice` and the patient types. There is never a server fallback: the app
-/// does not send audio anywhere. The on-device `Speech` engine is a later phase.
+/// - `location`: one Core Location reading, on the patient's tap.
+/// - `probe`: the Clinic server health read, before connecting.
+/// - `voice`: recognition on the phone only. When it is unavailable S05 says
+///   `voice.unavailableOnDevice` and the patient types. There is never a server fallback: the
+///   app does not send audio anywhere.
+/// - `scanner`: the camera behind S09's door code sheet. The typed field always stays.
+/// - `live`: the ticket's Live Activity, with local updates only.
+/// - `notifier`: local notifications for the visit, scheduled ahead in On this phone mode.
 struct PhoneFeatures: Sendable {
     var location: any LocationSource
     var probe: any ServerProbe
     var voice: any VoiceEngine
+    var scanner: any DoorScanner
+    var live: any TicketLiveActivities
+    var notifier: any VisitNotifying
 
+    /// Nothing at all: no position, no server, no voice, no camera, no Live Activity and no
+    /// notifications. Previews and tests that want none of the phone use this.
     static let unavailable = PhoneFeatures(
-        location: NoLocationSource(), probe: NoServerProbe(), voice: UnavailableVoiceEngine())
+        location: NoLocationSource(), probe: NoServerProbe(), voice: UnavailableVoiceEngine(),
+        scanner: NoDoorScanner(), live: NoTicketLive(), notifier: NoVisitNotifier())
+
+    /// The phone's own frameworks, which a normal launch uses. The server probe stays
+    /// `NoServerProbe` until Clinic server mode connects in Phase 5.
+    static let device = PhoneFeatures(
+        location: CoreLocationSource(), probe: NoServerProbe(), voice: SpeechVoiceEngine(),
+        scanner: CameraDoorScanner(), live: ActivityTicketLive(), notifier: LocalVisitNotifier())
 }

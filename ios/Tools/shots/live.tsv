@@ -1,0 +1,16 @@
+# The Live Activity and Dynamic Island, iOS Design section 9. See shoot.sh for the columns.
+# -demoScreen live is the DEBUG gallery in ios/Dawri/Debug/LiveGallery.swift: the Lock Screen,
+# compact, minimal and expanded presentations of one state, drawn by the same TicketLive* views
+# as the widget extension. The Lock Screen follows the theme; the Island shapes are always black
+# with the dark values. Sample data only, so nothing moves under the shot.
+live-gallery-active	3	-	-demoScreen live -demoPage active
+live-gallery-called	3	-	-demoScreen live -demoPage called
+live-gallery-serving	3	-	-demoScreen live -demoPage serving
+live-gallery-between	3	-	-demoScreen live -demoPage between
+live-gallery-stale	3	-	-demoScreen live -demoPage stale
+live-gallery-ended	3	-	-demoScreen live -demoPage ended
+# The real compact Dynamic Island: S10 on a frozen clock starts the T-014 activity, then the
+# island flag puts Settings in front, so the app is in the background and the system draws its
+# activity in the Island. The shot must show the number in the hue in the compact leading
+# region. Light only, see the island flag in shoot.sh.
+live-island	5	island	-demoScreen s10 -demoFreeze 1
