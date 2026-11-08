@@ -22,3 +22,6 @@ Paused on 8 Nov 2026 at about 10:30 Doha, at the owner's request, right after Ph
 2. Keep the no-credit rules in [[iOS Brief]].
 3. Keep the Mac awake and on AC power during UI test runs. Clamshell sleep failed 4 UI tests in round 1, and all 4 passed after a rerun.
 4. Main moved during the build: teammates added `a70cedd`, `07ec7f7` and `542bc32` (a 45-second ad). This branch starts at `bb37797`, so check those before merging.
+
+## Resumed 8 Nov 2026
+The owner asked to continue. New run `wf_a81a1fd8-724` from `orchestrator-ios-resume.js` in this folder. It starts at Phase 3 round 2 with `gate-shot-rows`, then plans and builds Phases 4 and 5 as before. The Phase 3 acceptance list was rebuilt from the round 1 reviewer's evidence, because the original plan was not saved. If this run dies in a later session, edit `orchestrator-ios-resume.js` to skip the phases already committed, as was done here.

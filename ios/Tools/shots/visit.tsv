@@ -36,3 +36,9 @@ s11-no-medicines	3.5	-	-demoScreen s11 -demoFreeze 1 -demoPatch noMedicines
 s11-rated	4	-	-demoScreen s11 -demoFreeze 1 -demoRate 5
 s11-rating-failed	4	-	-demoScreen s11 -demoFreeze 1 -demoFail rateVisit=network -demoRate 4
 s11-final-ticket	4	-	-demoScreen s11 -demoFreeze 1 -demoScrollEnd 1
+# VisitGate, which every visit screen sits behind (Design section 8): loading with SkeletonBars
+# under the screen's title, and the ErrorBlock with retry. Gone is s03-demo-reset in account.tsv.
+gate-loading	3	ax3	-demoScreen s10 -demoFreeze 1 -demoHold getVisit
+gate-error	3	-	-demoScreen s10 -demoFreeze 1 -demoFail getVisit=network
+gate-s08-loading	3	-	-demoScreen s08 -demoFreeze 1 -demoHold getVisit
+gate-s08-error	3	ax3	-demoScreen s08 -demoFreeze 1 -demoFail getVisit=network
