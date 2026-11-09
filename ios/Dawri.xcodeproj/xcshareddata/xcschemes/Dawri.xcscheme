@@ -52,6 +52,11 @@
                BlueprintName = "DawriUITests"
                ReferencedContainer = "container:Dawri.xcodeproj">
             </BuildableReference>
+            <SkippedTests>
+               <Test
+                  Identifier = "ServerModeTests">
+               </Test>
+            </SkippedTests>
          </TestableReference>
       </Testables>
    </TestAction>

@@ -1,5 +1,7 @@
 # S02, S03, S04, Consent, S12 and Settings. See shoot.sh for the columns. The hooks are in
 # ios/Dawri/Debug/DemoAccount.swift. -demoFreeze 1 keeps a staged visit still under the shot.
+# The settings rows need no server: -demoServer is a fake probe, and with -demoClinic a clinic in
+# memory stands in for the server, so no row sends a request.
 s02-empty	2.5	ax3	-demoScreen s02
 s02-filled	2.5	-	-demoScreen s02 -demoQid DEMO-10001 -demoOtp 0000
 s02-chip-loading	2.5	-	-demoScreen s02 -demoHold authStart -demoLogin P001
@@ -34,3 +36,7 @@ settings-connected	3	-	-demoScreen settings -demoMode server -demoAddress http:/
 settings-refused-host	3	-	-demoScreen settings -demoMode server -demoAddress https://dawri.hf.space -demoServer ok -demoConnect 1
 settings-refused-mode	3	-	-demoScreen settings -demoMode server -demoAddress http://192.168.1.20:8100 -demoServer refusedAi -demoConnect 1
 settings-unreachable	3	-	-demoScreen settings -demoMode server -demoAddress http://192.168.1.20:8100 -demoServer unreachable -demoConnect 1
+settings-refused-address	3	-	-demoScreen settings -demoMode server -demoAddress http://example.com -demoServer ok -demoConnect 1
+settings-in-use-relaunch	3.5	ax3	-demoScreen settings -demoClinic http://192.168.1.20:8100 -demoServer ok
+settings-in-use-refused	3.5	-	-demoScreen settings -demoClinic http://192.168.1.20:8100 -demoServer refusedAi -demoConnect 1
+settings-back-on-phone	3.5	-	-demoScreen settings -demoClinic http://192.168.1.20:8100 -demoServer ok -demoMode local

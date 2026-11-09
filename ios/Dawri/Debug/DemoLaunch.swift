@@ -25,6 +25,11 @@ import SwiftUI
 ///     -demoFor <patient id>, the visit is a dependent's  -demoHistory mixed
 ///     -demoRedFlag 1, opens S06 as chat would  -demoRecordLinks 1, links go to `debug-status`
 ///     -demoSignIn <qid>, who the test control signs in  -demoOverride 1, S06 sends the override
+///     -demoClinic <url>, launch straight into Clinic server mode on that address, signed out,
+///       as a relaunch after Connect would. The address must pass `ServerAddress`, or the launch
+///       stops before any request. The service is `RemoteClinicService` inside `DemoClinicProxy`,
+///       so `-demoFail visitUpdates=network` forces polling, with its token in memory only. With
+///       `-demoServer` it is a stand-in with no network at all, see `DemoAccount`
 struct DemoLaunch: Sendable {
     let screen: String?
     let lang: Lang?
@@ -113,6 +118,16 @@ struct DemoLaunch: Sendable {
         let settings = MemoryStore()
 
         let destination = Self.destinations[screen ?? ""]
+        if let address = argument("demoClinic") {
+            // Signed out, so only the screens that need no session can open.
+            guard let base = ServerAddress.parse(address).url, let service = try? serverService(base) else {
+                preconditionFailure("-demoClinic refused \(address) before any request")
+            }
+            let path = destination.flatMap { $0.needsSession ? nil : $0.route("") }.map { [$0] } ?? []
+            return AppModel(
+                service: service, language: language, isSignedIn: false, path: path, features: features,
+                settings: settings, clinic: .server(base))
+        }
         let wantsSession = patient != nil || history || (destination?.needsSession ?? false)
         guard wantsSession else {
             // Screens with no session have no visit, so their routes ignore the id.
@@ -134,6 +149,32 @@ struct DemoLaunch: Sendable {
         model.demoVisitId = staged.visitId
         if redFlag { model.showEmergency(visitId: staged.visitId, redFlag: true) }
         return model
+    }
+
+    /// The host for a DEBUG launch. It never touches the phone's saved settings or Keychain: the
+    /// mode and address go to the launch's own memory store, the clinic on this phone is a fresh
+    /// one in memory, and a server keeps its token in memory.
+    @MainActor
+    func makeHost() -> AppHost {
+        let model = makeModel()
+        let maker = ClinicMaker(
+            language: model.language, settings: model.settings, features: features,
+            local: { (proxy(LocalClinicService(store: MemoryClinicStore())), false) },
+            server: { base, _ in (try serverService(base), false) })
+        return AppHost(maker: maker, launch: model)
+    }
+
+    /// A clinic server for a DEBUG launch, signed out. With `-demoServer`, whose probe is a fake,
+    /// a clinic in memory stands in for the server: it sends nothing anywhere and is not
+    /// `DemoDriving`, as a real server is not. Otherwise the real `RemoteClinicService`, inside
+    /// the proxy so the fault hooks reach it.
+    func serverService(_ base: URL) throws -> any ClinicService {
+        if argument("demoServer") != nil {
+            return DemoClinicProxy(base: LocalClinicService(store: MemoryClinicStore()), faults: faults)
+        }
+        let remote = try RemoteClinicService(
+            baseURL: base, transport: ClinicNetwork.transport, tokens: MemoryTokenStore())
+        return DemoClinicProxy(base: remote, faults: faults)
     }
 
     /// Hooks that change an answer sit in the proxy, between the screens and the real engine.

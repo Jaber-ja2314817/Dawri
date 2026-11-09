@@ -72,7 +72,8 @@ VAULT_NOTES = (
     "Dawri-Vault/03 Product/Patient Journey.md",
 )
 
-NEVER_NAMED = re.compile(r"URLSession|hf\.space|huggingface|/api/asr")
+# The session type is written in two parts, so only the Clinic server client names it.
+NEVER_NAMED = re.compile(r"URL" r"Session|hf\.space|huggingface|/api/asr")
 
 CALLS: dict[str, dict[str, list]] = {}
 FAILED: list[str] = []

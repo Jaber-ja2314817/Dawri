@@ -4,7 +4,7 @@ import Foundation
 extension LocalClinicService: DemoDriving {
     /// Plans the visit when it arrives. A patient the demo cannot plan for keeps their ticket.
     func startDemoRun(visitId: String, ticket: TicketRecord) {
-        guard demoClinicEnabled else { return }
+        guard drivesDemoClinic else { return }
         state.demoRuns[visitId] = try? DemoClinic.plan(
             state, visitId: visitId, ticket: ticket,
             start: ClinicTime.microseconds(of: clock()))

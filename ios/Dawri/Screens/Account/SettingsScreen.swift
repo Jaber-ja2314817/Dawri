@@ -5,49 +5,62 @@ import SwiftUI
 /// Sections are cards with a heading above, not a `Form`, so the shape holds on every system
 /// and the footer stays.
 ///
-/// In this phase the app stays on the clinic on this phone whatever the mode says. Clinic server
-/// mode only stores an address and checks it. The address passes `ServerAddress` first, so a
-/// refused host never reaches the probe, and the probe must then answer `ai_mode` simulated. In
-/// Release the probe is `NoServerProbe`, which always throws, so nothing can say Connected.
+/// Choosing a clinic:
+/// - **Clinic server** shows the address field. Connect runs `ServerAddress` first, so a refused
+///   host never reaches the probe, then the probe reads `/api/health` only, and only
+///   `ai_mode: simulated` passes. Then the host saves the choice, ends the old clinic's Live
+///   Activity and notices, and moves the app to that server, signed out, still on Settings.
+/// - **On this phone** moves back at once, with this phone's own saved session.
+/// - A refused host, a refused mode or an unreachable server leaves the app on its current
+///   clinic.
+///
+/// Reset exists only on this phone, because only the demo clinic conforms to `DemoDriving`.
 struct SettingsScreen: View {
     @Environment(AppModel.self) private var model
+    @Environment(AppHost.self) private var host
 
     var body: some View {
-        SettingsContent(model: model)
+        SettingsContent(model: model, host: host)
     }
 }
 
-/// The two modes of iOS Brief, as saved.
+/// The two modes of iOS Brief.
 private enum ClinicMode: String, CaseIterable {
     case local, server
 }
 
 private enum Connection: Equatable {
-    case idle, connecting, connected, refusedHost, refusedAi, unreachable
+    case idle, connecting, connected, refusedHost, refusedAddress, refusedAi, unreachable
 
     var errorKey: String? {
         switch self {
         case .refusedHost: "settings.server.refusedHost"
+        case .refusedAddress: "settings.server.refusedAddress"
         case .refusedAi: "settings.server.refusedAi"
         case .unreachable: "settings.server.unreachable"
         default: nil
         }
     }
+
+    /// What a refusal of the typed address shows. Only a Hugging Face host is the host refusal.
+    init(_ refusal: ServerAddress.Refusal) {
+        self = refusal == .forbiddenHost ? .refusedHost : .refusedAddress
+    }
 }
 
 private struct SettingsContent: View {
-    private static let modeKey = "dawri.mode"
-    private static let serverKey = "dawri.server"
     /// A local address of the kind the README's server runs on. Never a hosted one.
     private static let sample = "http://192.168.1.20:8100"
 
     let model: AppModel
+    let host: AppHost
 
     @Environment(\.lang) private var lang
+    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var mode: ClinicMode
     @State private var address: String
     @State private var connection = Connection.idle
-    /// Bumped by each connect, so an answer to an older one is dropped.
+    /// Bumped by each connect and each change, so an answer to an older one is dropped.
     @State private var attempt = 0
     @State private var showsResetConfirm = false
     @State private var isResetting = false
@@ -55,23 +68,27 @@ private struct SettingsContent: View {
     @State private var languagePicks = 0
     @State private var resetError: (any Error)?
 
-    init(model: AppModel) {
+    init(model: AppModel, host: AppHost) {
         self.model = model
-        let savedMode = model.settings.read(Self.modeKey).flatMap(ClinicMode.init(rawValue:))
-        let savedAddress = model.settings.read(Self.serverKey)
-        _mode = State(initialValue: Self.demoMode ?? savedMode ?? .local)
-        _address = State(initialValue: Self.demoAddress ?? savedAddress ?? "")
+        self.host = host
+        let inUse = model.clinic.serverURL
+        let shown: ClinicMode = inUse != nil || Self.demoMode == .server ? .server : .local
+        _mode = State(initialValue: shown)
+        _address = State(
+            initialValue: inUse?.absoluteString ?? Self.demoAddress
+                ?? model.settings.read(AppHost.serverKey) ?? "")
     }
 
-    /// `-demoMode` and `-demoAddress`, which DEBUG launches use in place of what is saved.
+    /// `-demoMode`, which DEBUG launches use as if the picker had been set, on the first Settings.
     private static var demoMode: ClinicMode? {
         #if DEBUG
-        DemoAccount.mode.flatMap(ClinicMode.init(rawValue:))
+        DemoAccount.firstMode.flatMap(ClinicMode.init(rawValue:))
         #else
         nil
         #endif
     }
 
+    /// `-demoAddress`, as if typed.
     private static var demoAddress: String? {
         #if DEBUG
         DemoAccount.address
@@ -80,12 +97,32 @@ private struct SettingsContent: View {
         #endif
     }
 
-    /// The app's probe, or in DEBUG the one `-demoServer` asks for.
+    /// The app's probe, or in DEBUG the fake one `-demoServer` asks for.
     private var probe: any ServerProbe {
         #if DEBUG
         if let demo = DemoAccount.probe { return demo }
         #endif
         return model.features.probe
+    }
+
+    /// The server the app is using now, if any.
+    private var inUse: URL? { model.clinic.serverURL }
+
+    /// The pill: a connect that just passed, or the server in use, while its health says
+    /// simulated.
+    private var showsConnected: Bool {
+        switch connection {
+        case .connected: true
+        case .idle: inUse != nil && model.health?.aiMode == .simulated && !model.healthRefused
+        default: false
+        }
+    }
+
+    /// The connect's own refusal, or the server in use refusing after a relaunch.
+    private var errorKey: String? {
+        if let key = connection.errorKey { return key }
+        if connection == .idle, inUse != nil, model.healthRefused { return "settings.server.refusedAi" }
+        return nil
     }
 
     var body: some View {
@@ -100,9 +137,13 @@ private struct SettingsContent: View {
             .accessibilityIdentifier("screen-settings")
         }
         .onChange(of: mode) { _, next in
-            model.settings.write(next.rawValue, for: Self.modeKey)
             attempt += 1
             connection = .idle
+            // Back to this phone at once. Choosing Clinic server only shows the field: nothing
+            // changes until Connect passes both guards.
+            if next == .local, inUse != nil {
+                Task { await host.useLocal() }
+            }
         }
         .onChange(of: address) {
             attempt += 1
@@ -114,6 +155,10 @@ private struct SettingsContent: View {
         .task {
             if DemoAccount.connects, DemoAccount.once("connect") { await connect() }
             if DemoAccount.opensResetPrompt, DemoAccount.once("resetPrompt") { showsResetConfirm = true }
+            // `-demoMode local` on a server launch: the picker's tap back to this phone.
+            if DemoAccount.mode == ClinicMode.local.rawValue, inUse != nil, DemoAccount.once("useLocal") {
+                mode = .local
+            }
         }
         #endif
     }
@@ -168,13 +213,16 @@ private struct SettingsContent: View {
             VStack(alignment: .leading, spacing: DS.Space.m) {
                 DSTextField(
                     label: lang.t("settings.server"), text: $address,
-                    error: connection.errorKey.map { lang.t($0) }, kind: .address,
+                    error: errorKey.map { lang.t($0) }, kind: .address,
                     placeholder: Self.sample, identifier: "settings-server")
                     .submitLabel(.go)
                     .onSubmit { Task { await connect() } }
-                if connection == .connected {
-                    Pill(lang.t("settings.server.ok"), tone: .positive)
+                if showsConnected {
+                    connectedPill
                         .accessibilityIdentifier("settings-server-ok")
+                }
+                if let inUse {
+                    inUseLine(inUse.absoluteString)
                 }
                 Button(lang.t("settings.connect")) {
                     Task { await connect() }
@@ -187,26 +235,83 @@ private struct SettingsContent: View {
         }
     }
 
-    /// The guard, then `/api/health` only. Nothing else is read, and the app does not switch.
+    /// `Pill` never wraps, which at accessibility sizes would push the card off the screen. There
+    /// the same colours take a rounded box that wraps (iOS Design section 3.4).
+    @ViewBuilder
+    private var connectedPill: some View {
+        if typeSize.isAccessibilitySize {
+            Text(verbatim: lang.t("settings.server.ok"))
+                .dsText(.pill)
+                .foregroundStyle(DS.Color.pillPositiveText)
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.vertical, DS.Space.xs)
+                .padding(.horizontal, DS.Space.s)
+                .background(
+                    DS.Color.pillPositiveFill,
+                    in: RoundedRectangle(cornerRadius: DS.Radius.control, style: .continuous))
+        } else {
+            Pill(lang.t("settings.server.ok"), tone: .positive)
+        }
+    }
+
+    /// Whenever the app is using a server: the sentence, then the address on a line of its own,
+    /// left to right in both languages, so a URL is never broken inside a sentence.
+    private func inUseLine(_ address: String) -> some View {
+        VStack(alignment: .leading, spacing: DS.Space.xxs) {
+            Text(verbatim: lang.t("settings.server.inUse"))
+                .dsText(.secondary)
+                .foregroundStyle(DS.Color.ink)
+            Text(verbatim: Bidi.ltr(address))
+                .dsText(.secondaryStrong)
+                .foregroundStyle(DS.Color.ink)
+        }
+        .multilineTextAlignment(.leading)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .fixedSize(horizontal: false, vertical: true)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(verbatim: "\(lang.t("settings.server.inUse")) \(address)"))
+        .accessibilityIdentifier("settings-server-in-use")
+    }
+
+    /// The address guard, then `/api/health` only. Only a pass moves the app to the server.
     private func connect() async {
         guard connection != .connecting else { return }
-        model.settings.write(address, for: Self.serverKey)
         attempt += 1
         let mine = attempt
         // Before any request: a refused host never reaches the probe.
-        guard let url = ServerAddress.parse(address).url else {
-            connection = .refusedHost
+        let url: URL
+        switch ServerAddress.parse(address) {
+        case .refused(.empty):
             return
+        case .refused(let refusal):
+            connection = Connection(refusal)
+            return
+        case .ok(let parsed):
+            url = parsed
         }
         connection = .connecting
-        let next: Connection
+        var next: Connection
         do {
             let health = try await probe.probe(url: url)
             next = health.aiMode == .simulated ? .connected : .refusedAi
+        } catch ServerCheck.Refusal.notSimulated {
+            next = .refusedAi
+        } catch ServerCheck.Refusal.address(let refusal) {
+            next = Connection(refusal)
         } catch {
             next = .unreachable
         }
-        guard mine == attempt else { return }
+        guard mine == attempt, mode == .server else { return }
+        if next == .connected {
+            do {
+                try host.useServer(url)
+            } catch ServerCheck.Refusal.address(let refusal) {
+                next = Connection(refusal)
+            } catch {
+                next = .unreachable
+            }
+        }
         connection = next
     }
 

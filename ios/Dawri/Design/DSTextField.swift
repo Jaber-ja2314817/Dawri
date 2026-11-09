@@ -23,6 +23,7 @@ struct DSTextField: View {
 
     @Environment(\.lang) private var lang
     @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.dynamicTypeSize) private var typeSize
     @FocusState private var focused: Bool
 
     var body: some View {
@@ -105,6 +106,27 @@ struct DSTextField: View {
                     let latin = latinDigits(next)
                     if latin != next { text = latin }
                 }
+        case .address where typeSize.isAccessibilitySize:
+            // A long address wraps at accessibility sizes instead of ending in an ellipsis
+            // (iOS Design section 11, check 8). An address never holds a line break, so Return
+            // only closes the keyboard here, and Connect stays the way to connect.
+            TextField(
+                label, text: $text,
+                prompt: placeholder.map { Text(verbatim: $0).foregroundStyle(DS.Color.muted) } ?? Text(verbatim: ""),
+                axis: .vertical
+            )
+            .lineLimit(1...4)
+            .padding(.vertical, DS.Space.s)
+            .multilineTextAlignment(.leading)
+            .keyboardType(.URL)
+            .textInputAutocapitalization(.never)
+            .autocorrectionDisabled()
+            .environment(\.layoutDirection, .leftToRight)
+            .onChange(of: text) { _, next in
+                guard next.contains(where: \.isNewline) else { return }
+                text = next.filter { !$0.isNewline }
+                focused = false
+            }
         case .address:
             base
                 .multilineTextAlignment(.leading)

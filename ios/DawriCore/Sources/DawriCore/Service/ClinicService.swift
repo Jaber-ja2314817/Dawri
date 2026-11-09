@@ -13,7 +13,7 @@ public enum VisitUpdate: Sendable, Equatable {
 /// What every screen talks to, so a screen never knows which back end it has. Mirrors
 /// frontend/src/api/endpoints.ts, plus `sendChat` from frontend/src/features/chat/send.ts.
 ///
-/// `transcribe` is deliberately left out: the app never calls /api/asr, because voice is
+/// `transcribe` is deliberately left out: the app has no speech upload, because voice is
 /// always transcribed on the phone.
 ///
 /// The service holds its own token, so screens never see it.

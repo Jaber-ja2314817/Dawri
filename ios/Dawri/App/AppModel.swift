@@ -27,6 +27,8 @@ final class AppModel {
     private static let healthRetry = Duration.seconds(10)
 
     @ObservationIgnored let service: any ClinicService
+    /// The clinic behind `service`: this phone, or the clinic server it was connected to.
+    @ObservationIgnored let clinic: ClinicKind
     let language: LanguageState
     @ObservationIgnored let direction: DirectionBridge
     @ObservationIgnored let features: PhoneFeatures
@@ -41,6 +43,8 @@ final class AppModel {
     private(set) var meError: (any Error)?
     private var loggedIn: Patient?
     private(set) var health: Health?
+    /// The server's `/api/health` stopped saying simulated, so the service refuses every call.
+    private(set) var healthRefused = false
 
     var path: [Route]
     private(set) var emergency: EmergencyCover? {
@@ -80,9 +84,10 @@ final class AppModel {
     init(
         service: any ClinicService, language: LanguageState, isSignedIn: Bool = false,
         path: [Route] = [], features: PhoneFeatures = .unavailable,
-        settings: any KeyValueStore = UserDefaults.standard
+        settings: any KeyValueStore = UserDefaults.standard, clinic: ClinicKind = .local
     ) {
         self.service = service
+        self.clinic = clinic
         self.language = language
         self.isSignedIn = isSignedIn
         self.meState = isSignedIn ? .loading : .idle
@@ -101,19 +106,10 @@ final class AppModel {
         if isSignedIn { sessionToken = UUID().uuidString }
     }
 
-    /// The normal launch: the clinic on this phone, so the app works from first launch with
-    /// nothing else running. Its state lives in Application Support. A saved session is read
-    /// here, before the first frame, so it opens on Home with no Welcome frame. Screens only know
-    /// the protocol.
-    static func launch() -> AppModel {
-        #if DEBUG
-        if let demo = DemoLaunch.current { return demo.makeModel() }
-        #endif
-        let service = LocalClinicService(store: FileClinicStore())
-        return AppModel(
-            service: service, language: LanguageState(store: UserDefaults.standard),
-            isSignedIn: service.restoredSession, features: .device)
-    }
+    // `AppHost.launch()` makes the first model: the clinic on this phone by default, so the app
+    // works from first launch with nothing else running, or the saved clinic server. A saved
+    // session is read before the first frame, so it opens on Home with no Welcome frame.
+    // Screens only know the protocol.
 
     /// `.welcome` is the stack's root before login and `.home` after.
     var root: Route { isSignedIn ? .home : .welcome }
@@ -157,12 +153,17 @@ final class AppModel {
         if isSignedIn { await reloadMe() }
     }
 
-    /// Asks until answered, because the first read can come before the network does.
+    /// Asks until answered, because the first read can come before the network does. On a
+    /// clinic server this is the gate's own read, so a server that is not simulated is noted
+    /// for Settings and asked again later.
     private func loadHealth() async {
         while !Task.isCancelled {
-            if let answer = try? await service.health() {
-                health = answer
+            do {
+                health = try await service.health()
+                healthRefused = false
                 return
+            } catch {
+                if (error as? ClinicError)?.code == ClinicError.serverNotSimulatedCode { healthRefused = true }
             }
             try? await Task.sleep(for: Self.healthRetry)
         }

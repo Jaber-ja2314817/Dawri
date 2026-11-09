@@ -6,10 +6,13 @@ import Foundation
 /// test reaches each state with no tapping. Read through `DemoLaunch.current?.argument`, and all
 /// of it compiles out of Release with the rest of `Debug/`.
 ///
-///     -demoServer ok|refusedAi|unreachable, what Settings' probe answers. In Release the probe is
-///       `NoServerProbe`, which always throws, so a Release build can never say Connected.
-///       `-demoHold probe` keeps it waiting, and `debug-calls` counts it as `probe`.
-///     -demoMode local|server  -demoAddress <text>  -demoConnect 1, Settings as if typed and tapped
+///     -demoServer ok|refusedAi|unreachable, a fake in place of Settings' probe, so no request is
+///       made: the address guard runs first as always, then the fake answers. `ok` connects to a
+///       stand-in clinic in memory that is not `DemoDriving`, as a server is not. Without it the
+///       probe is the app's own `ServerHealthProbe`. `-demoHold probe` keeps the fake waiting,
+///       and `debug-calls` counts it as `probe`.
+///     -demoMode local|server  -demoAddress <text>  -demoConnect 1, Settings as if typed and tapped.
+///       `-demoMode local` on a `-demoClinic` launch taps back to On this phone once
 ///     -demoQid <text>  -demoOtp <text>  -demoLogin form|P001|P002|P003, S02 as if typed and tapped
 ///     -demoPick <patient id>, S04 opens Consent for that person, as a tap on the row would
 ///     -demoAgree 1, Consent taps I agree
@@ -41,6 +44,8 @@ enum DemoAccount {
     }
 
     static var mode: String? { argument("demoMode") }
+    /// `-demoMode` for the first Settings only, so a Settings after a switch shows the clinic in use.
+    static var firstMode: String? { once("mode") ? mode : nil }
     static var address: String? { argument("demoAddress") }
     static var connects: Bool { argument("demoConnect") == "1" }
     static var opensResetPrompt: Bool { argument("demoResetPrompt") == "1" }

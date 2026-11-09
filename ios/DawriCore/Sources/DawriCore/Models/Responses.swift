@@ -32,7 +32,7 @@ public struct ChatResponse: Sendable, Codable, Equatable {
     }
 }
 
-/// Unused on purpose. The app never calls /api/asr: voice is transcribed on the phone.
+/// Unused on purpose. The app never uploads speech: voice is transcribed on the phone.
 /// The shape stays only so this file keeps one type for every name in types.ts.
 public struct TranscribeResponse: Sendable, Codable, Equatable {
     public var text: String

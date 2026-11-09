@@ -3,7 +3,8 @@ import UserNotifications
 
 @main
 struct DawriApp: App {
-    @State private var model = AppModel.launch()
+    /// Owns the current model. Settings swaps it when the clinic changes.
+    @State private var host = AppHost.launch()
 
     init() {
         // Set before the first notice can arrive. A notice that lands while the app is open goes
@@ -13,8 +14,12 @@ struct DawriApp: App {
 
     var body: some Scene {
         WindowGroup {
+            // Identified by the model, so its session load and the Live Activity follower start
+            // again on a new clinic. Never by language: `DirectionBridge` switches that in place.
             RootView()
-                .environment(model)
+                .id(ObjectIdentifier(host.model))
+                .environment(host.model)
+                .environment(host)
         }
     }
 }

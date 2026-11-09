@@ -107,13 +107,23 @@ const COMMIT_SCHEMA = { type: 'object', properties: {
 }, required: ['committed', 'pushed', 'sha', 'notes'] }
 
 function runTask(task, phaseTitle, acceptance) {
+  if (args && args.reportDir && args.done && args.done.includes(task.id)) {
+    const file = `${args.reportDir}/p4-report-${task.id}.json`
+    log(`${task.id}: already finished, using its saved report ${file}`)
+    return Promise.resolve({ id: task.id, status: 'done',
+      what_changed: `This builder finished in an earlier run segment. Its full report (what changed, test evidence, open issues) is in ${file}. Read that file in full and treat it as claims, not facts.${task.id === 'p4-map' ? ' Note: the original p4-map agent died in an internet outage and was re-run separately at the owner\'s request, on a second iPhone Air simulator "Dawri Map" FC231CFD-0100-4598-A329-3FEB3D62E7A6, so its UI tests did not run on Dawri Build.' : ''}`,
+      test_evidence: `See ${file}`,
+      open_issues: [`Open issues are listed in ${file}`] })
+  }
   return agent(`You are a builder on the Dawri iOS team and you report to the orchestrator. Working directory: ${ROOT}. Branch: ${BRANCH}.
 Read "${BRIEF}" first, it is the authority. Then read these: ${task.vault_notes.join(', ')}.
 ${NO_CREDIT}
 ${POWER}
 
 Task ${task.id}: ${task.title}
-${task.brief}
+${task.brief}${args && args.reportDir && phaseTitle === 'Phase 4: Native features' ? `
+
+The earlier Phase 4 builders' full reports, including their open issues for you, are in ${args.reportDir}/p4-report-<id>.json (p4-groundwork, p4-map, p4-arrival-voice-scan, p4-live-notify). Read them first. p4-map was re-run separately after an internet outage and its UI tests ran on a second simulator "Dawri Map" FC231CFD, which is shut down. Do not use it: your simulator is Dawri Build.` : ''}
 
 You own only these paths: ${task.owned_paths.join(', ')}. Other agents may be editing other paths at the same time, so do not edit outside yours. If you need a change elsewhere, record it in open_issues.
 

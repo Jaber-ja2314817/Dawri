@@ -72,6 +72,8 @@ struct TicketLiveTextTests {
         #expect(TicketLiveColors.lockScreen(.light, contrast: .increased).hue == TicketLiveColors(dark: false, increasedContrast: true).hue)
     }
 
+    /// SwiftUI views are main-actor types, so their initialisers run on the main actor.
+    @MainActor
     @Test func `the views build for every state and presentation`() throws {
         let states = [
             state(try liveVisit()), state(try liveVisit(ticket: .called)),

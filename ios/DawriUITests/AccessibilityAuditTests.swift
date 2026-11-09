@@ -131,11 +131,32 @@ final class AccessibilityAuditTests: XCTestCase {
                 report.append("\(row.name) \(lang): \(row.screen) never appeared")
                 continue
             }
-            // Let a staged state settle, such as a send that fails or an override that lands, and
-            // the chat's scroll to its newest message, which at 2 s had not always finished.
-            sleep(4)
-            for finding in try app.auditFindings(excluding: exclusions, row: row.name) {
+            // Let a staged state land, such as a send that fails or an override, then wait until
+            // nothing moves, rather than for a fixed time that a busy simulator can outrun. The
+            // checks then run in `auditOrder`, so contrast reads the screen at rest and not as
+            // the clipped-text check leaves it.
+            let settling = app.waitUntilSettled()
+            print("audit \(row.name) \(lang): \(settling)")
+            if !settling.settled {
+                XCTContext.runActivity(named: "\(row.name) \(lang): \(settling)") { _ in }
+            }
+            // The screen and its tree as the audit found them, kept only when it finds something,
+            // so a failure can be judged from the picture and the frames, not from a rerun.
+            let atRest = XCUIScreen.main.screenshot()
+            let tree = app.debugDescription
+            let findings = try app.auditFindings(excluding: exclusions, row: row.name)
+            for finding in findings {
                 report.append("\(row.name) \(lang): \(finding)")
+            }
+            if !findings.isEmpty {
+                let picture = XCTAttachment(screenshot: atRest)
+                picture.name = "\(row.name)-\(lang) at audit"
+                picture.lifetime = .keepAlways
+                add(picture)
+                let text = XCTAttachment(string: tree)
+                text.name = "\(row.name)-\(lang) tree at audit"
+                text.lifetime = .keepAlways
+                add(text)
             }
             app.terminate()
         }

@@ -14,7 +14,9 @@ protocol LocationSource: Sendable {
     func currentPoint() async throws -> LocationPoint
 }
 
-/// Reads a server's `/api/health`, once the address has passed `ServerAddress`.
+/// Reads a server's `/api/health`, once the address has passed `ServerAddress`. It returns the
+/// health only for `ai_mode: simulated`, or throws: `ServerCheck.Refusal.notSimulated` for any
+/// other mode, anything else for a server that could not be read.
 protocol ServerProbe: Sendable {
     func probe(url: URL) async throws -> Health
 }
@@ -30,8 +32,8 @@ struct NoLocationSource: LocationSource {
     }
 }
 
-/// A build that cannot reach a server. It always throws, so nothing can say Connected. The
-/// network probe for Clinic server mode is Phase 5, so every build has this one for now.
+/// A build that cannot reach a server. It always throws, so nothing can say Connected. Previews
+/// and `PhoneFeatures.unavailable` use it. The phone's probe is `ServerHealthProbe`.
 struct NoServerProbe: ServerProbe {
     func probe(url: URL) async throws -> Health {
         throw PhoneFeatureError.unavailable
@@ -64,9 +66,9 @@ struct PhoneFeatures: Sendable {
         location: NoLocationSource(), probe: NoServerProbe(), voice: UnavailableVoiceEngine(),
         scanner: NoDoorScanner(), live: NoTicketLive(), notifier: NoVisitNotifier())
 
-    /// The phone's own frameworks, which a normal launch uses. The server probe stays
-    /// `NoServerProbe` until Clinic server mode connects in Phase 5.
+    /// The phone's own frameworks, which a normal launch uses. The server probe is
+    /// `ServerHealthProbe`, the two guards of Clinic server mode on the app's one transport.
     static let device = PhoneFeatures(
-        location: CoreLocationSource(), probe: NoServerProbe(), voice: SpeechVoiceEngine(),
+        location: CoreLocationSource(), probe: ServerHealthProbe(), voice: SpeechVoiceEngine(),
         scanner: CameraDoorScanner(), live: ActivityTicketLive(), notifier: LocalVisitNotifier())
 }

@@ -15,4 +15,7 @@ protocol ContractHarness: Sendable, CustomTestStringConvertible {
     func expireReservation(_ service: any ClinicService, visitId: String) async throws
 }
 
-let contractHarnesses: [any ContractHarness] = [LocalHarness()]
+/// On this phone always. The clinic server too, only when ios/Tools/clinic-server.sh contract
+/// sets `DAWRI_CONTRACT_SERVER`, so a plain `swift test` never needs or touches a server.
+let contractHarnesses: [any ContractHarness] =
+    [LocalHarness()] + (RemoteHarness.fromEnvironment().map { [$0] } ?? [])

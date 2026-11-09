@@ -11,6 +11,8 @@ final class AccountScreenTests: XCTestCase {
         static let refusedAi = "This server is not in simulated mode, so the app will not use it."
         static let unreachable = "We could not reach this server."
         static let connected = "Connected, simulated mode"
+        static let refusedAddress = "Type only the server's address, with no path. Plain http works only on your local network. Use https for anything else."
+        static let inUse = "The app is using this clinic server: http://192.168.1.20:8100"
         static let resetConfirm = "This clears the visits on this phone."
         static let reset = "Reset demo data"
         static let forLayla = "This visit is for Layla Al-Demo."
@@ -340,6 +342,25 @@ final class AccountScreenTests: XCTestCase {
         XCTAssertEqual(calls("probe", in: app), 0, "the probe was called for a refused host")
     }
 
+    /// The plain form of a Space address, as the owner's own Space has it, in both languages.
+    @MainActor
+    func testAPlainSpaceAddressIsRefusedWithNoProbe() {
+        for (lang, message) in [("en", Text.refusedHost), ("ar", "لا يتصل هذا التطبيق بهذا العنوان.")] {
+            let app = start([
+                "-demoLang", lang, "-demoScreen", "settings", "-demoMode", "server", "-demoServer", "ok",
+                "-demoAddress", "https://dawri.hf.space", "-demoControls", "1",
+            ])
+            assertShown(app.element("settings-connect"))
+            app.element("settings-connect").tap()
+            assertShown(app.element("settings-server-error"))
+            XCTAssertEqual(app.element("settings-server-error").label, message, lang)
+            XCTAssertFalse(app.element("settings-server-ok").exists, lang)
+            XCTAssertFalse(app.element("settings-server-in-use").exists, "\(lang): the app moved to that host")
+            sleep(1)
+            XCTAssertEqual(calls("probe", in: app), 0, "\(lang): the probe was called for a Space address")
+        }
+    }
+
     /// The same probe does answer a local address, so the zero above is not a broken counter.
     @MainActor
     func testALocalAddressReachesTheProbe() {
@@ -379,19 +400,102 @@ final class AccountScreenTests: XCTestCase {
         XCTAssertEqual(app.element("settings-server-error").label, Text.unreachable)
     }
 
-    /// With no `-demoServer`, the app's own probe, which in this phase always throws: nothing can
-    /// say Connected.
+    /// With no `-demoServer`, the app's own probe, `ServerHealthProbe`, on a closed port of this
+    /// Mac's loopback: nothing answers, so it says unreachable and the app stays on this phone.
+    /// The only request it can make goes to 127.0.0.1.
     @MainActor
-    func testTheAppsOwnProbeNeverConnects() {
+    func testTheAppsOwnProbeFindsNothingOnAClosedPort() {
         let app = start([
             "-demoLang", "en", "-demoScreen", "settings", "-demoMode", "server",
-            "-demoAddress", "http://192.168.1.20:8100",
+            "-demoAddress", "http://127.0.0.1:9",
         ])
         assertShown(app.element("settings-connect"))
         app.element("settings-connect").tap()
         assertShown(app.element("settings-server-error"))
         XCTAssertEqual(app.element("settings-server-error").label, Text.unreachable)
         XCTAssertFalse(app.element("settings-server-ok").exists)
+        XCTAssertFalse(app.element("settings-server-in-use").exists, "the app moved to a server")
+    }
+
+    /// `http` to a public host, or a path, is refused before any request, with the plainer
+    /// message, and the probe is never called.
+    @MainActor
+    func testAPublicHttpAddressIsRefusedWithNoProbe() {
+        let app = start([
+            "-demoLang", "en", "-demoScreen", "settings", "-demoMode", "server", "-demoServer", "ok",
+            "-demoAddress", "http://example.com", "-demoControls", "1",
+        ])
+        assertShown(app.element("settings-connect"))
+        app.element("settings-connect").tap()
+        assertShown(app.element("settings-server-error"))
+        XCTAssertEqual(app.element("settings-server-error").label, Text.refusedAddress)
+        XCTAssertFalse(app.element("settings-server-ok").exists)
+        sleep(1)
+        XCTAssertEqual(calls("probe", in: app), 0, "the probe was called for a refused address")
+    }
+
+    /// Connected moves the app to the server, signed out, with the in-use line and no Reset.
+    /// On this phone moves it back at once, with Reset, and the server's line gone.
+    @MainActor
+    func testConnectUsesTheServerAndOnThisPhoneSwitchesBack() {
+        let app = start([
+            "-demoLang", "en", "-demoScreen", "settings", "-demoMode", "server", "-demoServer", "ok",
+            "-demoAddress", "http://192.168.1.20:8100", "-demoControls", "1",
+        ])
+        app.element("settings-connect").tap()
+        assertShown(app.element("settings-server-ok"))
+        assertShown(app.element("settings-server-in-use"))
+        XCTAssertEqual(app.element("settings-server-in-use").label, Text.inUse)
+        XCTAssertFalse(app.element("settings-reset").exists)
+
+        app.element("settings-mode").buttons["On this phone"].tap()
+        assertShown(app.element("settings-reset"), "back on this phone at once")
+        XCTAssertFalse(app.element("settings-server").exists)
+        XCTAssertFalse(app.element("settings-server-in-use").exists)
+        XCTAssertEqual(calls("probe", in: app), 1, "switching back needs no probe")
+    }
+
+    /// The modes never share a session: signed in on this phone, the server starts signed out,
+    /// and On this phone comes back to the patient and the open visit.
+    @MainActor
+    func testTheModesNeverShareASession() {
+        let app = start([
+            "-demoLang", "en", "-demoScreen", "s03", "-demoPatient", "DEMO-10001", "-demoFreeze", "1",
+            "-demoServer", "ok", "-demoAddress", "http://192.168.1.20:8100", "-demoMode", "server",
+        ])
+        assertShown(app.element("open-visit"))
+        app.element("settings-gear").tap()
+        app.element("settings-connect").tap()
+        assertShown(app.element("settings-server-in-use"))
+        app.backControl.tap()
+        assertShown(app.element("screen-welcome"), "the server has no session of this phone's")
+
+        app.element("settings-gear").tap()
+        assertShown(app.element("settings-server-in-use"))
+        app.element("settings-mode").buttons["On this phone"].tap()
+        assertShown(app.element("settings-reset"))
+        app.backControl.tap()
+        assertShown(app.element("screen-home"), "this phone's session is back")
+        assertShown(app.element("open-visit"), "with its open visit")
+    }
+
+    /// A refusal while a server is in use leaves the app on that server.
+    @MainActor
+    func testARefusalKeepsTheServerInUse() {
+        let app = start([
+            "-demoLang", "en", "-demoScreen", "settings", "-demoClinic", "http://192.168.1.20:8100",
+            "-demoServer", "refusedAi", "-demoControls", "1",
+        ])
+        assertShown(app.element("settings-server-in-use"), "a launch in server mode")
+        let field = app.element("settings-server")
+        field.tap()
+        field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 30))
+        field.typeText("http://10.0.0.5:8100")
+        app.element("settings-connect").tap()
+        assertShown(app.element("settings-server-error"))
+        XCTAssertEqual(app.element("settings-server-error").label, Text.refusedAi)
+        XCTAssertEqual(app.element("settings-server-in-use").label, Text.inUse, "the app left its server")
+        XCTAssertEqual(calls("probe", in: app), 1)
     }
 
     @MainActor

@@ -926,6 +926,16 @@ Question: which language and which clinic?
 | Limit, always shown in this mode | `settings.server.limit` as a `Notice` |
 | Reset | `settings.reset`, `DestructiveButtonStyle`, confirmed, On this phone mode only |
 
+| As built | Detail |
+| --- | --- |
+| Switching | `AppHost` (`ios/Dawri/App/AppHost.swift`) owns the current `AppModel`, and `RootView` is identified by the model, never by language. Connect runs `ServerAddress` first, then `ServerHealthProbe` (`ServerCheck.health`: one `GET /api/health`, no redirect, only `simulated` passes). Only a pass saves `dawri.mode` = `server` and `dawri.server`, ends the old clinic's Live Activity and notices, and moves to an `AppModel` on `RemoteClinicService`, signed out, still on Settings. A server already in use stays as it is |
+| On this phone | Saves `local`, ends the Live Activity and notices, and moves back at once to the same `LocalClinicService` with its own saved session, still on Settings. The server's token is forgotten. The modes never share a session or a visit |
+| Relaunch | Saved `server` with an address that passes `ServerAddress` launches on `RemoteClinicService`, whose gate reads `/api/health` again before its first request. Anything else launches on this phone |
+| Token | `KeychainTokenStore`: one `kSecClassGenericPassword` item, `WhenUnlockedThisDeviceOnly`, no entitlement. DEBUG launch hooks keep it in memory |
+| In use | Whenever a server is in use: the pill while its health says simulated, then `settings.server.inUse` with the address on its own line, left to right. At accessibility sizes the pill's colours take a wrapping rounded box, because `Pill` never wraps |
+| Refusals | A Hugging Face host gives `settings.server.refusedHost`. Any other address the guard refuses (`http` to a public host, a path, user info) gives the plainer `settings.server.refusedAddress`. Neither reaches the probe. When the launch's health read of the server in use does not say simulated, Settings shows `settings.server.refusedAi`. After a reconnect, every call to a server that no longer says simulated fails with `server_not_simulated`, shown through `errorText`. None of them moves the app |
+| Server mode | No Reset and no `settings.notifyLocal`. S10 has no Demo: next step, because the remote service is not `DemoDriving` |
+
 ## 9. Live Activity and Dynamic Island
 
 Starts when the ticket is active, never while reserved, because a reserved ticket has no number. Never on an emergency or refill visit. Local updates only, no push. Clinic server mode updates only while the app runs, so set a `staleDate`. Ends at visit complete with dismissal after 15 minutes.
@@ -1112,6 +1122,9 @@ New keys the design needs, for `ios/Tools/strings/ios.en.json` and `ios.ar.json`
 | `common.loading` | Loading | جارٍ التحميل |
 | `common.cancel` | Cancel | إلغاء |
 | `settings.resetConfirm` | This clears the visits on this phone. | سيؤدي هذا إلى مسح الزيارات على هذا الهاتف. |
+| `settings.server.inUse` | The app is using this clinic server: | يستخدم التطبيق خادم العيادة هذا: |
+| `settings.server.refusedAddress` | Type only the server's address, with no path. Plain http works only on your local network. Use https for anything else. | اكتب عنوان الخادم فقط، دون أي مسار. لا يعمل http العادي إلا على شبكتك المحلية، واستخدم https لغير ذلك. |
+| `error.server_not_simulated` | This server is not in simulated mode, so the app will not use it. | هذا الخادم ليس في وضع المحاكاة، لذلك لن يستخدمه التطبيق. |
 
 ## 13. Coverage
 
