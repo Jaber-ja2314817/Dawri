@@ -11,7 +11,7 @@
 #    TEST_RUNNER_DAWRI_SERVER=<url>, so the test runner reads the address as DAWRI_SERVER.
 # 4. Exports every screenshot and timing attachment from the result into <outdir>/attachments,
 #    copies the server's log to <outdir>/server.log, and checks that every request in it came
-#    from 127.0.0.1 and none was the speech upload path.
+#    from 127.0.0.1, none was the speech upload path, and none was answered 401.
 # 5. Through a trap, whatever happened: stops the recording, stops the server, and shuts Dawri
 #    Build down again if this script booted it.
 #
@@ -138,10 +138,14 @@ speech='/api/'"as"'r'
 requests=$(grep -cE '"(GET|POST|PUT|PATCH|DELETE) /' "$OUT/server.log")
 foreign=$(grep -E '"(GET|POST|PUT|PATCH|DELETE) /' "$OUT/server.log" | grep -vcE '^INFO: +127\.0\.0\.1:[0-9]+ - "')
 spoken=$(grep -cF "$speech" "$OUT/server.log")
-print -r -- "server-proof: server log: $requests requests, $foreign not from 127.0.0.1, $spoken to the speech path" \
+# A request answered 401 is one the app should never have sent, such as a visit read while
+# signed out. The staff side always holds a session, so the count must be 0.
+refused=$(grep -E '"(GET|POST|PUT|PATCH|DELETE) /' "$OUT/server.log" | grep -cE '" 401( |$)')
+print -r -- "server-proof: server log: $requests requests, $foreign not from 127.0.0.1, $spoken to the speech path, $refused answered 401" \
   | tee "$OUT/server-log-check.txt"
+grep -E '"(GET|POST|PUT|PATCH|DELETE) /' "$OUT/server.log" | grep -E '" 401( |$)' >>"$OUT/server-log-check.txt"
 LOG_OK=0
-(( requests > 0 && foreign == 0 && spoken == 0 )) && LOG_OK=1
+(( requests > 0 && foreign == 0 && spoken == 0 && refused == 0 )) && LOG_OK=1
 
 if (( TESTS == 0 && LOG_OK )); then
   print -r -- "server-proof: PASSED. Output in $OUT"

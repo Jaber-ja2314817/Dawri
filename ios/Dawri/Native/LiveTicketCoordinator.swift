@@ -152,7 +152,12 @@ final class LiveTicketCoordinator {
     /// visit is not live, so old ones never pile up or fire for a visit that is over or gone, and
     /// reads the followed visit again to catch up.
     func reconcile() async {
-        let rows = (try? await service.listVisits()) ?? []
+        // Signed out, no visit can be live, and asking would only earn a refusal: on a clinic
+        // server that is a wasted request answered 401. So signed out ends everything unasked.
+        var rows: [VisitRow] = []
+        if await service.isSignedIn {
+            rows = (try? await service.listVisits()) ?? []
+        }
         let liveIds = Set(rows.filter { $0.active && Self.liveStages.contains($0.stage) }.map(\.visitId))
         enqueue { [live, notifier] in
             await live.endAll(except: liveIds)

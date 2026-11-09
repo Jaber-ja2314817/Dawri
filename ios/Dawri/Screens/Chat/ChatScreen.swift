@@ -21,7 +21,8 @@ struct ChatScreen: View {
 
 /// What the scroll follows: each change the web's effect names, plus the language, so a switch
 /// returns to the newest message, and what makes the summary card grow, so its Yes and Change
-/// never sit behind the composer.
+/// never sit behind the composer. The text size is one of those: a change mid-chat reflows every
+/// bubble and the composer, and the chat must land on the newest message again.
 private struct NewestKey: Equatable {
     var messages: Int
     var thinking: Bool
@@ -31,6 +32,7 @@ private struct NewestKey: Equatable {
     var lang: Lang
     var confirmError: Bool
     var unsent: Bool
+    var typeSize: DynamicTypeSize
 }
 
 private struct ChatContent: View {
@@ -41,6 +43,7 @@ private struct ChatContent: View {
 
     @Environment(\.lang) private var lang
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var typeSize
     @FocusState private var fieldFocused: Bool
     @FocusState private var transcriptFocused: Bool
     @State private var position = ScrollPosition(edge: .bottom)
@@ -68,7 +71,7 @@ private struct ChatContent: View {
         .onChange(of: NewestKey(
             messages: messages.count, thinking: chat.thinking, summary: summary != nil,
             failure: chat.failure != nil, voice: voice.step, lang: lang,
-            confirmError: chat.confirmError != nil, unsent: unsent)
+            confirmError: chat.confirmError != nil, unsent: unsent, typeSize: typeSize)
         ) {
             scrollToNewest()
         }

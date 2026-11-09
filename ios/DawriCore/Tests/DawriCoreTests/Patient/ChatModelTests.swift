@@ -1122,5 +1122,5 @@ extension ChatResponse {
 // - "the scripted note", all three: the app has no real AI mode, so `chat.scripted` is never
 //   shown, as "leaves simulated mode to the footer" asks. The footer's AI line is EverywhereTests'.
 // - "tells the patient to type after a 502, a 400, a 413": server recognition codes. The app never
-//   calls /api/asr, so they cannot happen.
+//   uploads speech, so they cannot happen.
 // - Screens.test.tsx S06: EmergencyScreenTests covers each case on the real cover.

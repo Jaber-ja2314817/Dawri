@@ -96,6 +96,12 @@ xcrun simctl install "$UDID" "$DERIVED/Build/Products/Debug-iphonesimulator/Dawr
 xcrun simctl status_bar "$UDID" override --time 9:41 --batteryState charged --batteryLevel 100 \
   --cellularBars 4 --wifiBars 3 --dataNetwork wifi
 
+# The first launch after a boot or an install is cold and slow, and once drew S01 in place of the
+# first row's screen. One launch that is thrown away warms the app up before the first shot.
+xcrun simctl launch --terminate-running-process "$UDID" "$BUNDLE" -demoLang en -demoScreen settings >/dev/null
+sleep 8
+xcrun simctl terminate "$UDID" "$BUNDLE" 2>/dev/null || true
+
 # shoot <file name> <seconds to settle> <island: 0 or 1> <launch arguments...>
 shoot() {
   local name=$1 settle=$2 island=$3

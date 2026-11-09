@@ -75,8 +75,6 @@ allowed_reason() {
     ios/DawriUITests/AccountScreenTests.swift)
       [[ $text == *'app.typeText("https://User@Dawri.HF.Space.:443")'* ]] && { print "the refused-host UI test"; return; }
       [[ $text == *'"-demoAddress", "https://dawri.hf.space"'* ]] && { print "the refused-host UI test, plain Space address"; return; } ;;
-    ios/DawriCore/Tests/DawriCoreTests/Patient/ChatModelTests.swift)
-      [[ $text == *'calls /api/asr, so they cannot happen.'* ]] && { print "a comment: the speech-upload cases cannot happen"; return; } ;;
     ios/DawriCore/Tests/DawriCoreTests/Fixtures/goldens/*|ios/Tools/export/harvested-inputs.json)
       only_corpus_terms "$terms" && { print "rule-input text harvested from backend tests ($terms)"; return; } ;;
   esac

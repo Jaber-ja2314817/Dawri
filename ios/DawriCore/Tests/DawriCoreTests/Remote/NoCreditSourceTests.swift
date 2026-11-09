@@ -75,10 +75,6 @@ private let allowed: [Allowed] = [
             why: "the refused-host UI test gives the plain Space address"),
     Allowed("ios/DawriUITests/ServerModeTests.swift",
             why: "the Clinic server UI tests, with their refusal cases"),
-    // A comment saying why the web's speech-upload test cases have no port.
-    Allowed("ios/DawriCore/Tests/DawriCoreTests/Patient/ChatModelTests.swift",
-            line: "calls /api/asr, so they cannot happen.",
-            why: "a comment explaining that the speech-upload cases cannot happen"),
     // The golden corpus feeds strings harvested from backend/tests to the rule port as text.
     // Provider names occur there only as rule inputs, never as a host. A Hugging Face host or the
     // speech path would still fail, because only these four words are allowed.

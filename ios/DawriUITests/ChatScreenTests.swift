@@ -105,6 +105,32 @@ final class ChatScreenTests: XCTestCase {
         assertShown(app.keyboards.firstMatch)
     }
 
+    /// The text size grows and comes back, as the audit's clipping check does to the running app
+    /// and as a patient does in Control Centre mid-chat. The chat must return to its newest
+    /// message, so Yes and Change sit above the composer and can be tapped, not under it.
+    @MainActor
+    func testATextSizeChangeKeepsYesAndChangeAboveTheComposer() throws {
+        for lang in ["ar", "en"] {
+            let app = chat(fatima, lang: lang, "-demoChat", "summary")
+            let yes = app.element("chat-summary-yes")
+            let change = app.element("chat-summary-change")
+            let field = app.element("chat-input")
+            assertShown(change, lang)
+            assertShown(field, lang)
+            _ = app.waitUntilSettled()
+            // The clipping check draws the text larger and then puts it back.
+            try app.performAccessibilityAudit(for: .textClipped) { _ in true }
+            let settling = app.waitUntilSettled()
+            for button in [yes, change] {
+                XCTAssertTrue(button.isHittable, "\(lang): \(button) is covered after the size change. \(settling)")
+                XCTAssertLessThanOrEqual(
+                    button.frame.maxY, field.frame.minY,
+                    "\(lang): \(button.identifier) at \(button.frame) sits under the composer at \(field.frame). \(settling)")
+            }
+            app.terminate()
+        }
+    }
+
     @MainActor
     func testUnsentWordsDisableYesUntilTheBoxIsEmpty() {
         let app = chat(fatima, lang: "en", "-demoChat", "summary")

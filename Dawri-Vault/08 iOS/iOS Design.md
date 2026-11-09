@@ -731,6 +731,10 @@ Question: what brings you in, one question at a time?
 | Red flag | S06 opens at once, with no animation, over a closed chat |
 | Scripted note | `chat.scripted` is not shown. The web shows it only in real AI mode, and the footer already says AI: simulated |
 
+| As built | Detail |
+| --- | --- |
+| Text size mid-chat | The scroll to the newest message also follows the Dynamic Type size (`NewestKey.typeSize` in `ChatScreen.swift`), so after a size change the chat lands on the newest message again and the summary's Yes and Change sit above the composer. `ChatScreenTests.testATextSizeChangeKeepsYesAndChangeAboveTheComposer` (Phase 5) |
+
 ### S06 Emergency
 
 Question: what do I do right now? Answer: call 999.
