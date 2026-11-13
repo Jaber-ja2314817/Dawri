@@ -342,6 +342,35 @@ final class AccountScreenTests: XCTestCase {
         XCTAssertEqual(calls("probe", in: app), 0, "the probe was called for a refused host")
     }
 
+    /// At AX3 the empty address field shows the whole sample, wrapped, not cut to an ellipsis
+    /// (iOS Design section 11, check 8): the empty field stands taller than it does with one
+    /// letter in it. It still takes a tap anywhere, typing, and Return, which only closes the
+    /// keyboard. In Arabic and English, as the address reads left to right in both.
+    @MainActor
+    func testAtAX3TheEmptyAddressFieldWrapsItsSampleAndStillTypes() {
+        for lang in ["en", "ar"] {
+            let app = start([
+                "-demoLang", lang, "-demoScreen", "settings", "-demoMode", "server", "-demoServer", "ok",
+                "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXL",
+            ])
+            let field = app.element("settings-server")
+            assertShown(field, lang)
+            let empty = field.frame
+            // Low on the field, below where a one-line field would end.
+            field.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.85)).tap()
+            assertShown(app.keyboards.firstMatch, lang)
+            app.typeText("h")
+            let oneLetter = field.frame
+            XCTAssertGreaterThan(
+                empty.height, oneLetter.height + 20,
+                "\(lang): the empty field at \(empty) is no taller than with one letter at \(oneLetter), so the sample did not wrap")
+            app.typeText("ttp://127.0.0.1:8101\n")
+            XCTAssertEqual(field.value as? String, "http://127.0.0.1:8101", lang)
+            gone(app.keyboards.firstMatch)
+            app.terminate()
+        }
+    }
+
     /// The plain form of a Space address, as the owner's own Space has it, in both languages.
     @MainActor
     func testAPlainSpaceAddressIsRefusedWithNoProbe() {

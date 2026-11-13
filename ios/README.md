@@ -65,8 +65,9 @@ Developer Program.
 
 Limits of a free team:
 - **Profiles expire after 7 days.** After that the app will not open. Connect the phone and Run
-  from Xcode again to renew it. The signed device build checked for this README had a profile
-  made on 9 Nov 2026 that expires on 16 Nov 2026.
+  from Xcode again to renew it. The signed device build of 13 Nov 2026 still carried the
+  profiles Xcode made on 9 Nov 2026 at 00:06 Doha time, which expire on 16 Nov 2026 at 00:06. A
+  phone test after that needs one Run from Xcode first, which makes new ones.
 - **Three apps at most.** A free team can have only 3 of its apps installed on a device at the
   same time. Dawri counts as one, with its Live Activity extension inside it. Free teams can
   also register only a few new App IDs a week, which matters only when you change
@@ -97,8 +98,9 @@ swift test --package-path ios/DawriCore --scratch-path <a folder outside ios/>
 They hold every safety golden (red flags, conversations, refill, text, regex, parsers, read-back,
 clinic rules and the session replay), the drift checks against the Python exports, both
 Clinic server guards, and the shared `ClinicContract` suite run against the on-this-phone
-service. On 9 Nov 2026, from an empty scratch folder: 627 tests in 93 suites passed in about
-22 s of test time (35 s in all with the build), with 0 skipped, 0 failed and 0 compiler warnings.
+service. On 13 Nov 2026, from an empty scratch folder: "Test run with 627 tests in 93 suites
+passed after 23.248 seconds", with 0 skipped, 0 failed and 0 compiler warnings (no `warning:` line
+in the build log).
 That includes every safety golden suite by name: red flag goldens (single messages),
 conversation goldens, the refill golden, text, regex, parser and read-back goldens, the
 `next_turn` golden, the session replay, the clinic rule goldens, the queue traces and the golden
@@ -133,18 +135,46 @@ xcodebuild test -project ios/Dawri.xcodeproj -scheme Dawri \
   `TEST_RUNNER_DAWRI_SERVER=<url>`. When it is missing, or is anything but
   `http://127.0.0.1:8101` to `8199`, every test fails with the reason. None is ever skipped. Run
   them through `server-proof.sh`, below, which starts and stops the server for you.
-- On 9 Nov 2026, after uninstalling the app and rebooting Dawri Build, the Dawri scheme from an
-  empty derived folder ran **162 UI tests in 22 classes, all passing on the first run, in
-  4,143 s** (about 69 minutes), on AC power under `caffeinate -i`, with no sleep in
-  `pmset -g log`. Per class: AccessibilityAuditTests 2, AccountScreenTests 28,
-  ArrivalNativeTests 8, BackTests 3, ChatScreenTests 10, EmergencyScreenTests 15,
-  EngineOnDeviceTests 5, EverywhereTests 4, FoundationHookTests 14, JourneyTests 7,
-  LanguageTests 6, LiveActivityTests 7, MapTests 8, NotificationTests 5, ScreenTests 2,
-  SessionTests 11, SmokeTests 1, StageTableTests 3, SwipeHoldTests 2, VisitScreenTests 13,
-  VoiceNativeTests 3, WelcomeTests 5. `ServerModeTests` was compiled but not run.
+- On 13 Nov 2026, after uninstalling the app (and the test runner), waiting 15 s and rebooting
+  Dawri Build, with `simctl listapps` showing no Dawri app, the Dawri scheme from an empty
+  derived folder ran **163 UI tests in 22 classes in 4,739 s** (about 79 minutes), on AC power
+  under `caffeinate -i`, with no sleep or wake in `pmset -g log` (the last was at 01:24 that
+  morning). 161 passed on the first run. Per class: AccessibilityAuditTests 2,
+  AccountScreenTests 28, ArrivalNativeTests 8, BackTests 3, ChatScreenTests 11,
+  EmergencyScreenTests 15, EngineOnDeviceTests 5, EverywhereTests 4, FoundationHookTests 14,
+  JourneyTests 7, LanguageTests 6, LiveActivityTests 7, MapTests 8, NotificationTests 5,
+  ScreenTests 2, SessionTests 11, SmokeTests 1, StageTableTests 3, SwipeHoldTests 2,
+  VisitScreenTests 13, VoiceNativeTests 3, WelcomeTests 5. `ServerModeTests` was compiled but
+  not run.
+- Two tests failed in that run, both inside Xcode's test machinery, not in the app, and both
+  passed on the rerun:
+  - `AccessibilityAuditTests.testEveryScreenInEnglish`: on `s09-reserved` XCTest's audit gave
+    up with "Audit failed to complete in time" (code -56) after 155 s. The simulator's log shows
+    the app idle and asked nothing from 18:59:52 to 19:02:20, while testmanagerd ran the audit
+    after its element-vision asset query. `Audit.swift` now runs an audit call once more when,
+    and only when, XCTest's audit service times out, with a line in the log; findings never
+    throw, so none can be retried away.
+  - `EverywhereTests.testEveryScreenFromEnglish`, on S02: the synthesized tap on the language
+    toggle drew its pressed state, but backboardd logged "didn't see a previous touch down or
+    range-in event for pathIndex:2; skipping event" seven times for it, so the touch never
+    ended in the app. No other tap in that test logged it.
+- The rerun, after another uninstall and reboot: `AccessibilityAuditTests` passed 2 of 2 on the
+  first try (968 s, all 84 rows settled, the new retry never used), and
+  `EverywhereTests.testEveryScreenFromEnglish` passed (370 s).
+- The screenshot review then found one real fault: at AX3 the empty server address field cut its
+  sample, `http://192.168.1.20:8100`, to "http://192.168.1.2…", because a field's own prompt keeps
+  to one line. `DSTextField` now draws the sample as wrapping text behind the empty field at
+  accessibility sizes, and a tap anywhere on the box focuses the field.
+  `AccountScreenTests.testAtAX3TheEmptyAddressFieldWrapsItsSampleAndStillTypes` checks it in both
+  languages and failed on the old code (the empty field stood 53 pt, no taller than with one
+  letter). The Dawri scheme now holds 164 UI tests. After the fix `AccountScreenTests` (29),
+  `ChatScreenTests` (11) and `AccessibilityAuditTests` (2) ran again: 42 of 42 passed, with no
+  audit retry. `ChatScreenTests.testATextSizeChangeKeepsYesAndChangeAboveTheComposer` likewise
+  failed with the chat's old scroll key ("chat-summary-change is covered after the size change"
+  in Arabic) and passes with the text size in it.
 - The accessibility audit of the five chat rows, repeated with `-test-iterations 5` and
   `TEST_RUNNER_AUDIT_ONLY=chat-opening,chat-summary,chat-error-retry,chat-listening,chat-transcript-confirm`,
-  passed 10 of 10.
+  passed 10 of 10, 50 row audits, with no retry.
 
 **Screenshots** for review, every row in `ios/Tools/shots/*.tsv`, in Arabic and English, light and
 dark, and at AX3 where a row asks:
@@ -154,7 +184,23 @@ ios/Tools/shoot.sh <outdir>
 ios/Tools/shoot.sh --only 's10*' <outdir>
 ```
 
-It uses only the Dawri Build simulator and leaves it as it found it.
+It uses only the Dawri Build simulator and leaves it as it found it. Before the first row it
+launches the app once and throws that launch away, because the first launch after a boot or an
+install is cold and once drew S01 in place of the first row's Settings screen.
+
+Each row gives 4 images (Arabic and English, light and dark), 8 with `ax3`, and an `island` row
+gives 2 (light only). On 13 Nov 2026 the full run printed "Done: 132 rows, 650 images", exactly
+the tables' count: 100 plain rows at 4, 31 AX3 rows at 8 and 1 Island row at 2, in about 43
+minutes. Every Settings row (on this phone, reset confirm, server, connecting, connected,
+refused host, refused mode, unreachable, refused address, in use after a relaunch, in use and
+refused, back on the phone) was viewed in both languages and themes, with the AX3 rows,
+against iOS Design section 11; the first image, `settings-local-ar-light`, shows Settings. That
+review found the AX3 address sample cut short, described above; after the fix
+`shoot.sh --only 'settings*'` gave "12 rows, 56 images", with the sample wrapped in full.
+The colour scan of all 650 (the top 170 px left out, each channel within 30) finds the hue
+`#1d5fbf` or its dark form `#689ce8` only on S10, the Live views, the galleries, and MapKit's own
+water label inside the S08 map; it finds `#c4242a` above 1% of an image only on S06 (68 of 68),
+on the S06 rows of the Live switch and in a component gallery.
 
 **The no-credit search:**
 
@@ -179,7 +225,9 @@ HF_TOKEN= HF_HUB_OFFLINE=1 SIMULATE_LOAD=1 DAWRI_DB=<temp file outside the repo>
 ```
 
 The exporters import the backend, so they run with `HF_TOKEN=` blank, and they stop unless the
-backend reports simulated mode.
+backend reports simulated mode. On 13 Nov 2026 all three exited 0: "sync-strings: up to date"
+(38 phone-only keys in each language in `ios/Tools/strings`, 270 and 270 in DawriCore, with equal
+key sets), and the engine export printed "ai_mode simulated" for the rules and the clinic.
 
 ## Clinic server mode
 
@@ -212,11 +260,12 @@ on-this-phone harness only. The script keeps its state (`url=`, `pid=`, `db=`, `
 `$DAWRI_SERVER_STATE`, by default `$TMPDIR/dawri-clinic-server.state`, and the server's log is
 `server.log` in that `dir`. `stop` kills only that pid, and only if it is this uvicorn.
 
-Checked on 9 Nov 2026: `contract` printed
+Checked on 13 Nov 2026: `contract` printed
 `health http://127.0.0.1:8101/api/health: {"status":"ok","ai_mode":"simulated","simulate_load":true}`
-and `ai_mode simulated http://127.0.0.1:8101`, then "Test run with 32 tests in 1 suite passed":
-35 cases for the on-this-phone harness and 35 for the clinic server, with the same tests on
-each, then "stopped". `pgrep -fl uvicorn` was empty afterwards.
+and `ai_mode simulated http://127.0.0.1:8101`, then "Test run with 32 tests in 1 suite passed
+after 2.362 seconds": 35 cases for the on-this-phone harness and 35 for the clinic server, with
+the same tests on each, then "clinic-server: stopped pid 89085". The server's log held 474
+requests, all from 127.0.0.1, none to the speech path. `pgrep -fl uvicorn` was empty afterwards.
 
 The same by hand, from the repository root, with a free port above 8100 and a new temp
 database:
@@ -258,6 +307,8 @@ nothing until it runs again, and posts no notice or Live Activity change in the 
 Run the server on `127.0.0.1` as above. In the app, open Settings, choose **Clinic server**, type
 `http://127.0.0.1:8101` and tap **Connect**. The pill reads "Connected, simulated mode", and the
 app then uses the server until you choose **On this phone** again, which switches back at once.
+Connect leaves you on Settings, signed out of the server: the two modes never share a session,
+so sign in again from the start screen.
 Reset and Demo: next step are hidden in Clinic server mode, because real staff move the ticket.
 The server-proof screenshots show exactly this: Settings with the green "Connected, simulated
 mode" pill, the line "The app is using this clinic server:" with the address, the notice that
@@ -288,11 +339,32 @@ scheme, which holds only `ServerModeTests`, four tests:
 - `testARelaunchStaysOnTheServerUntilOnThisPhone`: with no launch hook, Connect, sign in,
   relaunch (still on the server, signed in from the Keychain), then On this phone.
 
-Run on 9 Nov 2026 on Dawri Build: `server-proof: PASSED`, 4 of 4 tests. Every staff move showed
-on screen between 0.14 s and 0.33 s after the staff call returned, with no pull to refresh, no
-relaunch and no tap (the limit is 10 s). By polling, the call showed after 0.25 s. The server log
-held 193 requests, all from 127.0.0.1, none to the speech path; the patient's polled visit made no
-stream request.
+Run on 13 Nov 2026 on Dawri Build: `server-proof: PASSED`, 4 of 4 tests (relaunch 41.4 s,
+Arabic 74.5 s, English 88.1 s, polling 61.8 s). Every staff move showed on screen between 0.14 s
+and 0.33 s after the staff call returned, with no pull to refresh, no relaunch and no tap (the
+limit is 10 s):
+
+| Run | Staff call | Seen after |
+| --- | --- | --- |
+| English | nurse call-next (called) | 0.25 s |
+| English | vitals (with the team) | 0.26 s |
+| English | handoff confirm (D-GP-023 at the doctor) | 0.15 s |
+| English | doctor call-next | 0.33 s |
+| English | consult done (P-031 at the pharmacy) | 0.14 s |
+| English | pharmacist call-next | 0.32 s |
+| English | dispensed (S11) | 0.23 s |
+| Arabic | nurse call-next, vitals, handoff confirm, doctor call-next | 0.24 s, 0.24 s, 0.14 s, 0.33 s |
+| Stream down | nurse call-next, by polling, under "Updates may be slower" | 0.47 s |
+
+How soon a polled change shows depends on where the call lands between two polls, so that last
+figure varies from run to run. The server log held 187 requests, all from 127.0.0.1, none to the
+speech path and none answered 401; after the polling run's reset it holds no stream request.
+The run's 284 s `server-proof.mov` shows the same screens.
+
+A second run the same evening, on the final code after the AX3 address fix, also printed
+`server-proof: PASSED`, 4 of 4: every stream move showed in 0.16 s to 0.34 s, the polled one in
+4.32 s with the slow line, and its log held 194 requests, all from 127.0.0.1, none to the speech
+path, none answered 401, and no stream request after the polling run's reset.
 
 What `<outdir>` holds afterwards:
 
@@ -305,8 +377,16 @@ What `<outdir>` holds afterwards:
 | `timings.txt` | One `SERVER-PROOF` line per staff move: the time the call returned, the time the change was seen, and the seconds between |
 | `server-proof.mov` | The simulator's screen for the whole run |
 | `server.log` | The server's own log |
-| `server-log-check.txt` | The count of requests, those not from 127.0.0.1, and those to the speech path |
+| `server-log-check.txt` | The count of requests, those not from 127.0.0.1, those to the speech path and those answered 401, then each 401 line. The run passes only when the last three are 0. A 401 is a request the app should not have sent, such as a visit read while signed out |
 | `xcodebuild.log`, `recorder.log` | The full build and test output, and the recorder's |
+| `.clinic-server.state` | The server's `url=`, `pid=`, `db=` and `dir=` while it runs; removed when it stops |
+
+The attachments are named `<run>-<step>-<screen>.png`, where the run is `en`, `ar`, `en-polling`
+or `relaunch`: 41 screenshots in all on 13 Nov 2026. English has 15, from
+`en-01-settings-typed.png` to `en-15-s11-complete.png`; Arabic 11, from
+`ar-02-settings-in-use.png` to `ar-12-s10-doctor-called.png`; the polling run 8, ending with
+`en-polling-09-s10-slow.png` and `en-polling-10-s10-called-by-polling.png`; and the relaunch 7,
+from `relaunch-01-settings-typed.png` to `relaunch-07-back-on-the-phone.png`.
 
 ### From a real iPhone over Wi-Fi
 
@@ -357,7 +437,7 @@ footer says "AI: simulated" on every patient screen.
   and `testARefusedHostShowsTheMessageWithNoProbe` (`https://User@Dawri.HF.Space.:443`) each show
   the refused-host message with the DEBUG probe count at 0, and
   `testAPublicHttpAddressIsRefusedWithNoProbe` does the same for `http://example.com`. All passed
-  in the 9 Nov 2026 full run.
+  in the 13 Nov 2026 full run.
 - **Guard 2, simulated mode only.** `ServerCheck` then sends exactly one request,
   `GET /api/health`, follows no redirect, and refuses any server whose `ai_mode` is not
   `simulated`, with "This server is not in simulated mode, so the app will not use it." It
@@ -368,15 +448,15 @@ footer says "AI: simulated" on every patient screen.
   next call after a reconnect or a dropped stream, and that a full scripted remote journey never
   asks for the speech path. In the UI, `AccountScreenTests.testAServerNotInSimulatedModeIsRefused`
   shows the refused-AI message on Connect, and `testARefusalKeepsTheServerInUse` shows it for the
-  server already in use, which stays as it is. Both passed in the 9 Nov 2026 full run.
+  server already in use, which stays as it is. Both passed in the 13 Nov 2026 full run.
 - **App Transport Security** allows plain `http` only to the local network:
   `NSAppTransportSecurity` is exactly `NSAllowsLocalNetworking = true`, with no arbitrary-loads
   key and no exception domains. The Live Activity extension has no ATS key and makes no request.
 - **The search.** `ios/Tools/no-credit-check.sh` and `NoCreditSourceTests` find Hugging Face and
   model-provider hosts in the app's folders only in the refusal guards, their tests and banned
   lists, plus four provider words (`featherless`, `novita`, `openai`, `whisper`) that occur as
-  rule-input text in the goldens harvested from the backend's tests, never as a host. On 9 Nov
-  2026 the script printed "no-credit-check: clean (110 hits, every one allowed)" and exited 0.
+  rule-input text in the goldens harvested from the backend's tests, never as a host. On 13 Nov
+  2026 the script printed "no-credit-check: clean (107 hits, every one allowed)" and exited 0.
   Foundation's network session type appears only in `DawriCore/Sources/DawriCore/Remote` and
   `DawriUITests/ServerModeTests.swift`.
 
@@ -386,29 +466,32 @@ and the app refuses it otherwise.
 ## Definition of done
 
 Each line of the Definition of done in `Dawri-Vault/08 iOS/iOS Brief.md`, with the evidence from
-the Phase 5 integration runs on 9 Nov 2026 on `build/dawri-ios`. Full evidence for each phase is
+the Phase 5 integration runs of 13 Nov 2026 on `build/dawri-ios`. Full evidence for each phase is
 in `Dawri-Vault/08 iOS/iOS Build Log.md`. PHONE-ONLY marks what a simulator cannot show; it is
 listed in the next section and left for the owner's phone test.
 
 | Brief line | Evidence | Status |
 | --- | --- | --- |
-| `swift test` in `DawriCore` is green, and every safety golden passes | 627 tests in 93 suites passed from an empty scratch folder, 0 skipped, 0 warnings. Every safety golden suite ran by name (red flags single and conversation, refill, text, regex, parsers, read-back, `next_turn`, session replay, clinic rules, queue traces, manifests). No `XCTSkip`, `.disabled(` or `withKnownIssue` anywhere in the tests | PASS |
-| The shared contract suite runs against both back ends | `ios/Tools/clinic-server.sh contract <scratch>` against a real local backend that reported `ai_mode simulated`: 32 tests, 35 cases on this phone and 35 on the clinic server, all passed | PASS |
-| `xcodebuild test` on "Dawri Build" is green | 162 UI tests in 22 classes passed on the first run in 4,143 s, from an empty derived folder after uninstalling the app and rebooting the simulator, with no sleep in `pmset -g log`. The per-class counts are under Tests above. The Dawri scheme does not run `ServerModeTests` | PASS |
-| XCUITests walk Fatima, Ahmed and Ravi in AR and EN in On this phone mode | `JourneyTests`, 7 of 7, with no server argument: `testFatimaInArabic`, `testFatimaInEnglish` (ticket, medicines with no penicillin, rating, history), `testFatimaForADependent`, `testAhmedInArabic`, `testAhmedInEnglish` (refill route, no ticket), `testRaviInArabic`, `testRaviInEnglish` (emergency screen, 999, no ticket) | PASS |
-| In Clinic server mode, against a local simulated backend, a patient on the simulator gets a ticket that moves live from staff API calls | `ios/Tools/server-proof.sh <outdir>`: PASSED, 4 of 4. Fatima in English went from T-014 through called, serving, D-GP-023, the doctor's call, P-031, the pharmacy's call and S11 with no penicillin; in Arabic through the doctor's call. Each move showed in 0.14 s to 0.33 s with no refresh; with the stream down, polling showed it in 0.25 s with the slow line. The server log: 193 requests, all from 127.0.0.1, none to the speech path. Over Wi-Fi from a real phone is PHONE-ONLY | PASS |
-| A device build signs and compiles with `generic/platform=iOS`, using team `4Y4YQ65B78` | `xcodebuild -scheme Dawri -configuration Release -destination 'generic/platform=iOS' -allowProvisioningUpdates build`: BUILD SUCCEEDED, signed with an Apple Development identity and the "iOS Team Provisioning Profile" for `com.jaber.dawri` and `com.jaber.dawri.live` (made 9 Nov 2026, expiring 16 Nov 2026). `codesign -dvv` shows TeamIdentifier `4Y4YQ65B78` on `Dawri.app` and `DawriLiveExtension.appex`; `codesign -d --entitlements -` shows only `application-identifier`, `com.apple.developer.team-identifier` and `get-task-allow` on each. `codesign --verify --deep --strict` passes | PASS |
+| `swift test` in `DawriCore` is green, and every safety golden passes | From an empty scratch folder: "Test run with 627 tests in 93 suites passed after 23.248 seconds", 0 skipped, 0 compiler warnings. Every safety golden suite ran and passed by name: red flag goldens (single messages and conversations), the refill golden, text, regex, parser and read-back goldens, the `next_turn` and session replay suites, the clinic rule goldens, the queue traces and the golden manifests. No `XCTSkip`, `.disabled(` or `withKnownIssue` in `DawriCore/Tests` or `DawriUITests`. `sync-strings.py --check`, `export-engine-data.py --check` and `export-goldens.py --check` exit 0 | PASS |
+| (the same line) The shared contract suite runs against both back ends | `ios/Tools/clinic-server.sh contract <scratch>` against a real local backend that printed `ai_mode simulated http://127.0.0.1:8101`: 32 tests, 35 cases on this phone and 35 on the clinic server, all passed; 474 requests, all from 127.0.0.1 | PASS |
+| `xcodebuild test` on "Dawri Build" is green | Fresh derived folder, after uninstalling the app and rebooting the simulator, no sleep in `pmset -g log`: 163 UI tests in 22 classes, 161 passed on the first run. The 2 failures were in Xcode's test machinery, each with its log evidence above (an audit-service timeout with the app idle, and a synthesized tap whose touch backboardd dropped); after another uninstall and reboot both passed, `AccessibilityAuditTests` 2 of 2 on the first try. The chat audit rows passed 10 of 10 with `-test-iterations 5`. After the AX3 address fix under Tests, `AccountScreenTests`, `ChatScreenTests` and `AccessibilityAuditTests` ran again: 42 of 42 passed. The Dawri scheme does not run `ServerModeTests` | PASS, with the environmental rerun reported |
+| XCUITests walk Fatima, Ahmed and Ravi in AR and EN in On this phone mode | `JourneyTests`, 7 of 7, launched with only `-demoLang` and `-demoFreeze 0`, no server argument: `testFatimaInArabic`, `testFatimaInEnglish` (ticket, medicines with no penicillin, rating, history), `testFatimaForADependent`, `testAhmedInArabic`, `testAhmedInEnglish` (refill route, no ticket), `testRaviInArabic`, `testRaviInEnglish` (emergency screen, 999, no ticket) | PASS |
+| In Clinic server mode, against a local simulated backend, a patient on the simulator gets a ticket, and it moves from staff API calls with the app updating live | `ios/Tools/server-proof.sh <outdir>`: PASSED, 4 of 4, twice (the second on the final code). Fatima in English went from T-014 through called, serving, D-GP-023, the doctor's call, P-031, the pharmacy's call and S11 with paracetamol and dextromethorphan and no penicillin; in Arabic through the doctor's call. Each move showed in 0.14 s to 0.34 s with no refresh; with the stream down, polling showed it (0.47 s and 4.32 s) with the slow line. 187 and 194 requests in the server logs, all from 127.0.0.1, none to the speech path, none answered 401. The stage screenshots and frames of `server-proof.mov` were viewed in both languages. Over Wi-Fi from a real phone is PHONE-ONLY | PASS |
+| A device build signs and compiles with `generic/platform=iOS`, using team `4Y4YQ65B78` | `xcodebuild -project ios/Dawri.xcodeproj -scheme Dawri -configuration Release -destination 'generic/platform=iOS' -derivedDataPath <fresh> -allowProvisioningUpdates build`: BUILD SUCCEEDED, signed with an Apple Development identity and "iOS Team Provisioning Profile: com.jaber.dawri" and "...: com.jaber.dawri.live" (team 4Y4YQ65B78, one device, made 9 Nov 2026, expiring 16 Nov 2026). `codesign -dvv`: TeamIdentifier=4Y4YQ65B78 on `Dawri.app` and `DawriLiveExtension.appex`. `codesign -d --entitlements -`: only `application-identifier`, `com.apple.developer.team-identifier` and `get-task-allow` on each, so no paid capability. `codesign --verify --deep --strict` passes. The device app's ATS is `{NSAllowsLocalNetworking: true}` and it holds none of the 13 DEBUG hooks | PASS |
 | Agents never install it | No `devicectl`, `ios-deploy` or `simctl install` of the device build was run, and the physical iPhone was not touched. Installing is the owner's step | PASS |
-| A log proves no request left for any Hugging Face host | Guard 1 and Guard 2 above, tested with a request-recording stub that records zero requests for every refused host and exactly one health read for a server not in simulated mode, and in the Settings UI tests. `no-credit-check.sh` exits 0. The server-proof log shows only 127.0.0.1. The Release app's `Info.plist` has `NSAppTransportSecurity` exactly `{NSAllowsLocalNetworking: true}`, the extension has no ATS key, and `NSLocalNetworkUsageDescription` is in both `ar.lproj` and `en.lproj` | PASS |
+| A log proves no request left for any Hugging Face host | Guard 1 and Guard 2 above: `CreditGuardTests` record zero requests for every refused host form and exactly one `GET /api/health` for a server not in simulated mode, and the Settings UI tests show the refused-host message with the probe count at 0. `no-credit-check.sh` exits 0 ("clean (107 hits, every one allowed)"), and a plain `grep -rniE` over `ios/` hits only the guards, their tests and banned lists (this README's guarantees section is one). The network session type appears only in `DawriCore/Sources/DawriCore/Remote` and `DawriUITests/ServerModeTests.swift`. The contract and server-proof logs show only 127.0.0.1. The Release app's `Info.plist` has `NSAppTransportSecurity` exactly `{NSAllowsLocalNetworking: true}`, the extension has no ATS key, and `NSLocalNetworkUsageDescription` is in both `ar.lproj` and `en.lproj` | PASS |
 | `ios/README.md` covers open in Xcode, run on an iPhone with a free team, starting the local server for Clinic server mode, and an honest list of what only a real phone can prove | The sections above and below | PASS |
 | What only a real phone can prove: microphone, on-device Arabic speech, geofence, QR camera, the Live Activity on the real Dynamic Island, the 999 dialer, haptics, and the rest listed below | Built, and tested as far as a simulator allows. Not claimed as verified | PHONE-ONLY |
 
-Also checked on 9 Nov 2026: the Release simulator build succeeded, and `strings` on its app and
+Also checked on 13 Nov 2026: the Release simulator build succeeded, and `strings` on its app and
 extension binaries finds none of the DEBUG launch hooks (`demoScreen`, `demoMode`, `demoAddress`,
 `demoConnect`, `demoServer`, `demoClinic`, `demoFail`, `demoHold`, `demoCamera`, `demoVoice`,
-`demoNotify`, `demoLiveProbe`, `demoFreeze`), while the Debug build's `Dawri.debug.dylib` has each
-of them. `sync-strings.py --check`, `export-engine-data.py --check` and `export-goldens.py --check`
-exit 0.
+`demoNotify`, `demoLiveProbe`, `demoFreeze`), nor the DEBUG types `DemoLaunch`, `DemoFeatures`,
+`DemoAccount`, `DemoClinicProxy` and `LiveGallery`, while the Debug build's `Dawri.debug.dylib`
+has every hook. The built app's `NSAppTransportSecurity` is exactly
+`{NSAllowsLocalNetworking: true}`, and the AR and EN `InfoPlist.strings` hold
+`NSLocalNetworkUsageDescription`. `git diff bb37797 -- backend frontend` is empty, and no build
+output or `.swiftpm` folder is left under `ios/`.
 
 ## What only a real iPhone can prove
 

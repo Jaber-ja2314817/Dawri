@@ -69,7 +69,7 @@ extension XCUIApplication {
     func auditFindings(excluding exclusions: [AuditExclusion], row: String) throws -> [String] {
         var findings: [String] = []
         for types in auditOrder {
-            try performAccessibilityAudit(for: types) { issue in
+            findings += try auditCall(types, row: row) { issue in
                 let identifier = issue.element?.identifier ?? ""
                 let label = issue.element?.label ?? ""
                 let frame = issue.element?.frame ?? .zero
@@ -78,16 +78,58 @@ extension XCUIApplication {
                         issue.auditType, identifier: identifier, label: label, frame: frame,
                         detail: issue.detailedDescription, row: row)
                 }) {
-                    return true
+                    return nil
                 }
                 let element = issue.element.map {
                     "\($0.elementType.rawValue) id='\(identifier)' label='\(label)' frame=\(frame)"
                 } ?? "no element: \(issue.detailedDescription)"
-                findings.append("\(issue.auditType.name): \(issue.compactDescription) [\(element)]")
-                return true
+                return "\(issue.auditType.name): \(issue.compactDescription) [\(element)]"
             }
         }
         return findings
+    }
+
+    /// One audit call, and its findings. XCTest's own audit service can stall and give up with
+    /// "Audit failed to complete in time" (code -56) while the app sits idle and is never asked
+    /// anything: in the 13 Nov full run it stalled 155 s on s09-reserved in English, inside
+    /// testmanagerd, after its element-vision asset query. That timeout is not a finding, so the
+    /// call runs once more from the start, with a line in the log, and only the completed call's
+    /// findings count. A second timeout, and any other error, fails the row as before. A finding
+    /// is never retried away: findings do not throw.
+    @MainActor
+    private func auditCall(
+        _ types: XCUIAccessibilityAuditType, row: String,
+        _ finding: @escaping (XCUIAccessibilityAuditIssue) -> String?
+    ) throws -> [String] {
+        func once() throws -> [String] {
+            var found: [String] = []
+            try performAccessibilityAudit(for: types) { issue in
+                if let line = finding(issue) { found.append(line) }
+                return true
+            }
+            return found
+        }
+        do {
+            return try once()
+        } catch let error as NSError where error.isAuditServiceTimeout {
+            print("audit \(row): XCTest's audit service timed out (\(error.code)) on \(types.names), running that call once more")
+            return try once()
+        }
+    }
+}
+
+extension NSError {
+    /// XCTest's "Audit failed to complete in time": the audit service's own timeout, not a finding.
+    var isAuditServiceTimeout: Bool {
+        domain == "com.apple.xcode.xctest.accessibilityAudit" && code == -56
+    }
+}
+
+extension XCUIAccessibilityAuditType {
+    /// The names of every check in a set, for the log.
+    var names: String {
+        let all: [XCUIAccessibilityAuditType] = [.contrast, .elementDetection, .hitRegion, .textClipped, .dynamicType]
+        return all.filter { contains($0) }.map(\.name).joined(separator: "+")
     }
 }
 

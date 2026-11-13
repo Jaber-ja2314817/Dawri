@@ -58,7 +58,8 @@ struct DSTextField: View {
     private var field: some View {
         let shape = RoundedRectangle(cornerRadius: DS.Radius.control, style: .continuous)
         return input
-            .focused($focused)
+            // The wrapping address field binds its own focus inside, on the field itself.
+            .modifier(FocusBinding(focused: $focused, applies: !wrapsAddress))
             .dsText(.body, monoDigits: kind == .qid || kind == .code)
             .foregroundStyle(isEnabled ? DS.Color.ink : DS.Color.disabledText)
             .padding(.horizontal, DS.Space.m)
@@ -76,6 +77,9 @@ struct DSTextField: View {
             .accessibilityHint(error.map { Text(verbatim: $0) } ?? Text(verbatim: ""))
             .accessibilityIdentifier(identifier ?? "")
     }
+
+    /// The address at accessibility sizes, which wraps.
+    private var wrapsAddress: Bool { kind == .address && typeSize.isAccessibilitySize }
 
     @ViewBuilder
     private var input: some View {
@@ -110,23 +114,35 @@ struct DSTextField: View {
             // A long address wraps at accessibility sizes instead of ending in an ellipsis
             // (iOS Design section 11, check 8). An address never holds a line break, so Return
             // only closes the keyboard here, and Connect stays the way to connect.
-            TextField(
-                label, text: $text,
-                prompt: placeholder.map { Text(verbatim: $0).foregroundStyle(DS.Color.muted) } ?? Text(verbatim: ""),
-                axis: .vertical
-            )
-            .lineLimit(1...4)
-            .padding(.vertical, DS.Space.s)
-            .multilineTextAlignment(.leading)
-            .keyboardType(.URL)
-            .textInputAutocapitalization(.never)
-            .autocorrectionDisabled()
-            .environment(\.layoutDirection, .leftToRight)
-            .onChange(of: text) { _, next in
-                guard next.contains(where: \.isNewline) else { return }
-                text = next.filter { !$0.isNewline }
-                focused = false
+            // The field's own prompt stays on one line even on a vertical field, so the sample
+            // address ended in an ellipsis at AX3. Here the sample is its own wrapping text,
+            // drawn behind the empty field, and a tap anywhere on the box focuses the field.
+            ZStack(alignment: .topLeading) {
+                if text.isEmpty, let placeholder {
+                    Text(verbatim: placeholder)
+                        .foregroundStyle(DS.Color.muted)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .accessibilityHidden(true)
+                }
+                TextField(label, text: $text, prompt: Text(verbatim: ""), axis: .vertical)
+                    .lineLimit(1...4)
+                    .frame(maxHeight: .infinity, alignment: .top)
+                    .multilineTextAlignment(.leading)
+                    .keyboardType(.URL)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .focused($focused)
+                    .onChange(of: text) { _, next in
+                        guard next.contains(where: \.isNewline) else { return }
+                        text = next.filter { !$0.isNewline }
+                        focused = false
+                    }
             }
+            .padding(.vertical, DS.Space.s)
+            .contentShape(Rectangle())
+            .onTapGesture { focused = true }
+            .environment(\.layoutDirection, .leftToRight)
         case .address:
             base
                 .multilineTextAlignment(.leading)
@@ -134,6 +150,20 @@ struct DSTextField: View {
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
                 .environment(\.layoutDirection, .leftToRight)
+        }
+    }
+}
+
+/// `.focused` where the input is the field itself, and nothing where the input binds its own.
+private struct FocusBinding: ViewModifier {
+    var focused: FocusState<Bool>.Binding
+    let applies: Bool
+
+    func body(content: Content) -> some View {
+        if applies {
+            content.focused(focused)
+        } else {
+            content
         }
     }
 }
